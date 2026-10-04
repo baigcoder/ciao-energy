@@ -1135,7 +1135,7 @@ export class SceneManager {
         const breath = this.reducedMotion ? 0 : Math.sin(time * 0.0008 + phase) * 0.014;
         can.position.set(
           this.data.canPosX * (1 - s) + slot.x * mobileK * s,
-          this.data.canPosY * (1 - s) + (slot.y * mobileK + breath + drop) * s,
+          this.data.canPosY * (1 - s) + (slot.y * mobileK + (isMobile ? 2.2 : 0) + breath + drop) * s,
           this.data.canPosZ * (1 - s) + slot.z * s
         );
         can.rotation.set(
@@ -1458,14 +1458,15 @@ function landing(t: number) {
 const LINEUP_SLOTS = Array.from({ length: 12 }, (_, k) => {
   const t = k - 5.5;
   return {
-    // one tight row receding in depth: near and low at the left (showing bottoms), far and high
-    // at the right (showing tops), the cans twisting along it; the floor below stays empty
-    x: t * 1.62,
-    y: 0.45 + t * 0.4 - 0.012 * t * t, // rising, flattening toward the far end
-    z: 2.4 - t * 0.85,
-    rotX: -0.5 + (k / 11) * 1.1,
+    // one tight, twisting row, as in the reference: packed can to can and nearly one size along its
+    // length, low at the left (showing bottoms) and high at the right (showing lids), each can
+    // leaning square to the row; the floor below stays empty
+    x: t * 1.68,
+    y: 1.0 + t * 0.36 - 0.014 * t * t, // rising, flattening toward the far end
+    z: 0.8 - t * 0.25,
+    rotX: -0.8 + (k / 11) * 1.7,
     rotY: -0.3,
-    rotZ: 0.14,
+    rotZ: 0.22,
     delay: (k / 11) * 0.6,
   };
 });

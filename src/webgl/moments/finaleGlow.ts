@@ -5,8 +5,8 @@ import { FLAVORS } from '../../data/flavors';
 
 /**
  * Finale. All six cans drop into a mountain-shaped lineup (positions and the drop are in
- * SceneManager.layoutCans); this moment lights each one in its own colour: a soft additive glow
- * behind the can and a stronger rim light, both in the flavor accent, after the can lands.
+ * SceneManager.layoutCans); this moment adds a trace of each flavor's colour: a faint additive glow
+ * behind the can and a light rim, both in the flavor accent, after the can lands.
  *
  * Trigger: the lineup section (timeline `swirl`). Scroll-driven (via swirl) plus a small
  * time-based breathing. WebGL: six camera-facing sprites. DOM: the shop button (FullGammeSection).
@@ -56,9 +56,9 @@ export class FinaleGlow implements SceneMoment {
   update(seconds: number, scene: SceneManager) {
     const swirl = scene.data.swirl;
     const lit = THREE.MathUtils.smoothstep(swirl, 0.7, 1);
-    // every can in the row gets its flavor-coloured rim; the soft colour pools sit behind one of each
+    // as in the reference the row reads by white gloss: only a trace of flavor-coloured rim and glow
     scene.cans.forEach((can) => {
-      can.userData.rimBoost = lit * 1.1;
+      can.userData.rimBoost = lit * 0.3;
     });
     this.sprites.forEach((sprite, i) => {
       const can = scene.cans[i];
@@ -67,7 +67,7 @@ export class FinaleGlow implements SceneMoment {
       sprite.visible = show;
       if (!show) return;
       const breathe = scene.reducedMotion ? 1 : 0.9 + 0.1 * Math.sin(seconds * 0.7 + i * 1.3);
-      material.opacity = 0.22 * lit * breathe;
+      material.opacity = 0.06 * lit * breathe;
       const size = 5.2 * can.scale.x;
       sprite.scale.set(size, size * 1.15, 1);
       sprite.position.set(can.position.x, can.position.y + 0.1, can.position.z - 1.4);
