@@ -1029,7 +1029,7 @@ export class SceneManager {
         const isFeatured = p > 0.4;
         const fromScale = isFeatured ? this.data.canScale : 0;
         can.visible = isDuplicate ? isFeatured && s < 0.25 : isFeatured || s > 0.25;
-        const mobileK = isMobile ? 0.4 : 1;
+        const mobileK = isMobile ? 0.33 : 1; // phones: the whole ridge fits the narrow frame
         // Each can drops in on its own beat (back row first), with a small settle.
         const local = THREE.MathUtils.clamp((s - slot.delay * 0.7) / (1 - slot.delay * 0.7), 0, 1);
         const drop = (1 - landing(local)) * 9;
@@ -1045,7 +1045,7 @@ export class SceneManager {
           this.data.canRotY * (1 - s) + slot.rotY * s,
           this.data.canRotZ * (1 - s) + slot.rotZ * s
         );
-        const canScale = fromScale * (1 - s) + this.data.canScale * (isMobile ? 0.52 : 1) * s;
+        const canScale = fromScale * (1 - s) + this.data.canScale * (isMobile ? 0.46 : 1) * s;
         can.scale.setScalar(canScale);
         setCanFocus(can, Math.round(Math.max(0.02, (isFeatured ? 1 - s : 0) + s * 0.95) * 100) / 100);
         this.applyLabelState(can, false);
@@ -1067,8 +1067,12 @@ export class SceneManager {
         let featRotX = this.data.canRotX;
         let featRotY = this.data.canRotY + this.data.canSpin;
         if (isMobile) {
-          featScale *= 0.58;
-          featY += 1.45; // phones: copy sits at the bottom, so the can rides higher
+          // Phones shrink the can (benefit close-ups most, blended through labelDim). The
+          // vertical pose scales with it, so the lit benefit block keeps its place on screen
+          // instead of the can for the lowest block leaving the top of the frame.
+          const k = 0.7 - 0.12 * this.data.labelDim;
+          featScale *= k;
+          featY = featY * k + 1.45; // copy sits at the bottom, so the can rides higher
           featX = 0.58;
         }
         featRotY += (this.pointer.smoothX / 1280) * this.tilt() + this.spinOffset;
