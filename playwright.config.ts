@@ -12,6 +12,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     // Reduced motion also selects the light render tier, which software WebGL can keep up with.
     reducedMotion: 'reduce',
+    // Optional: point at a preinstalled Chromium (e.g. in CI containers) instead of a Playwright download.
+    launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {},
   },
   webServer: {
     command: 'npm run build && npx vite preview --port 4173 --strictPort',

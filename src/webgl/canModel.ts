@@ -3,11 +3,10 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FLAVORS } from '../data/flavors';
 
 /**
- * CIAO ENERGY — 3D Can Asset & Material Pipeline
+ * GRIZZLY ENERGY — 3D Can Asset & Material Pipeline
  *
  * Implements:
- * 1. High-detail procedural label canvas generator (2048x1024, correct UV alignment,
- *    bold stylized typography, flavor badges, and 360-degree sidewall nutrition/barcode).
+ * 1. Text-free placeholder label for the frames before the label file loads.
  * 2. Official GLB loader for can.glb with geometry caching and material cloning.
  * 3. Watertight, continuous procedural can geometry fallback with identical UV space.
  * 4. PBR physical materials calibrated to printed aluminum standards.
@@ -73,141 +72,27 @@ export function preloadBaseModel(): Promise<THREE.Group> {
 }
 
 /**
- * Generates an authentic, high-resolution procedural label texture for each flavor.
- * Canvas dimensions: 2048 x 1024.
- * UV mapping: u=0.5 corresponds to the front face (+Z in can.glb and procedural can with thetaStart=-PI).
+ * Placeholder label for the first frames, until the flavor's label file arrives
+ * (the material swaps the image in place). Satin black with a soft band of the
+ * flavor colour on the front panel: no text, so nothing unconfirmed is printed.
  */
 export function generateProceduralLabelTexture(flavorIndex: number): THREE.CanvasTexture {
   const flavor = FLAVORS[flavorIndex % FLAVORS.length];
-  const width = 2048;
-  const height = 1024;
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = 256;
+  canvas.height = 128;
   const ctx = canvas.getContext('2d');
-
   if (ctx) {
-    // 1. Base vibrant flavor gradient — centered on luminous flavor accents
-    const grad = ctx.createLinearGradient(0, 0, width, 0);
-    grad.addColorStop(0.00, flavor.theme.primary);
-    grad.addColorStop(0.20, flavor.theme.secondary);
-    grad.addColorStop(0.40, flavor.theme.primary);
-    grad.addColorStop(0.50, flavor.theme.secondary); // Rich luminous color at front center
-    grad.addColorStop(0.60, flavor.theme.primary);
-    grad.addColorStop(0.80, flavor.theme.secondary);
-    grad.addColorStop(1.00, flavor.theme.primary);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, width, height);
-
-    // 2. Subtle horizontal brushed aluminum micro-grain
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
-    for (let y = 0; y < height; y += 3) {
-      ctx.fillRect(0, y, width, 1);
-    }
-
-    // -------------------------------------------------------------
-    // FRONT FACE BRAND TREATMENT (Centered at X = 1024, u = 0.5)
-    // -------------------------------------------------------------
-    const frontCenterX = 1024;
-    const frontCenterY = 512;
-
-    ctx.save();
-    ctx.translate(frontCenterX, frontCenterY);
-
-    // Vertical CIAO brand text: Rotated -90 degrees so text runs vertically along the can
-    ctx.save();
-    ctx.rotate(-Math.PI / 2);
-
-    // Stylized "CIAO" in bold italic typography
-    ctx.fillStyle = '#FFFFFF';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-    ctx.shadowBlur = 12;
-    ctx.font = 'italic 900 240px "Franklin Gothic Atf", Impact, Arial Black, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('CIAO', 0, -50);
-
-    // Bold "ENERGY" subtitle
-    ctx.font = 'italic 900 64px "Franklin Gothic Atf", Impact, Arial Black, sans-serif';
-    ctx.fillStyle = '#FFFFFF';
-    ctx.shadowBlur = 8;
-    ctx.fillText('ENERGY', 0, 90);
-
-    // "[FLAVOR NAME] FLAVOR"
-    ctx.font = '700 28px "Geistmono", monospace, sans-serif';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.shadowBlur = 0;
-    ctx.fillText(`${flavor.name.toUpperCase()} FLAVOR`, 0, 150);
-
-    // "250ml | Zero Bullshit"
-    ctx.font = '500 20px "Geistmono", monospace, sans-serif';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.fillText('250ml  |  Zero Bullshit', 0, 185);
-
-    ctx.restore();
-    ctx.restore();
-
-    // -------------------------------------------------------------
-    // SIDEWALL NUTRITION & TECHNICAL PANEL (Left side, X = 420)
-    // -------------------------------------------------------------
-    ctx.save();
-    ctx.translate(420, 512);
-    ctx.rotate(-Math.PI / 2);
-
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.font = '700 16px "Geistmono", monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText('AVERAGE NUTRITIONAL VALUES / 100ml', -280, -40);
-
-    ctx.font = '400 13px "Geistmono", monospace';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.fillText('Energy ....................... 84 kJ / 20 kcal', -280, -18);
-    ctx.fillText('Fat .......................... 0 g', -280, -2);
-    ctx.fillText('Carbohydrates (cane sugar) ... 4.8 g', -280, 14);
-    ctx.fillText('Protein ...................... 0 g', -280, 30);
-    ctx.fillText('Salt ......................... 0.01 g', -280, 46);
-    ctx.fillText('Natural caffeine ............. 32 mg', -280, 62);
-
-    // Warning
-    ctx.font = '600 12px "Geistmono", monospace';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.fillText('HIGH CAFFEINE CONTENT (32mg/100ml)', -280, 92);
-
-    ctx.restore();
-
-    // -------------------------------------------------------------
-    // SIDEWALL BARCODE & ACCREDITATION PANEL (Right side, X = 1628)
-    // -------------------------------------------------------------
-    ctx.save();
-    ctx.translate(1628, 512);
-    ctx.rotate(-Math.PI / 2);
-
-    // Barcode white box
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.fillRect(-140, -45, 280, 90);
-
-    // Barcode black lines
-    ctx.fillStyle = '#000000';
-    const barPattern = [3, 2, 4, 1, 5, 2, 2, 4, 1, 3, 5, 2, 3, 1, 4, 2, 2, 5, 1, 3, 2, 4, 2, 3, 1, 5, 2, 4];
-    let bx = -125;
-    for (const w of barPattern) {
-      ctx.fillRect(bx, -40, w, 70);
-      bx += w + 3;
-      if (bx > 125) break;
-    }
-
-    ctx.font = '700 12px "Geistmono", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('3 760345 890124', 0, 40);
-
-    // Origin & Recyclable certification mark
-    ctx.font = '600 11px "Geistmono", monospace';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-    ctx.fillText('CRAFTED IN FRANCE • 100% RECYCLABLE', 0, 70);
-
-    ctx.restore();
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+    gradient.addColorStop(0, flavor.theme.primary);
+    gradient.addColorStop(0.5, flavor.theme.secondary);
+    gradient.addColorStop(1, flavor.theme.primary);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = flavor.theme.primary;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
-
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.RepeatWrapping;

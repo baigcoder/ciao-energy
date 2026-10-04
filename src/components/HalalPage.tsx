@@ -30,7 +30,7 @@ export const HalalPage: React.FC = () => {
         {block('Zamzam water', HALAL_PAGE.zamzam, <BenefitIcon type="zamzam" size={28} />)}
         {block('How it’s made', HALAL_PAGE.process)}
       </div>
-      <p className="story__origin">{BRAND.company.name}, {BRAND.origin.toLowerCase()}.</p>
+      <p className="story__origin">{BRAND.company.name}. {BRAND.origin}.</p>
     </article>
   );
 };

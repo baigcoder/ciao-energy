@@ -98,10 +98,10 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
     baseOffset: 3,
   },
 
-  // Flavor intro: big can leaning ~21°, right of the copy; the whole front label shows, only the base leaves the frame.
+  // Flavor intro: big can leaning ~18°, right of the copy; the whole can stays in frame.
   profile: {
     camera: CAMERA,
-    product: { scale: 1.8, posX: 1.2, posY: -1.25, posZ: 0, rotX: 8 * DEG, rotY: 0.32, rotZ: 21 * DEG, spin: 0 },
+    product: { scale: 1.5, posX: 1.4, posY: -0.45, posZ: 0, rotX: 8 * DEG, rotY: 0.32, rotZ: 18 * DEG, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0.12 },
     spacing: CAROUSEL_CONFIG.spacing,
     wave: 0,

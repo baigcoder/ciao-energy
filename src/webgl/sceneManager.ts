@@ -66,6 +66,19 @@ import { SCENE_SEQUENCE, SCENE_STATES, SceneMode, SceneStateConfig } from './sce
 export { CAROUSEL_CONFIG };
 export type { SceneMode, SceneStateConfig };
 
+/**
+ * Puts a loaded image into a placeholder texture that materials already use.
+ * The GPU copy was allocated at the placeholder's size (immutable storage), so it
+ * is released first; otherwise the larger upload overflows it and the map never
+ * appears. The loaded wrapper texture is not needed afterwards.
+ */
+function swapImage(target: THREE.Texture, loaded: THREE.Texture) {
+  target.dispose();
+  target.image = loaded.image;
+  target.needsUpdate = true;
+  loaded.dispose();
+}
+
 export class SceneManager {
   public currentMode: SceneMode = 'hero-carousel';
   public canvas: HTMLCanvasElement;
@@ -462,27 +475,20 @@ export class SceneManager {
       const surface = createNeutralSurfaceTexture();
       const normal = createFlatNormalTexture();
       if (!this.isLowPower) {
-        loader.load(flavor.textureUrl.replace('.webp', '-normal.png'), (loaded) => {
-          normal.image = loaded.image;
-          normal.needsUpdate = true;
-        });
+        loader.load(flavor.textureUrl.replace('.webp', '-normal.png'), (loaded) => swapImage(normal, loaded));
       }
       loader.load(
         flavor.textureUrl,
         (loaded) => {
-          albedo.image = loaded.image;
           albedo.anisotropy = anisotropy;
-          albedo.needsUpdate = true;
+          swapImage(albedo, loaded);
         },
         undefined,
         (err) => console.warn(`[Grizzly] Label texture failed for ${flavor.name}:`, err)
       );
       loader.load(
         flavor.surfaceUrl,
-        (loaded) => {
-          surface.image = loaded.image;
-          surface.needsUpdate = true;
-        },
+        (loaded) => swapImage(surface, loaded),
         undefined,
         (err) => console.warn(`[Grizzly] Surface map failed for ${flavor.name}:`, err)
       );
@@ -587,7 +593,7 @@ export class SceneManager {
     const isMobile = window.innerWidth < 768;
     const distance = (isMobile ? this.data.camPosZ + 6.5 : this.data.camPosZ) - CAROUSEL_CONFIG.heroLift;
     const unitsPerPx = (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * distance) / height;
-    const marginPx = 18; // the flavor name sits just under the can
+    const marginPx = 12; // the flavor name sits just under the can
     const safeY = (height / 2 - (titleTopPx - marginPx)) * unitsPerPx; // world Y of the safe line
     const baseScale = isMobile ? CAROUSEL_CONFIG.heroScaleMobile : CAROUSEL_CONFIG.heroScale;
     // The can spans about ±2.4 × scale (half-height plus the tilted end ellipses).
@@ -602,9 +608,7 @@ export class SceneManager {
     this.heroLift = safeY - canBottom;
     // Desktop: with spare room, centre the can in it rather than hugging the title
     // (phones keep it close to the title, where the thumb-side copy sits).
-    if (!isMobile && available !== Number.POSITIVE_INFINITY && available > 4.8 * scale) {
-      this.heroLift += (available - 4.8 * scale) * 0.15;
-    }
+    // (Spare room stays above the can: the flavor name sits right under it.)
   }
 
   /**
@@ -1104,7 +1108,7 @@ export class SceneManager {
         const ceiling = this.baseGroup.children[1];
         const retract = 1 - this.data.wave;
         const mobileFloorY = isMobile ? -2.05 : this.pedestal.y;
-        const mobileCeilY = isMobile ? 9 : 0.5; // phones: no room for the top disc
+        const mobileCeilY = 9; // the top disc stays out of frame: it clipped into the header
         if (floor) {
           floor.position.y = mobileFloorY - retract * 8.0;
           // Desktop: a slightly smaller pedestal so the whole disc fits under the slider.

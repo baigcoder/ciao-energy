@@ -384,6 +384,9 @@
   font-size: var(--font-size-md);
   text-transform: uppercase;
   color: var(--color-text-muted);
+  /* The can stands right of centre: letters fade out of its column, never over the label. */
+  -webkit-mask-image: linear-gradient(90deg, var(--color-black) 0 34%, transparent 40% 76%, var(--color-black) 82%);
+  mask-image: linear-gradient(90deg, var(--color-black) 0 34%, transparent 40% 76%, var(--color-black) 82%);
 }
 
 .flavor-letters__row:first-child { top: 25%; }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { FLAVORS } from './data/flavors';
 import { getProductBySlug } from './data/products';
 import { SceneManager } from './webgl/sceneManager';
@@ -19,13 +19,7 @@ import { NewsletterFooter, SiteFooter } from './components/NewsletterFooter';
 import { FallbackStage } from './components/FallbackStage';
 import { ProductDetailPage } from './components/ProductDetailPage';
 import { CartDrawer } from './components/CartDrawer';
-import { CartPage } from './components/CartPage';
-import { CheckoutPage } from './components/CheckoutPage';
-import { PackBuilder } from './components/PackBuilder';
-import { HalalPage } from './components/HalalPage';
-import { NotFoundPage } from './components/NotFoundPage';
 import { FlavorFinder } from './components/FlavorFinder';
-import { StoreLocator } from './components/StoreLocator';
 import { PointerFX } from './components/PointerFX';
 import { CookieNotice } from './components/CookieNotice';
 import type { MenuItem } from './components/MenuDrawer';
@@ -33,6 +27,15 @@ import { useCart } from './store/cart';
 import { useSmoothScroll, prefersReducedMotion } from './hooks/useSmoothScroll';
 import { useHomeScroll } from './hooks/useHomeScroll';
 import { getRouteMeta } from './seo/meta';
+import { SCENE_SEQUENCE } from './webgl/sceneStates';
+
+// Secondary pages load on demand; the home story and product page stay in the main chunk.
+const CartPage = lazy(() => import('./components/CartPage').then((module) => ({ default: module.CartPage })));
+const CheckoutPage = lazy(() => import('./components/CheckoutPage').then((module) => ({ default: module.CheckoutPage })));
+const PackBuilder = lazy(() => import('./components/PackBuilder').then((module) => ({ default: module.PackBuilder })));
+const HalalPage = lazy(() => import('./components/HalalPage').then((module) => ({ default: module.HalalPage })));
+const NotFoundPage = lazy(() => import('./components/NotFoundPage').then((module) => ({ default: module.NotFoundPage })));
+const StoreLocator = lazy(() => import('./components/StoreLocator').then((module) => ({ default: module.StoreLocator })));
 
 export type AppRoute =
   | { type: 'HOME' }
@@ -348,7 +351,7 @@ export const App: React.FC = () => {
         <FallbackStage activeIndex={activeIndex} />
       )}
 
-      <SiteFrame scene={isHome ? scene : 'page'} />
+      <SiteFrame scene={isHome ? scene : 'page'} chapter={isHome ? sectionIndex : undefined} chapters={SCENE_SEQUENCE.length} />
 
       <CiaoHeader
         isMenuOpen={isMenuOpen}
@@ -361,6 +364,7 @@ export const App: React.FC = () => {
 
       <CartDrawer isOpen={isCartOpen} onClose={() => toggleCart(false)} onNavigate={navigate} />
 
+      <Suspense fallback={<main id="main" className="page" aria-busy="true" />}>
       {route.type === 'CART' ? (
         <main id="main" className="page">
           <CartPage onNavigate={navigate} />
@@ -418,6 +422,7 @@ export const App: React.FC = () => {
           <NewsletterFooter />
         </main>
       )}
+      </Suspense>
       <SiteFooter />
       <PointerFX onTilt={handleTilt} />
       <CookieNotice isReady={isReady} />

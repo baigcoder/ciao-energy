@@ -194,7 +194,7 @@
   --layout-footer-max: 50rem;
   --layout-intro-max: 30rem;
   --layout-faq-lead: 62svh;          /* FAQ title sits under the rising lineup */
-  --hero-fade-rate: 16;              /* hero HUD gone by half the first segment */
+  --hero-fade-rate: 30;              /* hero HUD gone a quarter into the first segment, before it reaches the cans */
 
   /* Backdrop composition (viewport-relative by design) */
   --backdrop-glow-width: 22vw;

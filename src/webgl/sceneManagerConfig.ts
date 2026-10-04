@@ -7,12 +7,12 @@
 export const CAROUSEL_CONFIG = {
   spacing: 2.1,          // arc length between cans: neighbours tuck slightly behind the centre can
   spacingMobile: 2.6,
-  ringRadius: 11,        // tighter ring: neighbours step back in depth
+  ringRadius: 8.5,       // tight ring: neighbours swing back in depth, so the row reads as a curve
   ringRadiusMobile: 10,
   ringArc: 0.09,         // outer cans rise slightly (squared with the slot distance)
-  visibleSlots: 3.2,     // seven cans on desktop; the outer pair fades toward the frame edge
+  visibleSlots: 2.5,     // five cans on desktop (centre ± 2): with six flavors, slot ±3 would show one flavor twice
   visibleSlotsMobile: 1.35,
-  heroScale: 1.45,       // ≈55% of the viewport height when the space allows
+  heroScale: 1.65,       // ≈55% of the viewport height when the space allows
   heroScaleMobile: 1.2,
   heroLift: 1.4,         // focused can steps toward the camera
   yBase: 0.1,
