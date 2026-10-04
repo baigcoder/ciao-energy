@@ -34,6 +34,7 @@ import type { MenuItem } from './components/MenuDrawer';
 import { useCart } from './store/cart';
 import { useSmoothScroll, prefersReducedMotion } from './hooks/useSmoothScroll';
 import { useHomeScroll } from './hooks/useHomeScroll';
+import { useCanKeys } from './hooks/useCanKeys';
 import { OPENING_MIN_SECONDS, openingShouldPlay } from './webgl/moments/openingConfig';
 
 const MIN_LOADER_MS = 900;
@@ -98,6 +99,7 @@ export const App: React.FC = () => {
   const isHome = route.type === 'HOME';
   const { scrollToElement } = useSmoothScroll(isHome && isReady, '.home > .home-section:not(.faq)');
   const { scene, chapter, sectionIndex } = useHomeScroll(isHome, sceneManagerRef);
+  useCanKeys(isHome ? 'HOME' : route.type === 'PRODUCT' ? 'PRODUCT' : 'OTHER', sceneManagerRef);
 
   const navigate = useCallback((targetUrl: string) => {
     const previous = parseCurrentRoute();
@@ -205,19 +207,30 @@ export const App: React.FC = () => {
     applyHead(route);
   }, [route]);
 
-  // Product page scroll moves the can away with the hero on narrow screens.
+  // Product page scroll: the can moves away with the hero on narrow screens, and lifts clear of the footer on wide ones.
   useEffect(() => {
     if (route.type !== 'PRODUCT') return;
     let frame = 0;
     const onScroll = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => sceneManagerRef.current?.setProductScroll(window.scrollY / window.innerHeight));
+      frame = requestAnimationFrame(() => {
+        const sm = sceneManagerRef.current;
+        sm?.setProductScroll(window.scrollY / window.innerHeight);
+        // Last ~0.8 screens of the page: the pinned can (and its DOM controls) lift away from the footer.
+        const remaining = (document.documentElement.scrollHeight - window.scrollY - window.innerHeight) / window.innerHeight;
+        const exit = Math.min(1, Math.max(0, 1 - remaining / 0.8));
+        sm?.setProductExit(exit);
+        document.documentElement.style.setProperty('--pdp-exit', exit.toFixed(3));
+        document.documentElement.toggleAttribute('data-pdp-end', exit > 0.35);
+      });
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('scroll', onScroll);
+      document.documentElement.style.removeProperty('--pdp-exit');
+      document.documentElement.removeAttribute('data-pdp-end');
     };
   }, [route]);
 

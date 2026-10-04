@@ -38,6 +38,17 @@ body[data-scene='argument'] .site-header::before {
   opacity: var(--opacity-scrim);
 }
 
+/* Product and shop pages scroll copy under the header: same scrim, always on. */
+body:has(main.page) .site-header::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--layout-header-height);
+  background: linear-gradient(to bottom, var(--color-surface-base) 0%, var(--color-surface-base) 62%, transparent 100%);
+  opacity: 1;
+  pointer-events: none;
+}
+
 .site-header__bar {
   position: relative;
   display: grid;

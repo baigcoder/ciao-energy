@@ -116,6 +116,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ activeIndex, isActiv
         </div>
 
         <p className="hero__scroll-hint">{t('scroll')}</p>
+        <p className="hero__turn-hint" aria-hidden="true">{t('turnHint')}</p>
       </div>
     </section>
   );

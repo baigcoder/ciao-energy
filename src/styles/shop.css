@@ -221,11 +221,16 @@
   min-height: 100svh;
 }
 
+/* Wide screens: the stage is pinned like the 3D can it controls, so hotspots and the Front / Back
+   switch stay beside the can while the panel scrolls; both lift away near the end of the page. */
 .pdp-stage {
-  position: absolute;
+  position: fixed;
   inset: var(--layout-header-height) calc(100% - var(--layout-panel-left)) var(--space-2xl) 0;
+  z-index: var(--z-content);
   cursor: grab;
   touch-action: pan-y;
+  opacity: calc(1 - var(--pdp-exit, 0) * 1.4);
+  translate: 0 calc(var(--pdp-exit, 0) * -12vh);
 }
 
 .pdp-stage:active {
@@ -745,6 +750,13 @@ html.is-locked {
     position: relative;
     inset: auto;
     height: 62svh;
+    opacity: 1;
+    translate: none;
+  }
+
+  .pdp-buybar {
+    left: var(--space-sm);
+    right: var(--space-sm);
   }
 
   .pdp-stage__controls {
@@ -833,3 +845,117 @@ body:has(.page) .site-header::before {
   margin-bottom: var(--space-sm);
 }
 
+
+/* Near the end of the page (footer in view) the pinned stage and the buy bar step aside. */
+html[data-pdp-end] .pdp-stage,
+html[data-pdp-end] .pdp-buybar {
+  pointer-events: none;
+}
+
+html[data-pdp-end] .pdp-buybar {
+  opacity: 0;
+}
+
+/* Room under the last row so the floating buy bar never covers content. */
+.page--product {
+  padding-bottom: calc(var(--control-size) + var(--space-3xl));
+}
+
+/* ---------- Flavor switcher (by the title) ---------- */
+.flavor-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin-bottom: var(--space-md);
+}
+
+.flavor-swatch {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--control-size);
+  height: var(--control-size);
+  border-radius: var(--radius-round);
+  border: var(--border-hairline) solid var(--color-line-subtle);
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+}
+
+.flavor-swatch::before {
+  content: '';
+  width: 45%;
+  height: 45%;
+  border-radius: var(--radius-round);
+  background: var(--swatch);
+  box-shadow: 0 0 var(--space-sm) 0 var(--swatch);
+}
+
+.flavor-swatch:hover {
+  border-color: var(--color-line-strong);
+  transform: translateY(calc(var(--space-3xs) * -1));
+}
+
+.flavor-swatch:active {
+  transform: scale(var(--scale-shrink));
+}
+
+.flavor-swatch[aria-current='page'] {
+  border-color: var(--swatch);
+}
+
+/* ---------- Sticky buy bar: appears once the main Add to bag button scrolls away ---------- */
+.pdp-buybar {
+  position: fixed;
+  right: var(--layout-gutter);
+  bottom: var(--space-md);
+  left: var(--layout-panel-left);
+  z-index: var(--z-chrome);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-xs) var(--space-xs) var(--space-xs) var(--space-md);
+  border: var(--border-hairline) solid var(--color-line-subtle);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--color-surface-base) 82%, transparent);
+  backdrop-filter: blur(var(--blur-glass));
+  opacity: 0;
+  translate: 0 var(--space-md);
+  pointer-events: none;
+  transition:
+    opacity var(--motion-fast) var(--ease-out),
+    translate var(--motion-fast) var(--ease-out);
+}
+
+.pdp-buybar.is-visible {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+
+.pdp-buybar__info {
+  display: grid;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.pdp-buybar__name {
+  overflow: hidden;
+  font-family: var(--font-family-display);
+  font-style: italic;
+  font-weight: var(--font-weight-display);
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pdp-buybar__meta {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pdp-buybar {
+    translate: none;
+  }
+}

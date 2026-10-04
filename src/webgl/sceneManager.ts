@@ -30,7 +30,8 @@ const BENEFIT_GLOW_RECTS = LABEL.benefitBlocks.map(([u0, v0, u1, v1]) => new THR
 
 /** Product page framing (same lens as the home scene). */
 const PRODUCT_CAMERA = { x: 0, y: 0, z: 29, fov: 20 };
-const PRODUCT_POSE = { x: -3.2, y: -0.35, z: 0, scale: 2.0, rotX: 0.1, rotY: 0.3, rotZ: 0.2 };
+// Whole can in the left column, lid to base with breathing room; a gentle, premium lean.
+const PRODUCT_POSE = { x: -3.3, y: 0.2, z: 0, scale: 1.6, rotX: 0.08, rotY: 0.3, rotZ: 0.11 };
 const PRODUCT_POSE_NARROW = { x: 0, y: 1.6, z: 0, scale: 1.1, rotX: 0.08, rotY: 0.3, rotZ: 0.14 };
 
 const CAN_COUNT = 12;
@@ -194,6 +195,8 @@ export class SceneManager {
   public routeMode: 'HOME' | 'PRODUCT' | 'PAGE' = 'HOME';
   public activeProductIndex = 0;
   private productScroll = 0;
+  /** 0..1 as the product page reaches its end: the pinned can lifts away clear of the footer. */
+  private productExit = 0;
   private heroLift = 0;
   /** Hero can scale factor so it fits between the header and the title (≤ 1). */
   private heroFit = 1;
@@ -218,6 +221,9 @@ export class SceneManager {
   private readonly tmpEuler = new THREE.Euler();
   private readonly tmpQuaternion = new THREE.Quaternion();
   public productViewerRotation = { x: 0, y: 0, targetX: 0, targetY: 0 };
+  /** Visitor turning the featured can (keys / drag), eased; glides back to the authored pose when idle. */
+  private userTurn = { yaw: 0, pitch: 0, targetYaw: 0, targetPitch: 0, lastInput: -1e9 };
+  private dragTurn = false;
 
   // Flavor colour wave: the new accent floods outward from the focused can.
   private accentShown = new THREE.Color();
@@ -246,7 +252,8 @@ export class SceneManager {
     const width = window.innerWidth;
     const height = window.innerHeight;
     this.isLowPower = width < 1024 || /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
-    this.pixelRatioCap = this.isLowPower ? 2 : 1.5;
+    // up to 2x on every tier for crisp labels; the frame-rate governor steps down on slow GPUs
+    this.pixelRatioCap = 2;
     const pixelRatio = Math.min(window.devicePixelRatio, this.pixelRatioCap);
 
     this.renderer = new THREE.WebGLRenderer({
@@ -577,7 +584,9 @@ export class SceneManager {
   // ───────────────────────── pointer ─────────────────────────
 
   private onPointerDown = (e: PointerEvent) => {
-    if (this.routeMode !== 'HOME' || (this.data.wave < 0.4 && this.data.swirl < 0.4)) return;
+    if (this.routeMode !== 'HOME') return;
+    // single-can scenes: dragging turns the can; hero and lineup keep their own drag
+    this.dragTurn = this.data.wave < 0.4 && this.data.swirl < 0.4;
     this.isPointerDown = true;
     this.isDragging = false;
     this.dragStartX = e.clientX;
@@ -595,6 +604,11 @@ export class SceneManager {
     const dx = e.clientX - this.dragStartX;
     const dy = e.clientY - this.dragStartY;
     if (!this.isDragging && Math.hypot(dx, dy) > 6) this.isDragging = true;
+    if (this.isDragging && this.dragTurn) {
+      this.turnCan((e.clientX - this.lastDragX) * 0.012, 0);
+      this.lastDragX = e.clientX;
+      return;
+    }
     if (this.isDragging && this.data.wave > 0.4) {
       const stepX = e.clientX - this.lastDragX;
       this.lastDragX = e.clientX;
@@ -611,6 +625,10 @@ export class SceneManager {
       this.canvas.releasePointerCapture(e.pointerId);
     } catch {
       // nothing captured
+    }
+    if (this.isDragging && this.dragTurn) {
+      this.isDragging = false;
+      return;
     }
     if (this.isDragging) {
       this.isDragging = false;
@@ -744,6 +762,36 @@ export class SceneManager {
     this.productScroll = Math.max(0, progress);
   }
 
+  public setProductExit(amount: number) {
+    this.productExit = THREE.MathUtils.clamp(amount, 0, 1);
+  }
+
+  /** Turns the featured home can like a model viewer (radians). Ignored outside the home story. */
+  public turnCan(deltaYaw: number, deltaPitch: number) {
+    if (this.routeMode !== 'HOME') return;
+    const t = this.userTurn;
+    t.targetYaw += deltaYaw;
+    t.targetPitch = THREE.MathUtils.clamp(t.targetPitch + deltaPitch, -0.6, 0.6);
+    t.lastInput = performance.now();
+  }
+
+  private updateUserTurn(delta: number, time: number) {
+    const t = this.userTurn;
+    if (time - t.lastInput > 3500) {
+      // idle: settle back to the designed pose by the shortest way round
+      t.targetYaw = Math.round(t.yaw / (Math.PI * 2)) * Math.PI * 2;
+      t.targetPitch = 0;
+    }
+    const k = 1 - Math.exp(-(this.reducedMotion ? 30 : 7) * delta);
+    t.yaw += (t.targetYaw - t.yaw) * k;
+    t.pitch += (t.targetPitch - t.pitch) * k;
+    if (time - t.lastInput > 3500 && Math.abs(t.yaw - t.targetYaw) < 1e-3 && Math.abs(t.pitch) < 1e-3) {
+      t.yaw = 0;
+      t.targetYaw = 0;
+      t.pitch = 0;
+    }
+  }
+
   /** Drag-to-rotate on the product page. */
   public rotateProduct(deltaX: number, deltaY: number) {
     if (this.routeMode !== 'PRODUCT') return;
@@ -806,6 +854,7 @@ export class SceneManager {
     const pointerBlend = 1 - Math.exp(-12 * delta);
     this.pointer.smoothX += (this.pointer.x - this.pointer.smoothX) * pointerBlend;
     this.pointer.smoothY += (this.pointer.y - this.pointer.smoothY) * pointerBlend;
+    this.updateUserTurn(delta, now);
 
     const timelineBlend = 1 - Math.exp(-14 * delta);
     this.currentTimelineProgress += (this.targetTimelineProgress - this.currentTimelineProgress) * timelineBlend;
@@ -1076,6 +1125,8 @@ export class SceneManager {
           featX = 0.58;
         }
         featRotY += (this.pointer.smoothX / 1280) * this.tilt() + this.spinOffset;
+        featRotY += this.userTurn.yaw;
+        featRotX = featRotX + this.userTurn.pitch;
         featRotX += (this.pointer.smoothY / 1280) * this.tilt();
         setCanFocus(can, 1);
         this.applyLabelState(can, true);
@@ -1136,6 +1187,8 @@ export class SceneManager {
       canRotY += this.data.canRotY * collapseBlend;
       canRotZ += this.data.canRotZ * collapseBlend;
       canRotY += this.data.canSpin * p;
+      canRotY += this.userTurn.yaw * p;
+      canRotX += this.userTurn.pitch * p;
       // The focused can tilts toward the pointer.
       canRotY += (this.pointer.smoothX / 1280) * this.tilt() * p + this.spinOffset * p;
       canRotX += (this.pointer.smoothY / 1280) * this.tilt() * p;
@@ -1240,7 +1293,7 @@ export class SceneManager {
 
     const pose = isNarrow ? PRODUCT_POSE_NARROW : PRODUCT_POSE;
     const sway = this.reducedMotion ? 0 : Math.sin(time * 0.0006) * 0.03;
-    const scrollLift = isNarrow ? this.productScroll * 7 : 0;
+    const scrollLift = isNarrow ? this.productScroll * 7 : smooth(this.productExit) * 11;
     this.tmpEuler.set(pose.rotX + rotation.x, pose.rotY + rotation.y + sway, pose.rotZ);
     this.tmpQuaternion.setFromEuler(this.tmpEuler);
     const flavor = FLAVORS[this.activeProductIndex];

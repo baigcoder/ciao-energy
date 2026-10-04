@@ -33,8 +33,8 @@ export function createStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Te
   };
 
   addPanel(8, 2.4, 0xeaf3ff, 5.2, [0, 7, 2.5]); // overhead softbox: the key
-  addPanel(1.1, 9, 0xcfe2ff, 2.8, [-6.5, 0.8, 2.5]); // cold left strip
-  addPanel(0.7, 9, 0xb9cfff, 1.0, [6.5, 0.8, -1.5]); // dim right strip
+  addPanel(2.6, 10, 0xcfe2ff, 3.2, [-6.5, 0.8, 2.5]); // cold left strip: the long edge highlight
+  addPanel(1.4, 10, 0xb9cfff, 1.8, [6.5, 0.8, -1.5]); // right strip: the second, thinner edge highlight
   addPanel(24, 24, 0x2c4260, 0.2, [0, -6, 0]); // moon-blue floor bounce
   addPanel(12, 7, 0xdce8ff, 1.6, [-2, 2, 14]); // frontal fill so labels stay readable
   addPanel(1.6, 1.6, 0xffffff, 5.0, [3.5, 3, -9]); // small hard kicker behind

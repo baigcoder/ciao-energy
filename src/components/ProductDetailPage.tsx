@@ -4,6 +4,7 @@ import {
   getProductBySlug,
   getProductThumbUrl,
   getRelatedProducts,
+  PRODUCTS,
   PLACEHOLDER_PRICING,
   type PackOption,
 } from '../data/products';
@@ -52,6 +53,15 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ slug, onNa
   const [shareState, setShareState] = useState<ShareOutcome | 'working' | 'idle'>('idle');
   const timers = useRef<number[]>([]);
   const addButtonRef = useRef<HTMLButtonElement>(null);
+  // The sticky buy bar shows once the main Add to bag button has scrolled up out of view.
+  const [showBuyBar, setShowBuyBar] = useState(false);
+  useEffect(() => {
+    const button = addButtonRef.current;
+    if (!button || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => setShowBuyBar(!entry.isIntersecting && entry.boundingClientRect.top < 0));
+    observer.observe(button);
+    return () => observer.disconnect();
+  }, [slug]);
   const packGroupId = useId();
 
   useEffect(() => () => timers.current.forEach((timer) => window.clearTimeout(timer)), []);
@@ -180,6 +190,24 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ slug, onNa
           {product.edition && <p className="pdp-price__note pdp-panel__edition">{product.edition}</p>}
           <LimitedCountdown slug={product.slug} />
           <p className="pdp-panel__tagline">{product.tagline}</p>
+
+          <nav className="flavor-swatches" aria-label="Switch flavor">
+            {PRODUCTS.map((item) => (
+              <a
+                key={item.slug}
+                href={`/products/${item.slug}`}
+                className="flavor-swatch"
+                style={{ '--swatch': `var(--color-flavor-${item.accentToken})` } as React.CSSProperties}
+                aria-label={item.name}
+                aria-current={item.slug === product.slug ? 'page' : undefined}
+                title={item.name}
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (item.slug !== product.slug) onNavigate(`/products/${item.slug}`);
+                }}
+              />
+            ))}
+          </nav>
 
           <ul className="trust-badges" aria-label="Certifications">
             <li className="trust-badge">
@@ -353,6 +381,24 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ slug, onNa
           ))}
         </ul>
       </section>
+
+      <div className={`pdp-buybar ${showBuyBar ? 'is-visible' : ''}`} aria-hidden={!showBuyBar}>
+        <div className="pdp-buybar__info">
+          <span className="pdp-buybar__name">{product.name}</span>
+          <span className="pdp-buybar__meta">
+            {pack.label} × {quantity} · {formatPrice(lineTotal)}
+          </span>
+        </div>
+        <button
+          type="button"
+          className={`button-primary ${addState === 'added' ? 'is-success' : ''} ${addState === 'adding' ? 'is-loading' : ''}`}
+          onClick={handleAdd}
+          tabIndex={showBuyBar ? 0 : -1}
+          aria-busy={addState === 'adding'}
+        >
+          <ButtonLabel>{ADD_LABEL[addState]}</ButtonLabel>
+        </button>
+      </div>
 
       <InfoDrawer isOpen={infoOpen} onClose={() => setInfoOpen(false)} title={`${product.name}: nutrition and ingredients`}>
         <h3 className="field-legend">Ingredients</h3>

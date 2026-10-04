@@ -255,7 +255,7 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
           float gzSpot = gzRect(vMapUv, uGlowRect, 0.008) * step(0.001, uGlowStrength);
           diffuseColor.rgb *= mix(1.0, 0.1, uLabelDim * (1.0 - gzSpot)) * (1.0 + 0.7 * uLabelDim * gzSpot);
         #endif
-        diffuseColor.rgb *= mix(0.04, 1.0, uFocus);`
+        diffuseColor.rgb *= mix(0.18, 1.0, uFocus);`
       )
       .replace(
         '#include <roughnessmap_fragment>',
@@ -337,8 +337,9 @@ export function createCanMaterials(
         roughness: 1,
         anisotropy: 0.3,
         anisotropyRotation: 0,
-        clearcoat: 0.22,
-        clearcoatRoughness: 0.3,
+        // printed cans are varnished: a crisp clear coat gives the long vertical studio highlight
+        clearcoat: 0.85,
+        clearcoatRoughness: 0.22, // a broad, soft softbox band rather than a hairline streak
         envMapIntensity: 1,
       });
   applyCanSurfaceShader(bodyMat);
@@ -352,9 +353,9 @@ export function createCanMaterials(
     : new THREE.MeshPhysicalMaterial({
         color: 0xb4b8c1,
         metalness: 1,
-        roughness: 0.46, // softer lid hotspot
-        anisotropy: 0.2,
-        envMapIntensity: 0.55,
+        roughness: 0.3, // machined lid: crisp rings, soft hotspot
+        anisotropy: 0.35,
+        envMapIntensity: 0.8,
       });
   return { bodyMat, aluminumMat };
 }
@@ -384,14 +385,14 @@ export function setCanFocus(can: THREE.Object3D, focus: number) {
     const surface = material.userData.surface as CanSurfaceUniforms | undefined;
     if (surface) {
       surface.uFocus.value = focus;
-      material.envMapIntensity = 0.3 + 0.7 * focus;
+      material.envMapIntensity = 0.45 + 0.55 * focus;
       surface.uRimStrength.value = 0.9 - 0.55 * focus + boost;
       const physical = material as THREE.MeshPhysicalMaterial;
-      if (physical.isMeshPhysicalMaterial) physical.clearcoat = Math.max(0.001, 0.35 * focus * focus); // never 0: avoids a shader recompile
+      if (physical.isMeshPhysicalMaterial) physical.clearcoat = Math.max(0.001, 0.85 * focus); // never 0: avoids a shader recompile
     } else if (material.color) {
       // machined aluminium: dim it with the label, relative to its authored colour and reflectance
       const base = (material.userData.base ??= { color: material.color.clone(), env: material.envMapIntensity }) as { color: THREE.Color; env: number };
-      material.color.copy(base.color).multiplyScalar(0.07 + 0.93 * focus);
+      material.color.copy(base.color).multiplyScalar(0.18 + 0.82 * focus);
       material.envMapIntensity = base.env * (0.3 + 0.7 * focus);
     }
   });

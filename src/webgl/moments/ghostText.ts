@@ -70,15 +70,25 @@ export class GhostText implements SceneMoment {
     ctx.font = "italic 900 330px 'Libre Franklin', 'Arial Black', sans-serif";
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
-    const gradient = ctx.createLinearGradient(0, 0, width, 0);
-    gradient.addColorStop(0, 'rgba(120,150,190,0.9)');
-    gradient.addColorStop(0.5, 'rgba(235,242,255,1)');
-    gradient.addColorStop(1, 'rgba(120,150,190,0.9)');
-    ctx.fillStyle = gradient;
+    // Cold silver outline over a faint fill that fades into the mist toward each line's base:
+    // the words stand in the night behind the can instead of sitting on it as a flat slab.
     lines.forEach((line, i) => {
       const measured = ctx.measureText(line).width;
       const x = i === 0 ? 40 : Math.min(width - measured - 40, 40 + 220);
-      ctx.fillText(line, x, 300 + i * lineHeight);
+      const baseline = 300 + i * lineHeight;
+      const fill = ctx.createLinearGradient(0, baseline - 260, 0, baseline + 10);
+      fill.addColorStop(0, 'rgba(225,236,255,0.42)');
+      fill.addColorStop(0.65, 'rgba(160,185,225,0.12)');
+      fill.addColorStop(1, 'rgba(120,150,200,0)');
+      ctx.fillStyle = fill;
+      ctx.fillText(line, x, baseline);
+      const edge = ctx.createLinearGradient(0, baseline - 260, 0, baseline + 10);
+      edge.addColorStop(0, 'rgba(240,246,255,0.95)');
+      edge.addColorStop(1, 'rgba(150,175,215,0.25)');
+      ctx.strokeStyle = edge;
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(line, x, baseline);
     });
     this.aspect = canvas.width / canvas.height;
     this.texture = new THREE.CanvasTexture(canvas);
@@ -92,14 +102,14 @@ export class GhostText implements SceneMoment {
     // visible while the argument section (position 6) is on screen
     const reveal = THREE.MathUtils.smoothstep(p, 5.35, 5.95);
     const leave = 1 - THREE.MathUtils.smoothstep(p, 6.3, 6.85);
-    const opacity = 0.34 * leave;
+    const opacity = 0.55 * leave; // thin outline + faint fill: reads quieter than the old solid letters
     this.mesh.visible = !!this.texture && reveal > 0.001 && opacity > 0.002;
     if (!this.mesh.visible) return;
     const z = -4.5;
     const distance = scene.camera.position.z - z;
     const viewHeight = 2 * Math.tan(THREE.MathUtils.degToRad(scene.camera.fov / 2)) * distance;
     const viewWidth = viewHeight * scene.camera.aspect;
-    const width = Math.min(viewWidth * 0.92, viewHeight * 1.7 * this.aspect * 0.5);
+    const width = Math.min(viewWidth * 0.84, viewHeight * 1.5 * this.aspect * 0.5);
     this.mesh.scale.set(width, width / this.aspect, 1);
     // slow drift: the letters slide against the can as the section passes
     const drift = (p - 6) * 1.6;

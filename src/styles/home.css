@@ -993,3 +993,19 @@
   from { translate: calc(var(--drift-distance) * -1) 0; }
   to { translate: var(--drift-distance) 0; }
 }
+
+/* Model-viewer hint: pointer and keyboard devices only (touch drags the ring instead). */
+.hero__turn-hint {
+  margin-top: var(--space-2xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+@media (hover: none) {
+  .hero__turn-hint {
+    display: none;
+  }
+}

@@ -75,29 +75,24 @@ const BACKDROP_FRAGMENT = /* glsl */ `
   uniform vec2 uGlowPos;
   ${NOISE}
 
-  // One mountain layer: a sharp, uneven ridge line over a lit, strata-textured rock face with snow on the crest.
-  vec3 ridgeLayer(vec3 base, vec2 uv, float level, float freq, float amp, float seed, float par, float fog, vec3 tint, float rim) {
+  // One mountain layer: a broad, solid massif in atmospheric perspective. Far layers are paler,
+  // bluer and softer-edged; near layers darker and crisper. No outline glow, no strata: the range
+  // is atmosphere behind the can, not a pattern. 'near' (0..1) sets crispness and fine detail.
+  vec3 ridgeLayer(vec3 base, vec2 uv, float level, float freq, float amp, float seed, float par, float fog, vec3 tint, float near) {
     float x = uv.x * uAspect + uCam.x * par * 0.05 + uScroll * par * 0.03;
-    float shape = pow(ridged(vec2(x * freq, seed)), 1.7);
-    // a slow envelope makes tall massifs and low saddles instead of a uniform wave
-    float envelope = 0.55 + 0.45 * sin(x * freq * 0.6 + seed * 3.0);
-    float h = uHorizon + level + amp * (shape * (0.55 + 0.7 * envelope) - 0.2) - uCam.y * par * 0.012;
-    float px = 1.2 / 540.0;
-    float mask = smoothstep(h + px, h - px, uv.y);
-    // light from the moon side: brighten slopes facing it
-    float dh = pow(ridged(vec2((x + 0.012) * freq, seed)), 1.7) - pow(ridged(vec2((x - 0.012) * freq, seed)), 1.7);
-    float lit = clamp(0.5 + dh * 5.0, 0.0, 1.0);
-    float depth = clamp((h - uv.y) / (amp * 0.8 + 0.001), 0.0, 1.0);
-    // crags and strata: fine noise across the rock face
-    float crag = vnoise(vec2(x * freq * 14.0, uv.y * 70.0 + seed)) * 0.6 + vnoise(vec2(x * freq * 40.0, uv.y * 200.0)) * 0.4;
-    vec3 rock = tint * (0.55 + 0.9 * lit) * (0.7 + 0.6 * crag) * (1.0 - 0.45 * depth);
-    // snow on the high crest, only where the slope faces the light
-    float snow = smoothstep(0.38, 0.0, depth) * smoothstep(0.35, 0.8, lit) * (0.5 + 0.5 * crag);
-    rock += vec3(0.55, 0.7, 0.95) * 0.07 * snow;
-    rock = mix(rock, vec3(0.006, 0.012, 0.024), fog * (0.3 + 0.7 * depth));
-    float edge = exp(-abs(uv.y - h) * 300.0) * rim;
+    float shape = fbm(vec2(x * freq, seed));
+    // a little ridged detail on the nearest layer only, so crests read as rock, not as a wave
+    float detail = (ridged(vec2(x * freq * 3.2, seed + 5.0)) - 0.55) * 0.1 * near;
+    // vertical parallax is clamped: a high camera (FAQ, footer) must not lift the range into the sky
+    float h = uHorizon + level + amp * (shape - 0.35 + detail) - clamp(uCam.y, -3.0, 3.0) * par * 0.006;
+    float soft = mix(5.0, 1.2, near) / 540.0;
+    float mask = smoothstep(h + soft, h - soft, uv.y);
+    float depth = clamp((h - uv.y) / (amp + 0.001), 0.0, 1.0);
+    vec3 rock = mix(tint * 1.7, tint * 0.55, depth);
+    rock = mix(rock, vec3(0.011, 0.02, 0.036), fog * (1.0 - depth) * 0.55);
     vec3 col = mix(base, rock, mask);
-    col += (uAccent * 0.1 + vec3(0.12, 0.18, 0.28)) * edge * mask;
+    // the faintest cold light grazing the far crests (backlit by the horizon glow)
+    col += vec3(0.04, 0.06, 0.1) * exp(-abs(uv.y - h) * 140.0) * (1.0 - near) * 0.3 * mask;
     return col;
   }
 
@@ -111,12 +106,15 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     col += moonCol * (0.016 * exp(-md * 3.2) + 0.22 * exp(-md * 38.0)) * uMoon;
     float cl = fbm(vec2(uv.x * asp * 1.6 + t * 0.008, uv.y * 7.0 + uScroll * 0.1));
     col += vec3(0.006, 0.011, 0.02) * smoothstep(0.5, 0.9, cl) * smoothstep(uHorizon, 1.0, uv.y) * uMoon;
+    // one broad, cold horizon light: the range stands as silhouettes against it
+    col += vec3(0.016, 0.03, 0.055) * exp(-abs(uv.y - uHorizon - 0.06) * 6.0);
+    col += uAccent * 0.006 * exp(-abs(uv.y - uHorizon - 0.04) * 10.0);
     float m = uMountains;
-    col = ridgeLayer(col, uv, 0.03 * m, 1.05, 0.78 * m, 3.1, 0.5, 0.75, vec3(0.022, 0.04, 0.075), 0.35);
+    col = ridgeLayer(col, uv, 0.05 * m, 0.95, 0.36 * m, 3.1, 0.5, 0.8, vec3(0.02, 0.036, 0.066), 0.0);
     float band = fbm(vec2(uv.x * asp * 2.2 - t * 0.012, uv.y * 4.0));
-    col = mix(col, vec3(0.012, 0.024, 0.045), 0.4 * band * smoothstep(uHorizon + 0.3, uHorizon, uv.y) * m);
-    col = ridgeLayer(col, uv, 0.0 * m, 1.9, 0.42 * m, 7.9, 1.0, 0.5, vec3(0.010, 0.02, 0.04), 0.5);
-    col = ridgeLayer(col, uv, -0.035 * m, 3.1, 0.22 * m, 12.4, 1.8, 0.25, vec3(0.004, 0.008, 0.016), 0.8);
+    col = mix(col, vec3(0.012, 0.022, 0.04), 0.3 * band * smoothstep(uHorizon + 0.2, uHorizon, uv.y) * m);
+    col = ridgeLayer(col, uv, 0.015 * m, 1.6, 0.2 * m, 7.9, 1.0, 0.5, vec3(0.009, 0.017, 0.032), 0.5);
+    col = ridgeLayer(col, uv, -0.02 * m, 2.4, 0.09 * m, 12.4, 1.8, 0.25, vec3(0.003, 0.006, 0.012), 1.0);
     return col;
   }
 

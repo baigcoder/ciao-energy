@@ -31,6 +31,9 @@ export const PointerFX: React.FC<PointerFXProps> = ({ onTilt }) => {
     const current = { x: -100, y: -100 };
     let frame = 0;
     let magnet: HTMLElement | null = null;
+    // The ring only accompanies a moving pointer: it fades when the mouse rests or leaves.
+    let idleTimer = 0;
+    const IDLE_MS = 1200;
 
     const release = () => {
       if (!magnet) return;
@@ -47,6 +50,8 @@ export const PointerFX: React.FC<PointerFXProps> = ({ onTilt }) => {
       const element = event.target instanceof Element ? event.target : null;
       ring?.classList.toggle('is-hover', Boolean(element?.closest(INTERACTIVE)));
       ring?.classList.add('is-visible');
+      window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(() => ring?.classList.remove('is-visible'), IDLE_MS);
 
       const next = element?.closest<HTMLElement>(MAGNETIC) ?? null;
       if (next !== magnet) release();
@@ -63,8 +68,12 @@ export const PointerFX: React.FC<PointerFXProps> = ({ onTilt }) => {
       }
     };
     const onLeave = () => {
+      window.clearTimeout(idleTimer);
       ring?.classList.remove('is-visible');
       release();
+    };
+    const onOut = (event: MouseEvent) => {
+      if (!event.relatedTarget) onLeave();
     };
     const onDown = () => ring?.classList.add('is-pressed');
     const onUp = () => ring?.classList.remove('is-pressed');
@@ -81,6 +90,8 @@ export const PointerFX: React.FC<PointerFXProps> = ({ onTilt }) => {
       window.addEventListener('pointerdown', onDown, { passive: true });
       window.addEventListener('pointerup', onUp, { passive: true });
       document.documentElement.addEventListener('pointerleave', onLeave);
+      document.addEventListener('mouseout', onOut);
+      window.addEventListener('blur', onLeave);
       frame = requestAnimationFrame(tick);
     }
 
@@ -103,6 +114,9 @@ export const PointerFX: React.FC<PointerFXProps> = ({ onTilt }) => {
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUp);
       document.documentElement.removeEventListener('pointerleave', onLeave);
+      document.removeEventListener('mouseout', onOut);
+      window.removeEventListener('blur', onLeave);
+      window.clearTimeout(idleTimer);
       window.removeEventListener('deviceorientation', onOrientation);
     };
   }, []);
