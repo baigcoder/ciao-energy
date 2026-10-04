@@ -77,6 +77,14 @@ const BACKDROP_FRAGMENT = /* glsl */ `
   uniform vec2 uGlowPos;
   ${NOISE}
 
+  // Fraction of the sky (stars) left visible at this pixel: clouds and ridges cover the stars,
+  // which are added later at full resolution in the display pass (read back from alpha).
+  float gSkyVis = 1.0;
+
+  vec2 moonPosition() {
+    return vec2(0.70 + uCam.x * 0.004, 0.72 - uCam.y * 0.004);
+  }
+
   // One mountain layer: a broad, solid massif in atmospheric perspective. Far layers are paler,
   // bluer and softer-edged; near layers darker and crisper. No outline glow, no strata: the range
   // is atmosphere behind the can, not a pattern. 'near' (0..1) sets crispness and fine detail.
@@ -95,24 +103,95 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     vec3 col = mix(base, rock, mask);
     // the faintest cold light grazing the far crests (backlit by the horizon glow)
     col += vec3(0.04, 0.06, 0.1) * exp(-abs(uv.y - h) * 140.0) * (1.0 - near) * 0.3 * mask;
+    gSkyVis *= 1.0 - mask;
     return col;
   }
 
+  // Aurora: slow vertical curtains high in the sky. The curtain line is a slowly domain-warped
+  // noise along x; folds (where the sheet turns edge-on) are brighter; fine vertical rays run
+  // through it. Cold green-cyan core, faint violet upper fringe, a little of the flavor accent.
+  // 's' is the height above the horizon (0 horizon .. 1 top edge).
+  vec3 auroraCurtain(float X, float s, float t, float seed, float base, float height) {
+    // domain warp along x and time: the folds drift and undulate over tens of seconds
+    float w = vnoise(vec2(X * 0.9 + t * 0.011, t * 0.013 + seed));
+    float wx = X + 0.9 * w + 0.12 * sin(X * 2.2 + t * 0.04 + seed);
+    // folds: where the sheet turns edge-on it reads brighter
+    float fold = 1.0 - abs(2.0 * vnoise(vec2(wx * 2.6 - t * 0.02, seed + 4.0)) - 1.0);
+    fold *= fold;
+    // the curtain comes and goes along the sky
+    float patchy = smoothstep(0.2, 0.7, vnoise(vec2(X * 0.8 + t * 0.012, seed + 11.0)));
+    // the lower edge sweeps up and down across the sky with the sheet
+    float edge = base + 0.24 * (vnoise(vec2(wx * 1.3 - t * 0.016, seed + 7.0)) - 0.5);
+    float h = s - edge;
+    float prof = smoothstep(-0.05, 0.03, h) * exp(-max(h, 0.0) / height);
+    // rays: fine vertical striation, almost constant along y, bending with the sheet
+    float ray = vnoise(vec2(wx * 48.0, s * 2.4 - t * 0.03 + seed));
+    #if OCTAVES > 3
+    ray = 0.55 * ray + 0.45 * vnoise(vec2(wx * 115.0, s * 3.0 + t * 0.04));
+    float rays = 0.4 + 1.2 * ray * ray;
+    #else
+    // a single, coarser ray octave on lower tiers: keep its contrast low so it never reads as bars
+    float rays = 0.6 + 0.7 * ray * ray;
+    #endif
+    vec3 core = mix(vec3(0.05, 0.75, 0.6), uAccent, 0.18);
+    vec3 fringe = mix(vec3(0.34, 0.18, 0.9), uAccent, 0.15);
+    vec3 c = mix(core, fringe, smoothstep(0.02, height * 1.8, h));
+    return c * prof * (0.08 + 0.92 * fold * fold) * patchy * rays;
+  }
+
+  vec3 aurora(vec2 uv, float asp, float t) {
+    float s = (uv.y - uHorizon) / (1.0 - uHorizon + 0.001);
+    // fade toward the horizon and the top edge; dimmed with the night (close-ups dim the moon)
+    float vis = smoothstep(0.3, 0.6, s) * smoothstep(1.05, 0.72, s) * uMoon * uMoon;
+    if (vis < 0.002) return vec3(0.0);
+    float X = uv.x * asp + uCam.x * 0.012 + uScroll * 0.02;
+    vec3 a = auroraCurtain(X, s, t, 0.0, 0.52, 0.2);
+    #if OCTAVES > 3
+    // a second, fainter sheet further away
+    a += 0.5 * auroraCurtain(X * 1.3 + 3.7, s, t * 0.8, 21.0, 0.44, 0.13);
+    #endif
+    return a * vis * 0.085;
+  }
+
+  // Thin stratus drifting above the range: dark bodies, edges facing the moon catch its light.
+  float cloudDensity(vec2 uv, float asp, float t) {
+    vec2 p = vec2(uv.x * asp * 2.2 + t * 0.012 + uCam.x * 0.02 + uScroll * 0.06, (uv.y - uHorizon) * 11.0 - t * 0.003);
+    return fbm(p + vec2(0.0, 0.35 * vnoise(p * vec2(0.6, 0.25) + 5.0)));
+  }
+
   // Sky, moon and the three ridge layers: shared by the scene and its reflection in the wet floor.
-  vec3 skyAndMountains(vec2 uv, float asp, float t) {
-    float sky = smoothstep(0.0, 1.0, (uv.y - uHorizon) / (1.0 - uHorizon + 0.001));
+  // 'refl' = 1 for the wet-floor reflection: skips detail the ripples would destroy anyway.
+  vec3 skyAndMountains(vec2 uv, float asp, float t, float refl) {
+    gSkyVis = 1.0;
+    float span = 1.0 - uHorizon + 0.001;
+    float sky = smoothstep(0.0, 1.0, (uv.y - uHorizon) / span);
     vec3 col = mix(vec3(0.0042, 0.0095, 0.019), vec3(0.0004, 0.0007, 0.0016), pow(sky, 0.5));
-    vec2 moonPos = vec2(0.70 + uCam.x * 0.004, 0.72 - uCam.y * 0.004);
-    float md = length((uv - moonPos) * vec2(asp, 1.0));
+    vec2 moonPos = moonPosition();
+    vec2 dm = (uv - moonPos) * vec2(asp, 1.0);
+    float md = length(dm);
     vec3 moonCol = mix(vec3(0.42, 0.58, 0.9), uAccent, 0.25);
     // the glow follows how much of the moon is lit tonight
     float illum = 0.5 - 0.5 * cos(uMoonPhase * 6.2831853);
-    col += moonCol * (0.016 * exp(-md * 3.2) + 0.22 * exp(-md * 38.0)) * uMoon * (0.35 + 0.65 * illum);
+    float moonLight = uMoon * (0.35 + 0.65 * illum);
+
+    col += aurora(uv, asp, t);
+
+    #if OCTAVES > 3
+    // moonbeam haze: a few broad, slowly turning shafts falling away from the moon
+    {
+      vec2 dir = dm / (md + 1e-4);
+      float beams = vnoise(dir * 2.6 + vec2(t * 0.015, -t * 0.011));
+      beams = beams * beams * smoothstep(0.3, -0.6, dir.y);
+      col += moonCol * 0.012 * beams * exp(-md * 1.5) * smoothstep(0.03, 0.2, md) * moonLight;
+    }
+    #endif
+
+    col += moonCol * (0.016 * exp(-md * 3.2) + 0.22 * exp(-md * 38.0)) * moonLight;
     // the moon itself, at today's real phase: a small sphere lit from the sun's side, faint earthshine
     {
-      vec2 q = (uv - moonPos) * vec2(asp, 1.0) / 0.014;
+      vec2 q = dm / 0.014;
       float q2 = dot(q, q);
-      if (q2 < 1.2) {
+      if (q2 < 1.2 && refl < 0.5) {
         float z = sqrt(max(0.0, 1.0 - q2));
         float a = uMoonPhase * 6.2831853;
         vec3 sunDir = vec3(sin(a), 0.0, -cos(a));
@@ -122,19 +201,51 @@ const BACKDROP_FRAGMENT = /* glsl */ `
         col += (vec3(0.78, 0.84, 0.95) * lit * maria * 0.55 + vec3(0.02, 0.026, 0.04)) * disc * uMoon;
       }
     }
+
+    // drifting stratus: a band above the range, never a lid over the whole sky
+    {
+      float s = (uv.y - uHorizon) / span;
+      float bandMask = smoothstep(0.2, 0.34, s) * smoothstep(0.78, 0.5, s);
+      if (bandMask > 0.0) {
+        float d = cloudDensity(uv, asp, t);
+        float cover = smoothstep(0.46, 0.7, d) * bandMask;
+        // the edge facing the moon: density falls off toward it
+        vec2 toMoon = -dm / (md + 1e-4);
+        float d2 = cloudDensity(uv + vec2(toMoon.x / asp, toMoon.y) * 0.02, asp, t);
+        float rim = clamp((d - d2) * 6.0, 0.0, 1.0) * cover;
+        vec3 body = vec3(0.0025, 0.0045, 0.009) + moonCol * 0.01 * exp(-md * 2.5) * moonLight;
+        col = mix(col, body, cover * 0.85);
+        col += moonCol * rim * (0.03 + 0.14 * exp(-md * 2.6)) * moonLight;
+        gSkyVis *= 1.0 - cover * 0.85;
+      }
+    }
+
     // twilight at the edges of the night: a faint cold-warm dawn or a violet dusk along the horizon
     float twBand = exp(-abs(uv.y - uHorizon - 0.05) * 7.0);
     col += (vec3(0.05, 0.03, 0.022) * uTwilight.x + vec3(0.03, 0.016, 0.045) * uTwilight.y) * twBand;
-    float cl = fbm(vec2(uv.x * asp * 1.6 + t * 0.008, uv.y * 7.0 + uScroll * 0.1));
-    col += vec3(0.006, 0.011, 0.02) * smoothstep(0.5, 0.9, cl) * smoothstep(uHorizon, 1.0, uv.y) * uMoon;
     // one broad, cold horizon light: the range stands as silhouettes against it
     col += vec3(0.016, 0.03, 0.055) * exp(-abs(uv.y - uHorizon - 0.06) * 6.0);
     col += uAccent * 0.006 * exp(-abs(uv.y - uHorizon - 0.04) * 10.0);
+
     float m = uMountains;
+    float X = uv.x * asp;
+    float fogAmt = 0.4 + 0.6 * m;
     col = ridgeLayer(col, uv, 0.05 * m, 0.95, 0.36 * m, 3.1, 0.5, 0.8, vec3(0.02, 0.036, 0.066), 0.0);
-    float band = fbm(vec2(uv.x * asp * 2.2 - t * 0.012, uv.y * 4.0));
-    col = mix(col, vec3(0.012, 0.022, 0.04), 0.3 * band * smoothstep(uHorizon + 0.2, uHorizon, uv.y) * m);
+    // fog bank lying in the valleys between the far and mid ridges, drifting slowly to the left
+    {
+      float f = fbm(vec2(X * 2.4 + uCam.x * 0.035 - t * 0.011, (uv.y - uHorizon) * 9.0 + t * 0.004));
+      float top = uHorizon + 0.06 * m + 0.08 * (f - 0.5);
+      float bank = smoothstep(top + 0.03, top - 0.035, uv.y) * smoothstep(uHorizon - 0.08, uHorizon, uv.y);
+      col = mix(col, vec3(0.028, 0.05, 0.086), bank * smoothstep(0.25, 0.75, f) * 0.75 * fogAmt);
+    }
     col = ridgeLayer(col, uv, 0.015 * m, 1.6, 0.2 * m, 7.9, 1.0, 0.5, vec3(0.009, 0.017, 0.032), 0.5);
+    // a thinner, quicker bank between the mid and near ridges
+    {
+      float f = fbm(vec2(X * 3.6 + uCam.x * 0.07 - t * 0.019, (uv.y - uHorizon) * 14.0 - t * 0.006 + 6.0));
+      float top = uHorizon + 0.012 * m + 0.05 * (f - 0.5);
+      float bank = smoothstep(top + 0.02, top - 0.03, uv.y) * smoothstep(uHorizon - 0.06, uHorizon - 0.01, uv.y);
+      col = mix(col, vec3(0.018, 0.033, 0.06), bank * smoothstep(0.25, 0.75, f) * 0.7 * fogAmt);
+    }
     col = ridgeLayer(col, uv, -0.02 * m, 2.4, 0.09 * m, 12.4, 1.8, 0.25, vec3(0.003, 0.006, 0.012), 1.0);
     return col;
   }
@@ -143,23 +254,41 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     vec2 uv = vUv;
     float asp = uAspect;
     float t = uTime;
-    vec3 col = skyAndMountains(uv, asp, t);
+    float below = uHorizon - uv.y;
+    vec3 col = vec3(0.0);
+    float skyVis = 1.0;
+    // the floor below the blend line replaces the scene entirely, so only evaluate it above
+    if (below < 0.012) {
+      col = skyAndMountains(uv, asp, t, 0.0);
+      skyVis = gSkyVis;
+    }
     vec3 moonCol = mix(vec3(0.42, 0.58, 0.9), uAccent, 0.25);
-    vec2 moonPos = vec2(0.70 + uCam.x * 0.004, 0.72 - uCam.y * 0.004);
+    vec2 moonPos = moonPosition();
     float md = length((uv - moonPos) * vec2(asp, 1.0));
 
-    // floor: wet black stone that mirrors the mountains and catches a cold sheen near the horizon
-    float below = uHorizon - uv.y;
+    // floor: wet black stone that mirrors the night, crisp near the horizon, broken up further in
     if (below > 0.0) {
       float k = clamp(below / uHorizon, 0.0, 1.0);
+      // perspective-compressed coordinate: ripples crowd together toward the horizon
+      float zk = pow(k, 0.6);
       vec3 floorCol = mix(vec3(0.0042, 0.0085, 0.017), vec3(0.0004, 0.0006, 0.0012), pow(k, 0.45));
       float sheen = fbm(vec2(uv.x * asp * 5.0 + t * 0.01, k * 24.0));
       floorCol += vec3(0.004, 0.008, 0.015) * smoothstep(0.45, 0.95, sheen) * (1.0 - k);
-      // the reflection: the scene above the horizon, flipped, broken up by slow ripples and fading with distance
-      float ripple = (vnoise(vec2(uv.x * asp * 18.0 + t * 0.05, k * 40.0)) - 0.5) * 0.012 * (0.3 + k);
-      vec2 ruv = vec2(uv.x + ripple, uHorizon + below * 0.9);
-      floorCol += skyAndMountains(ruv, asp, t) * 0.3 * pow(1.0 - k, 1.6);
-      floorCol += moonCol * 0.012 * exp(-abs((uv.x - moonPos.x) * asp) * 7.0) * (1.0 - k) * uMoon;
+      // slow ripples: long horizontal swells that displace the reflection, stronger with distance
+      float r1 = vnoise(vec2(uv.x * asp * 5.0 + t * 0.03, zk * 60.0 - t * 0.32));
+      float r2 = vnoise(vec2(uv.x * asp * 11.0 - t * 0.02, zk * 130.0 - t * 0.5));
+      float rip = r1 * 0.65 + r2 * 0.35 - 0.5;
+      float rx = rip * 0.012 * (0.15 + k);
+      float ry = rip * 0.03 * k;
+      vec2 ruv = vec2(uv.x + rx, uHorizon + below * 0.9 + ry);
+      floorCol += skyAndMountains(ruv, asp, t, 1.0) * 0.5 * pow(1.0 - k, 1.5);
+      // the moon on the water: an elongated vertical streak broken into glints by the ripples
+      float illum = 0.5 - 0.5 * cos(uMoonPhase * 6.2831853);
+      float dx = (uv.x - moonPos.x + rx * 3.0) * asp;
+      float wdt = 0.008 + 0.06 * k;
+      float glint = smoothstep(0.42, 0.8, vnoise(vec2(uv.x * asp * 34.0 + t * 0.04, zk * 150.0 - t * 0.55)));
+      float streak = exp(-abs(dx) / wdt) * (0.2 + 1.3 * glint) + 0.25 * exp(-abs(dx) / (wdt * 4.0));
+      floorCol += moonCol * streak * 0.05 * pow(1.0 - k, 1.3) * uMoon * (0.35 + 0.65 * illum);
       col = mix(col, floorCol, smoothstep(0.0, 0.012, below));
     }
 
@@ -183,7 +312,8 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     col += accent * 0.003 * (1.0 - smoothstep(0.0, 1.0, (uv.y - uHorizon) / (1.0 - uHorizon + 0.001)));
 
     col += vec3(0.8, 0.9, 1.0) * uFlash * (0.25 + 0.5 * exp(-md * 2.0));
-    gl_FragColor = vec4(col, 1.0);
+    // alpha carries how much open sky is left for the display pass's stars
+    gl_FragColor = vec4(col, skyVis);
   }
 `;
 
@@ -197,14 +327,15 @@ const DISPLAY_FRAGMENT = /* glsl */ `
   uniform float uStars;
   ${NOISE}
   void main() {
-    vec3 col = texture2D(tBackdrop, vUv).rgb;
+    vec4 back = texture2D(tBackdrop, vUv);
+    vec3 col = back.rgb;
     // fine stars: sparse, only well above the horizon, slow twinkle
     vec2 cell = floor(vec2(vUv.x * uAspect, vUv.y) * 90.0);
     float h = hash21(cell);
     vec2 local = fract(vec2(vUv.x * uAspect, vUv.y) * 90.0) - 0.5;
     float star = step(0.9965, h) * smoothstep(0.22, 0.0, length(local));
     star *= 0.55 + 0.45 * sin(uTime * (0.4 + h * 2.0) + h * 40.0);
-    col += vec3(0.7, 0.8, 1.0) * star * smoothstep(uHorizon + 0.12, uHorizon + 0.5, vUv.y) * uStars * 0.9;
+    col += vec3(0.7, 0.8, 1.0) * star * smoothstep(uHorizon + 0.12, uHorizon + 0.5, vUv.y) * uStars * 0.9 * back.a;
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
