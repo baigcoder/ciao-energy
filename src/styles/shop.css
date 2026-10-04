@@ -412,13 +412,29 @@
 }
 
 .pdp-facts {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: max-content 1fr;
   gap: var(--space-2xs) var(--space-lg);
   margin-top: var(--space-md);
   padding-top: var(--space-md);
   border-top: var(--border-hairline) solid var(--color-line-subtle);
+  font-size: var(--font-size-md);
+}
+
+.pdp-facts__row {
+  display: contents;
+}
+
+.pdp-facts dt {
+  color: var(--color-text-muted);
+}
+
+.pdp-facts dd {
+  color: var(--color-text-primary);
+}
+
+.pdp-facts__note {
+  margin-top: var(--space-xs);
   font-size: var(--font-size-md);
   color: var(--color-text-muted);
 }

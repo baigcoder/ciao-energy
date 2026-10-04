@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import {
   formatPrice,
   getProductBySlug,
+  getProductFacts,
   getProductThumbUrl,
   getRelatedProducts,
   PLACEHOLDER_PRICING,
@@ -269,11 +270,15 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ slug, onNa
             </span>
           </div>
 
-          <ul className="pdp-facts">
-            <li>{product.leadTime}</li>
-            <li>{product.origin}</li>
-            <li>{product.volume}</li>
-          </ul>
+          <dl className="pdp-facts" aria-label={`${product.name} facts`}>
+            {getProductFacts(product).map((fact) => (
+              <div key={fact.label} className="pdp-facts__row">
+                <dt>{fact.label}</dt>
+                <dd>{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="pdp-facts__note">{product.leadTime}</p>
         </div>
       </section>
 

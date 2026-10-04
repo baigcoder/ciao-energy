@@ -1,0 +1,117 @@
+/* ============================================================
+   PRERENDER — the static first paint written into #root at build
+   time (text and a still can before any script runs). React
+   replaces it on mount. Semantic tokens only.
+   ============================================================ */
+.prerender {
+  min-height: 100svh;
+  padding: var(--space-xl) var(--space-md) var(--space-4xl);
+  background:
+    radial-gradient(60% 40% at 50% 30%, var(--color-accent-deep) 0%, transparent 70%),
+    var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-body);
+  font-weight: var(--font-weight-body);
+}
+
+.prerender__nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-xs) var(--space-lg);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.prerender a {
+  color: inherit;
+}
+
+.prerender__main {
+  max-width: var(--layout-faq-max);
+  margin: 0 auto;
+  padding-top: var(--space-3xl);
+  text-align: center;
+}
+
+.prerender__eyebrow {
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.prerender h1 {
+  margin: var(--space-sm) 0 var(--space-lg);
+  font-family: var(--font-family-display);
+  font-style: italic;
+  font-weight: var(--font-weight-display);
+  font-size: var(--font-size-3xl);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.prerender h2 {
+  margin: var(--space-2xl) 0 var(--space-sm);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-medium);
+}
+
+.prerender h3 {
+  margin-top: var(--space-md);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+}
+
+.prerender p,
+.prerender li {
+  font-size: var(--font-size-lg);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.prerender__hero {
+  display: block;
+  width: auto;
+  height: 45svh;
+  margin: 0 auto var(--space-lg);
+}
+
+.prerender ul {
+  list-style: none;
+}
+
+.prerender__flavors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  gap: var(--space-md);
+}
+
+.prerender__flavors a {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2xs);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+}
+
+.prerender__flavors img {
+  width: auto;
+  height: 9rem;
+}
+
+.prerender__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-2xs) var(--space-lg);
+  text-align: left;
+}
+
+.prerender__facts div {
+  display: contents;
+}
+
+.prerender__facts dt {
+  color: var(--color-text-muted);
+}

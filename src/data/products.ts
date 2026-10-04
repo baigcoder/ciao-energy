@@ -3,7 +3,7 @@
  * names, copy, nutrition and accents have one source. Pack prices are
  * PLACEHOLDERS until real pricing is supplied (labelled as such in the UI).
  */
-import { BRAND, COMMERCE, GRIZZLY_BENEFITS, GRIZZLY_FLAVORS, NUTRITION } from './brand';
+import { BRAND, COMMERCE, GRIZZLY_BENEFITS, GRIZZLY_FLAVORS, NUTRITION, UNCONFIRMED, confirmed } from './brand';
 
 export const PLACEHOLDER_PRICING = COMMERCE.placeholderPricing;
 
@@ -104,4 +104,26 @@ export function getRelatedProducts(slug: string): Product[] {
   const current = getProductBySlug(slug);
   if (!current) return PRODUCTS.slice(0, 3);
   return current.relatedSlugs.map((s) => getProductBySlug(s)).filter((p): p is Product => Boolean(p));
+}
+
+export interface ProductFact {
+  label: string;
+  value: string;
+}
+
+/**
+ * The facts block for one flavor: shown on the product page, in the static HTML
+ * and in the Product schema, so all three always say the same thing. Unconfirmed
+ * values read "To be confirmed" and are never guessed.
+ */
+export function getProductFacts(product: Product): ProductFact[] {
+  return [
+    { label: 'Size', value: product.volume },
+    { label: 'Caffeine', value: confirmed(UNCONFIRMED.caffeine) },
+    { label: 'Sugar', value: confirmed(UNCONFIRMED.sugar) },
+    { label: 'Ingredients', value: confirmed(product.ingredients) },
+    { label: 'Halal status', value: 'Halal certified' },
+    { label: 'Water', value: 'Made with added Zamzam water' },
+    { label: 'Made in', value: product.origin.replace(/^Made in\s+/i, '') },
+  ];
 }

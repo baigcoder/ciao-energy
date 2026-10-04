@@ -32,6 +32,7 @@ import type { MenuItem } from './components/MenuDrawer';
 import { useCart } from './store/cart';
 import { useSmoothScroll, prefersReducedMotion } from './hooks/useSmoothScroll';
 import { useHomeScroll } from './hooks/useHomeScroll';
+import { getRouteMeta } from './seo/meta';
 
 export type AppRoute =
   | { type: 'HOME' }
@@ -192,38 +193,44 @@ export const App: React.FC = () => {
     }
   }, [activeIndex, route, isHome]);
 
-  // Document title per route.
+  // Title, description, canonical, Open Graph and JSON-LD per route: the same
+  // values scripts/prerender.ts writes into the static HTML (src/seo/meta.ts).
   useEffect(() => {
-    const product = route.type === 'PRODUCT' ? getProductBySlug(route.slug) : undefined;
-    document.title = product
-      ? `${product.name} – Grizzly Energy`
-      : route.type === 'PRODUCT'
-        ? 'Flavor not found – Grizzly Energy'
-        : ({
-            CART: 'Your bag – Grizzly Energy',
-            CHECKOUT: 'Checkout – Grizzly Energy',
-            MIX: 'Mix your pack – Grizzly Energy',
-            HALAL: 'Halal and Zamzam – Grizzly Energy',
-            STORES: 'Find a store – Grizzly Energy',
-            NOT_FOUND: 'Page not found – Grizzly Energy',
-            HOME: 'Grizzly Energy – Fuel your wild side',
-          } as Record<string, string>)[route.type] ?? 'Grizzly Energy – Fuel your wild side';
-    const setMeta = (attr: 'name' | 'property', key: string, content: string) => {
-      let element = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
+    const meta = getRouteMeta(window.location.pathname);
+    document.title = meta.title;
+    const upsert = <T extends HTMLElement>(selector: string, create: () => T) => {
+      let element = document.head.querySelector<T>(selector);
       if (!element) {
-        element = document.createElement('meta');
-        element.setAttribute(attr, key);
+        element = create();
         document.head.appendChild(element);
       }
-      element.content = content;
+      return element;
     };
-    const description = product
-      ? `${product.name}: ${product.tagline} Natural caffeine, electrolytes and B vitamins.`
-      : 'Grizzly Energy: natural caffeine, natural electrolytes, B vitamins and added Zamzam water. Six flavors.';
-    setMeta('name', 'description', description);
-    setMeta('property', 'og:title', document.title);
-    setMeta('property', 'og:description', description);
-    setMeta('property', 'og:image', `/social/${product?.slug ?? 'blue-raspberry'}.png`);
+    const setMeta = (attr: 'name' | 'property', key: string, content: string) => {
+      upsert<HTMLMetaElement>(`meta[${attr}="${key}"]`, () => {
+        const element = document.createElement('meta');
+        element.setAttribute(attr, key);
+        return element;
+      }).content = content;
+    };
+    setMeta('name', 'description', meta.description);
+    setMeta('property', 'og:title', meta.title);
+    setMeta('property', 'og:description', meta.description);
+    setMeta('property', 'og:url', meta.canonical);
+    setMeta('property', 'og:image', meta.image);
+    setMeta('name', 'robots', meta.noindex ? 'noindex, follow' : 'index, follow');
+    upsert<HTMLLinkElement>('link[rel="canonical"]', () => {
+      const element = document.createElement('link');
+      element.rel = 'canonical';
+      return element;
+    }).href = meta.canonical;
+    document.head.querySelectorAll('script[type="application/ld+json"]').forEach((element) => element.remove());
+    meta.jsonLd.forEach((data) => {
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.textContent = JSON.stringify(data);
+      document.head.appendChild(script);
+    });
   }, [route]);
 
   // Product page scroll moves the can away with the hero on narrow screens.

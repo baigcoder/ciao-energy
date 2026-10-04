@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { LocaleProvider } from './i18n';
 import './styles/base.css';
+// Static first paint written into #root at build time (scripts/prerender.ts).
+import './styles/prerender.css';
 import './styles/chrome.css';
 import './styles/loader.css';
 import './styles/home.css';
