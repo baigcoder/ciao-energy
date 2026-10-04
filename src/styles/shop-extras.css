@@ -223,7 +223,7 @@
 .hotspot-panel {
   position: absolute;
   left: var(--layout-text-inset);
-  bottom: calc(var(--space-md) + var(--control-size) * 2 + var(--space-lg));
+  bottom: calc(var(--space-md) + var(--notice-h, 0px) + var(--control-size) * 2 + var(--space-lg));
   max-width: var(--layout-hotspot-panel);
   padding: var(--space-sm) var(--space-md);
   border: var(--border-hairline) solid var(--color-accent);
@@ -915,7 +915,7 @@ select.field__input--plain option {
   .hotspot-panel {
     left: var(--space-md);
     right: var(--space-md);
-    bottom: calc(var(--control-size) + var(--space-lg));
+    bottom: calc(var(--control-size) + var(--space-lg) + var(--notice-h, 0px));
   }
 
   [dir='rtl'] .pdp-panel,

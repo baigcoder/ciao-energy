@@ -102,9 +102,13 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ isMenuOpen, onToggleMenu
           </button>
           <span className="sr-only" role="status">{totalCount > 0 ? `${totalCount} ${totalCount === 1 ? 'item' : 'items'} in your bag` : ''}</span>
 
-          <a href={isTodo(BRAND.contactEmail) ? '#site-footer' : `mailto:${BRAND.contactEmail}`} className="button-primary button-primary--small">
-            <ButtonLabel>{t('contact')}</ButtonLabel>
-          </a>
+          {/* No dead-end action: the header Contact button appears once a real contact email exists
+              (grizzly.json → brand.contactEmail). Until then the menu's Contact entry points to the footer. */}
+          {!isTodo(BRAND.contactEmail) && (
+            <a href={`mailto:${BRAND.contactEmail}`} className="button-primary button-primary--small">
+              <ButtonLabel>{t('contact')}</ButtonLabel>
+            </a>
+          )}
         </div>
       </div>
     </header>

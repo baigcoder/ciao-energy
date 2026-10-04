@@ -97,6 +97,9 @@ a {
   top: var(--space-sm);
   left: var(--space-sm);
   z-index: var(--z-loader);
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-size);
   padding: var(--space-xs) var(--space-md);
   background: var(--color-action-primary);
   color: var(--color-action-primary-text);

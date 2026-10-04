@@ -241,6 +241,7 @@
   --z-canvas: 2;
   --z-content: 3;
   --z-chrome: 10;
+  --z-notice: 15;
   --z-overlay: 20;
   --z-loader: 30;
 
@@ -319,7 +320,7 @@
   --size-cursor: 2.25rem;
   --size-cursor-hover: 3.5rem;
   --size-hex-emblem: 4.5rem;
-  --layout-notice-max: 26rem;
+  --layout-notice-max: 30rem;
   --stroke-hex: 2.5;
 }
 :root { --opacity-watermark: 0.32; }

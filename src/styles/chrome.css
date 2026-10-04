@@ -142,6 +142,7 @@ body:has(main.page) .site-header::before {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
+  min-width: var(--control-size);
   min-height: var(--control-size);
   padding: 0;
   font-size: var(--font-size-md);
@@ -189,7 +190,9 @@ body:has(main.page) .site-header::before {
 
 /* Logo */
 .site-logo {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-size);
   padding: var(--space-2xs);
   transition: opacity var(--motion-instant) var(--ease-out);
 }
@@ -207,7 +210,9 @@ body:has(main.page) .site-header::before {
 .menu-toggle {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-xs);
+  min-width: var(--control-size);
   min-height: var(--control-size);
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-body);

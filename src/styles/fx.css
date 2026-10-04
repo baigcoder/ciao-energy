@@ -251,39 +251,69 @@
   letter-spacing: var(--letter-spacing-wide);
 }
 
-/* ---------- Storage notice ---------- */
+/* ---------- Storage notice ----------
+   A slim bar under the content layer. It publishes its own height as --notice-h (see CookieNotice.tsx),
+   and anything anchored to the bottom of the screen adds that variable to its offset, so the notice
+   never sits on top of Add to bag, the hero controls or the lineup button. Menus and the bag drawer
+   (--z-overlay) cover it, they never get covered by it. */
 .cookie-notice {
   position: fixed;
-  right: var(--layout-gutter);
-  bottom: var(--layout-gutter);
-  z-index: var(--z-overlay);
+  right: var(--space-sm);
+  bottom: max(var(--space-sm), env(safe-area-inset-bottom));
+  left: var(--space-sm);
+  z-index: var(--z-notice);
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  max-width: var(--layout-notice-max);
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-3xs) var(--space-3xs) var(--space-3xs) var(--space-md);
   border: var(--border-hairline) solid var(--color-line);
   border-radius: var(--radius-md);
   background: var(--color-surface-panel);
   backdrop-filter: blur(var(--blur-glass)) saturate(var(--saturate-glass));
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
   animation: answer-in var(--motion-fast) var(--ease-out);
 }
 
+.cookie-notice__text {
+  flex: 1;
+  margin: 0;
+}
+
 .cookie-notice a {
+  display: inline-block;
+  min-height: var(--control-size);
+  line-height: var(--control-size);
   text-decoration: underline;
   text-underline-offset: var(--underline-offset);
 }
 
-@media (max-width: 767px) {
+.cookie-notice .button-outline {
+  flex-shrink: 0;
+  min-width: var(--control-size);
+  min-height: var(--control-size);
+  white-space: nowrap;
+}
+
+/* Wide screens: a narrow card in the bottom-left corner, clear of the product column and the hero's
+   centre. Phones keep the full-width bar. */
+@media (min-width: 768px) {
   .cookie-notice {
-    left: var(--space-sm);
-    right: var(--space-sm);
-    bottom: var(--space-sm);
-    max-width: none;
-    padding: var(--space-xs) var(--space-sm);
-    font-size: var(--font-size-sm);
+    right: auto;
+    left: var(--layout-gutter);
+    max-width: var(--layout-notice-max);
   }
+}
+
+/* Hero hints would sit right under the bar: they come back once the notice is dismissed. */
+html[data-notice] .hero__scroll-hint,
+html[data-notice] .hero__turn-hint {
+  visibility: hidden;
+}
+
+/* The end of every page stays reachable above the bar. */
+html[data-notice] body {
+  padding-bottom: var(--notice-h, 0px);
 }
 
 /* ---------- Store locator ---------- */
@@ -353,11 +383,6 @@
 
 .button-primary__label {
   z-index: 1;
-}
-
-.cookie-notice .button-outline {
-  flex-shrink: 0;
-  white-space: nowrap;
 }
 
 /* The loader owns the screen: no cursor ring over it. */

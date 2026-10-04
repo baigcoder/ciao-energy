@@ -251,7 +251,7 @@
 .pdp-stage__controls {
   position: absolute;
   left: var(--layout-text-inset);
-  bottom: var(--space-md);
+  bottom: calc(var(--space-md) + var(--notice-h, 0px));
   display: flex;
   gap: var(--space-2xs);
 }
@@ -259,7 +259,7 @@
 .pdp-stage__hint {
   position: absolute;
   left: var(--layout-text-inset);
-  bottom: calc(var(--space-md) + var(--control-size) + var(--space-xs));
+  bottom: calc(var(--space-md) + var(--notice-h, 0px) + var(--control-size) + var(--space-xs));
   font-size: var(--font-size-sm);
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -917,7 +917,7 @@ html[data-pdp-end] .pdp-buybar {
 .pdp-buybar {
   position: fixed;
   right: var(--layout-gutter);
-  bottom: var(--space-md);
+  bottom: calc(var(--space-md) + var(--notice-h, 0px));
   left: var(--layout-panel-left);
   z-index: var(--z-chrome);
   display: flex;
