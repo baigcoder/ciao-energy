@@ -75,21 +75,48 @@ const BACKDROP_FRAGMENT = /* glsl */ `
   uniform vec2 uGlowPos;
   ${NOISE}
 
+  // One mountain layer: a sharp, uneven ridge line over a lit, strata-textured rock face with snow on the crest.
   vec3 ridgeLayer(vec3 base, vec2 uv, float level, float freq, float amp, float seed, float par, float fog, vec3 tint, float rim) {
     float x = uv.x * uAspect + uCam.x * par * 0.05 + uScroll * par * 0.03;
-    float h = uHorizon + level + amp * (ridged(vec2(x * freq, seed)) - 0.5) - uCam.y * par * 0.012;
+    float shape = pow(ridged(vec2(x * freq, seed)), 1.7);
+    // a slow envelope makes tall massifs and low saddles instead of a uniform wave
+    float envelope = 0.55 + 0.45 * sin(x * freq * 0.6 + seed * 3.0);
+    float h = uHorizon + level + amp * (shape * (0.55 + 0.7 * envelope) - 0.2) - uCam.y * par * 0.012;
     float px = 1.2 / 540.0;
     float mask = smoothstep(h + px, h - px, uv.y);
-    // light from the moon side: brighten slopes facing it, ice on the high peaks
-    float dh = ridged(vec2((x + 0.01) * freq, seed)) - ridged(vec2((x - 0.01) * freq, seed));
-    float lit = clamp(0.5 + dh * 6.0, 0.0, 1.0);
-    float depth = clamp((h - uv.y) / (amp * 0.9 + 0.001), 0.0, 1.0);
-    vec3 rock = mix(tint * 0.6, tint * (0.6 + 0.9 * lit), 1.0 - depth * 0.5);
-    rock += vec3(0.5, 0.65, 0.95) * 0.05 * smoothstep(0.4, 0.0, depth) * lit;      // snow on the crest
-    rock = mix(rock, vec3(0.006, 0.012, 0.024), fog * (0.35 + 0.65 * depth));
-    float edge = exp(-abs(uv.y - h) * 260.0) * rim;
+    // light from the moon side: brighten slopes facing it
+    float dh = pow(ridged(vec2((x + 0.012) * freq, seed)), 1.7) - pow(ridged(vec2((x - 0.012) * freq, seed)), 1.7);
+    float lit = clamp(0.5 + dh * 5.0, 0.0, 1.0);
+    float depth = clamp((h - uv.y) / (amp * 0.8 + 0.001), 0.0, 1.0);
+    // crags and strata: fine noise across the rock face
+    float crag = vnoise(vec2(x * freq * 14.0, uv.y * 70.0 + seed)) * 0.6 + vnoise(vec2(x * freq * 40.0, uv.y * 200.0)) * 0.4;
+    vec3 rock = tint * (0.55 + 0.9 * lit) * (0.7 + 0.6 * crag) * (1.0 - 0.45 * depth);
+    // snow on the high crest, only where the slope faces the light
+    float snow = smoothstep(0.38, 0.0, depth) * smoothstep(0.35, 0.8, lit) * (0.5 + 0.5 * crag);
+    rock += vec3(0.55, 0.7, 0.95) * 0.07 * snow;
+    rock = mix(rock, vec3(0.006, 0.012, 0.024), fog * (0.3 + 0.7 * depth));
+    float edge = exp(-abs(uv.y - h) * 300.0) * rim;
     vec3 col = mix(base, rock, mask);
-    col += uAccent * edge * 0.12 * mask;
+    col += (uAccent * 0.1 + vec3(0.12, 0.18, 0.28)) * edge * mask;
+    return col;
+  }
+
+  // Sky, moon and the three ridge layers: shared by the scene and its reflection in the wet floor.
+  vec3 skyAndMountains(vec2 uv, float asp, float t) {
+    float sky = smoothstep(0.0, 1.0, (uv.y - uHorizon) / (1.0 - uHorizon + 0.001));
+    vec3 col = mix(vec3(0.0042, 0.0095, 0.019), vec3(0.0004, 0.0007, 0.0016), pow(sky, 0.5));
+    vec2 moonPos = vec2(0.70 + uCam.x * 0.004, 0.72 - uCam.y * 0.004);
+    float md = length((uv - moonPos) * vec2(asp, 1.0));
+    vec3 moonCol = mix(vec3(0.42, 0.58, 0.9), uAccent, 0.25);
+    col += moonCol * (0.016 * exp(-md * 3.2) + 0.22 * exp(-md * 38.0)) * uMoon;
+    float cl = fbm(vec2(uv.x * asp * 1.6 + t * 0.008, uv.y * 7.0 + uScroll * 0.1));
+    col += vec3(0.006, 0.011, 0.02) * smoothstep(0.5, 0.9, cl) * smoothstep(uHorizon, 1.0, uv.y) * uMoon;
+    float m = uMountains;
+    col = ridgeLayer(col, uv, 0.03 * m, 1.05, 0.78 * m, 3.1, 0.5, 0.75, vec3(0.022, 0.04, 0.075), 0.35);
+    float band = fbm(vec2(uv.x * asp * 2.2 - t * 0.012, uv.y * 4.0));
+    col = mix(col, vec3(0.012, 0.024, 0.045), 0.4 * band * smoothstep(uHorizon + 0.3, uHorizon, uv.y) * m);
+    col = ridgeLayer(col, uv, 0.0 * m, 1.9, 0.42 * m, 7.9, 1.0, 0.5, vec3(0.010, 0.02, 0.04), 0.5);
+    col = ridgeLayer(col, uv, -0.035 * m, 3.1, 0.22 * m, 12.4, 1.8, 0.25, vec3(0.004, 0.008, 0.016), 0.8);
     return col;
   }
 
@@ -97,38 +124,22 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     vec2 uv = vUv;
     float asp = uAspect;
     float t = uTime;
-
-    // sky: near-black zenith to a cold, faintly lit horizon
-    float sky = smoothstep(0.0, 1.0, (uv.y - uHorizon) / (1.0 - uHorizon + 0.001));
-    vec3 col = mix(vec3(0.0042, 0.0095, 0.019), vec3(0.0004, 0.0007, 0.0016), pow(sky, 0.5));
-
-    // moon glow (right of centre) tinted a little toward the flavor
+    vec3 col = skyAndMountains(uv, asp, t);
+    vec3 moonCol = mix(vec3(0.42, 0.58, 0.9), uAccent, 0.25);
     vec2 moonPos = vec2(0.70 + uCam.x * 0.004, 0.72 - uCam.y * 0.004);
     float md = length((uv - moonPos) * vec2(asp, 1.0));
-    vec3 moonCol = mix(vec3(0.42, 0.58, 0.9), uAccent, 0.25);
-    col += moonCol * (0.016 * exp(-md * 3.2) + 0.22 * exp(-md * 38.0)) * uMoon;
 
-    // high thin cloud bands, drifting
-    float cl = fbm(vec2(uv.x * asp * 1.6 + t * 0.008, uv.y * 7.0 + uScroll * 0.1));
-    col += vec3(0.006, 0.011, 0.02) * smoothstep(0.5, 0.9, cl) * smoothstep(uHorizon, 1.0, uv.y) * uMoon;
-
-    // mountains: far, mid, near (parallax grows toward the camera)
-    float m = uMountains;
-    float farFog = 0.7;
-    col = ridgeLayer(col, uv, 0.20 * m - 0.05, 1.4, 0.26 * m, 3.1, 0.5, farFog, vec3(0.018, 0.034, 0.06), 0.35);
-    float band = fbm(vec2(uv.x * asp * 2.2 - t * 0.012, uv.y * 4.0));
-    col = mix(col, vec3(0.012, 0.024, 0.045), 0.4 * band * smoothstep(uHorizon + 0.3, uHorizon, uv.y) * m);
-    col = ridgeLayer(col, uv, 0.08 * m - 0.04, 2.3, 0.2 * m, 7.9, 1.0, 0.5, vec3(0.010, 0.019, 0.034), 0.5);
-    col = ridgeLayer(col, uv, -0.02 * m - 0.03, 3.4, 0.14 * m, 12.4, 1.8, 0.25, vec3(0.003, 0.006, 0.011), 0.8);
-
-    // floor: wet black stone that catches a cold sheen near the horizon
+    // floor: wet black stone that mirrors the mountains and catches a cold sheen near the horizon
     float below = uHorizon - uv.y;
     if (below > 0.0) {
       float k = clamp(below / uHorizon, 0.0, 1.0);
       vec3 floorCol = mix(vec3(0.0042, 0.0085, 0.017), vec3(0.0004, 0.0006, 0.0012), pow(k, 0.45));
-      float sheen = fbm(vec2(uv.x * asp * 5.0 + t * 0.01, k * 24.0)) ;
+      float sheen = fbm(vec2(uv.x * asp * 5.0 + t * 0.01, k * 24.0));
       floorCol += vec3(0.004, 0.008, 0.015) * smoothstep(0.45, 0.95, sheen) * (1.0 - k);
-      // moon column mirrored in the wet floor
+      // the reflection: the scene above the horizon, flipped, broken up by slow ripples and fading with distance
+      float ripple = (vnoise(vec2(uv.x * asp * 18.0 + t * 0.05, k * 40.0)) - 0.5) * 0.012 * (0.3 + k);
+      vec2 ruv = vec2(uv.x + ripple, uHorizon + below * 0.9);
+      floorCol += skyAndMountains(ruv, asp, t) * 0.3 * pow(1.0 - k, 1.6);
       floorCol += moonCol * 0.012 * exp(-abs((uv.x - moonPos.x) * asp) * 7.0) * (1.0 - k) * uMoon;
       col = mix(col, floorCol, smoothstep(0.0, 0.012, below));
     }
@@ -147,10 +158,10 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     float front = exp(-pow((wd - radius) * 3.2, 2.0)) * (1.0 - uWipe) * step(0.001, uWipe);
     col += uAccent * front * 0.2;
 
-    // accent glow pool (under / behind the focused can) and the rim light on the ridges
+    // accent glow pool (under / behind the focused can)
     float gd = length((uv - uGlowPos) * vec2(asp, 1.0));
     col += accent * (0.035 * exp(-gd * 2.6) + 0.1 * exp(-gd * 8.0)) * uGlow;
-    col += accent * 0.003 * (1.0 - sky);
+    col += accent * 0.003 * (1.0 - smoothstep(0.0, 1.0, (uv.y - uHorizon) / (1.0 - uHorizon + 0.001)));
 
     col += vec3(0.8, 0.9, 1.0) * uFlash * (0.25 + 0.5 * exp(-md * 2.0));
     gl_FragColor = vec4(col, 1.0);

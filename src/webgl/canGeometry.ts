@@ -8,12 +8,8 @@ import * as THREE from 'three';
  * Ends: a tapered neck, double-seam chime, countersunk lid with a stay-on tab at the top,
  * and a domed base with a foot ring at the bottom. Total height ≈ 4.5 world units.
  */
-export const CAN = {
-  radius: 0.795,
-  shellHeight: 3.88,
-  topHeight: 0.29,
-  bottomHeight: 0.245,
-} as const;
+import { CAN } from './canDimensions';
+export { CAN };
 
 const RADIAL_SEGMENTS = 128;
 const SHELL_HALF = CAN.shellHeight / 2;

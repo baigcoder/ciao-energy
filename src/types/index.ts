@@ -38,7 +38,10 @@ export interface Benefit {
 export interface FAQItem {
   id: string;
   question: string;
+  /** Public answer text; a neutral line while the fact is still being confirmed. */
   answer: string;
+  /** True while the answer is unconfirmed: shown in the list, left out of structured data. */
+  pending: boolean;
 }
 
 export type QualityPreset = 'HIGH' | 'MEDIUM' | 'LOW' | 'STATIC';

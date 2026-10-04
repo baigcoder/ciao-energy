@@ -74,6 +74,8 @@
   --gradient-brushed-silver: linear-gradient(105deg, var(--color-silver-500) 0%, var(--color-silver-100) 22%, var(--color-silver-300) 40%, var(--color-silver-100) 58%, var(--color-silver-500) 78%, var(--color-silver-300) 100%);
   --texture-brushed: repeating-linear-gradient(0deg, var(--color-black-a10) 0 1px, transparent 1px 3px);
   --blur-forming: 0.9rem;
+  --drift-distance: 2.5vw;
+  --image-night-stage: url('/brand/night-stage.jpg'); /* still of the WebGL night stage (no-WebGL fallback and first paint) */
 
   /* Quiet chapter (Zamzam and halal): slow, single strokes */
   --motion-draw: 2.6s;
@@ -81,6 +83,7 @@
   --size-seal: min(34vh, 21.5rem);
   --stroke-seal: 0.5;
   --size-shop-card: 26rem;
+  --size-fact: 17rem;
   --size-shop-can: 9rem;
   --size-shop-can-narrow: 6.5rem;
   --size-seal-latin: 4.2px; /* in seal viewBox units */
@@ -305,7 +308,7 @@
   --size-hotspot: 2.25rem;
   --layout-checkout-max: 72rem;
   --layout-story-max: 60rem;
-  --size-bear-watermark: 34rem;
+  --size-bear-watermark: 56rem;
   --size-palette-min: 9rem;
   --size-story-col: 16rem;
   --layout-hotspot-panel: 20rem;
@@ -316,4 +319,4 @@
   --layout-notice-max: 26rem;
   --stroke-hex: 2.5;
 }
-:root { --opacity-watermark: 0.12; }
+:root { --opacity-watermark: 0.32; }

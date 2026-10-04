@@ -1,6 +1,6 @@
 // Web Audio sound design: everything is synthesised (no audio files), off until the visitor enables it.
 
-export type UiSound = 'change' | 'enter' | 'benefits' | 'click' | 'open' | 'growl' | 'add' | 'whoosh';
+export type UiSound = 'change' | 'enter' | 'benefits' | 'click' | 'open' | 'growl' | 'add' | 'whoosh' | 'drop';
 
 type Tone = { type: OscillatorType; from: number; to: number; duration: number; gain: number; delay?: number };
 
@@ -178,6 +178,22 @@ class AudioManager {
             this.noise(t + 0.15 + Math.random() * 1.2, 0.012, 'bandpass', 3000 + Math.random() * 5000, 4000, 0.06 * volume, 6, 0.3);
           }
           break;
+        case 'drop': {
+          // a single drop into still water: a short falling sine, then a faint ring
+          const osc = ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1150, t);
+          osc.frequency.exponentialRampToValueAtTime(260, t + 0.16);
+          const amp = ctx.createGain();
+          amp.gain.setValueAtTime(0.0001, t);
+          amp.gain.exponentialRampToValueAtTime(0.16 * volume, t + 0.01);
+          amp.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+          osc.connect(amp);
+          this.route(amp, 1);
+          osc.start(t);
+          osc.stop(t + 0.55);
+          break;
+        }
         case 'growl': {
           // low rumble with a breathy edge: the bear, felt more than heard
           const osc = ctx.createOscillator();
@@ -263,6 +279,30 @@ class AudioManager {
     lfoGain.connect(lowpass.frequency);
     lfo.start(t);
     nodes.push(lfo);
+    // mountain air: very quiet band-passed noise, swelling slowly
+    if (this.noiseBuffer) {
+      const wind = ctx.createBufferSource();
+      wind.buffer = this.noiseBuffer;
+      wind.loop = true;
+      const band = ctx.createBiquadFilter();
+      band.type = 'bandpass';
+      band.frequency.value = 260;
+      band.Q.value = 0.5;
+      const windGain = ctx.createGain();
+      windGain.gain.value = 0.35;
+      const swell = ctx.createOscillator();
+      swell.frequency.value = 0.07;
+      const swellGain = ctx.createGain();
+      swellGain.gain.value = 0.25;
+      swell.connect(swellGain);
+      swellGain.connect(windGain.gain);
+      wind.connect(band);
+      band.connect(windGain);
+      windGain.connect(lowpass);
+      wind.start(t);
+      swell.start(t);
+      nodes.push(wind, swell);
+    }
     lowpass.connect(gain);
     this.route(gain, 0.5);
     this.ambient = { gain, nodes };

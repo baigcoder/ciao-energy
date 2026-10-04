@@ -10,6 +10,7 @@ export const UNCONFIRMED = grizzly.unconfirmed;
 export const NUTRITION = grizzly.nutrition;
 export const LABEL = grizzly.label;
 export const BADGES = grizzly.badges;
+export const POLICIES = grizzly.policies;
 export const COMMERCE = grizzly.commerce;
 export const REVIEWS: Array<{ author: string; rating: number; text: string }> = grizzly.reviews;
 export const HALAL_PAGE = grizzly.halalPage;

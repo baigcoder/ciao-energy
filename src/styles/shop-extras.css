@@ -799,10 +799,10 @@ select.field__input--plain option {
   width: var(--size-bear-watermark);
   max-width: 90vw;
   opacity: var(--opacity-watermark);
-  filter: grayscale(0.6) blur(var(--blur-glass));
-  transform: translate(-50%, -55%);
-  -webkit-mask: linear-gradient(180deg, var(--color-black) 0%, var(--color-black) 45%, transparent 75%);
-  mask: linear-gradient(180deg, var(--color-black) 0%, var(--color-black) 45%, transparent 75%);
+  mix-blend-mode: screen;
+  transform: translate(-50%, -52%);
+  -webkit-mask: radial-gradient(closest-side, var(--color-black) 40%, transparent 100%);
+  mask: radial-gradient(closest-side, var(--color-black) 40%, transparent 100%);
   pointer-events: none;
 }
 
@@ -956,4 +956,14 @@ select.field__input--plain option {
   .bag__undo {
     animation: none;
   }
+}
+
+.story__seal {
+  display: grid;
+  justify-items: end;
+  margin-bottom: calc(var(--space-xl) * -1);
+}
+
+.story__seal .halal-seal {
+  width: min(var(--size-seal), 40vw);
 }

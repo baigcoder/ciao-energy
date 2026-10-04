@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import { FLAVORS } from '../data/flavors';
-import { audioManager } from '../audio/audioManager';
 import { RevealText } from './RevealText';
 import { useLocale, FLAVOR_NAMES_UR } from '../locale';
 
@@ -41,7 +40,6 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ activeIndex, isActiv
     const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
     const index = Math.round(ratio * last);
     if (index !== activeIndex) {
-      audioManager.play('change');
       onSelectFlavor(index);
     }
   };

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BRAND } from '../data/brand';
+import { getProductThumbUrl } from '../data/products';
 
 interface PreloaderProps {
   isReady: boolean;
@@ -66,11 +67,12 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, 
 
   // Tell the page a loader is up so the hero chrome stays hidden behind the see-through opening.
   useEffect(() => {
+    if (phase !== 'loading') return;
     document.documentElement.dataset.loading = 'true';
     return () => {
       delete document.documentElement.dataset.loading;
     };
-  }, []);
+  }, [phase]);
 
   if (phase === 'done') return null;
 
@@ -85,6 +87,10 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, 
       aria-valuemax={100}
       aria-valuenow={percent}
     >
+      {/* First paint: the night and a still can, so the screen is never empty while the 3D loads. */}
+      <span className={`loader__still ${showStage && isReady ? 'is-hidden' : ''}`} aria-hidden="true">
+        <img src={getProductThumbUrl({ slug: 'blue-raspberry' })} alt="" width={187} height={491} />
+      </span>
       <span className="loader__glow" aria-hidden="true" />
       <div className="loader__stage" aria-hidden="true">
         <span className="loader__word">

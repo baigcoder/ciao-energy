@@ -8,7 +8,8 @@ import {
   type PackOption,
 } from '../data/products';
 import { BENEFITS } from '../data/benefits';
-import { REVIEWS, confirmed, publicText } from '../data/brand';
+import { BRAND, POLICIES, REVIEWS, confirmed, isTodo, publicText } from '../data/brand';
+import { productFacts } from '../seo/meta';
 import { useCart } from '../store/cart';
 import { audioManager } from '../audio/audioManager';
 import { QuantityStepper } from './QuantityStepper';
@@ -170,7 +171,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ slug, onNa
         )}
 
         <div className="pdp-panel">
-          <a className="back-link" href="/#gamme" onClick={(event) => { event.preventDefault(); onNavigate('/#gamme'); }}>
+          <a className="back-link" href="/shop" onClick={(event) => { event.preventDefault(); onNavigate('/shop'); }}>
             <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M8 2 4 6l4 4" /></svg>
             All flavors
           </a>
@@ -274,6 +275,40 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ slug, onNa
             <li>{product.origin}</li>
             <li>{product.volume}</li>
           </ul>
+        </div>
+      </section>
+
+      <section className="pdp-section" aria-labelledby="facts-title">
+        <h2 id="facts-title" className="pdp-section__title display">{product.name} facts</h2>
+        <dl className="facts">
+          {productFacts(product).map((fact) => (
+            <div key={fact.label} className={`facts__row ${fact.confirmed ? '' : 'is-pending'}`}>
+              <dt>{fact.label}</dt>
+              <dd>{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section className="pdp-section" aria-labelledby="trust-title">
+        <h2 id="trust-title" className="pdp-section__title display">Delivery, returns and help</h2>
+        <div className="trust-grid">
+          <div className="trust-card">
+            <h3>Delivery</h3>
+            <p>{publicText(POLICIES.delivery, 'Delivery areas, times and fees will be published here soon.')}</p>
+          </div>
+          <div className="trust-card">
+            <h3>Returns</h3>
+            <p>{publicText(POLICIES.returns, 'Our returns policy will be published here soon.')}</p>
+          </div>
+          <div className="trust-card">
+            <h3>Payment</h3>
+            <p>Cash on delivery. Card payment is coming soon.</p>
+          </div>
+          <div className="trust-card">
+            <h3>Contact</h3>
+            <p>{isTodo(BRAND.contactEmail) ? 'Customer service contact details will be published here soon.' : BRAND.contactEmail}</p>
+          </div>
         </div>
       </section>
 

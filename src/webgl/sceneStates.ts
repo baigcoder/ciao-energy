@@ -1,6 +1,6 @@
 import { CAROUSEL_CONFIG } from './sceneManagerConfig';
 import { LABEL } from '../data/brand';
-import { CAN } from './canGeometry';
+import { CAN } from './canDimensions';
 
 export type SceneMode = 'hero-carousel' | 'feature-editorial' | 'range';
 

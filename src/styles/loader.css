@@ -17,6 +17,9 @@
 }
 
 /* The 3D opening plays behind the loader: the overlay only carries the wordmark and the percentage. */
+
+
+/* The 3D opening plays behind the loader: the overlay only carries the wordmark and the percentage. */
 .loader--stage {
   background: transparent;
 }
@@ -24,6 +27,28 @@
 .loader.is-leaving {
   opacity: 0;
   pointer-events: none;
+}
+
+/* Still of the night stage with a can: visible from the first paint, hidden once the 3D opening can play. */
+.loader__still {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--image-night-stage) center / cover no-repeat;
+  opacity: 0.75;
+  transition: opacity var(--motion-slow) var(--ease-out);
+}
+
+.loader__still img {
+  height: 46vh;
+  width: auto;
+  margin-top: 14vh;
+  opacity: 0.55;
+}
+
+.loader__still.is-hidden {
+  opacity: 0;
 }
 
 /* Accent glow that rises and brightens with the fill. */

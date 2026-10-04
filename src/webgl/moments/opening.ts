@@ -19,19 +19,9 @@ const TAB_START = 0.9;
 const TAB_END = 1.2;
 const CRACK_AT = 1.12;
 const RETURN_TIME = 1.7;
-/** How long the opening needs before the loader may leave. */
-export const OPENING_MIN_SECONDS = 3.0;
-const SESSION_KEY = 'grizzly_opened_v1';
+import { OPENING_SESSION_KEY as SESSION_KEY } from './openingConfig';
 
 const easeInOut = (t: number) => t * t * (3 - 2 * t);
-
-export function openingShouldPlay(): boolean {
-  try {
-    return window.sessionStorage.getItem(SESSION_KEY) !== '1';
-  } catch {
-    return true;
-  }
-}
 
 export class OpeningMoment implements SceneMoment {
   private state: 'idle' | 'holding' | 'returning' | 'done' = 'idle';

@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FLAVORS } from './data/flavors';
 import { getProductBySlug } from './data/products';
-import { SceneManager } from './webgl/sceneManager';
+import { applyHead } from './seo/applyHead';
+import type { SceneManager } from './webgl/sceneManager';
 import { Preloader } from './components/Preloader';
-import { audioManager } from './audio/audioManager';
 import { SiteHeader } from './components/SiteHeader';
 import { MenuDrawer } from './components/MenuDrawer';
 import { SiteFrame } from './components/SiteFrame';
@@ -33,7 +33,7 @@ import type { MenuItem } from './components/MenuDrawer';
 import { useCart } from './store/cart';
 import { useSmoothScroll, prefersReducedMotion } from './hooks/useSmoothScroll';
 import { useHomeScroll } from './hooks/useHomeScroll';
-import { OPENING_MIN_SECONDS, openingShouldPlay } from './webgl/moments/opening';
+import { OPENING_MIN_SECONDS, openingShouldPlay } from './webgl/moments/openingConfig';
 
 const MIN_LOADER_MS = 900;
 
@@ -133,7 +133,8 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // WebGL scene (client only). Falls back to the static stage when unavailable.
+  // WebGL scene (client only), loaded as its own chunk so the page's text and UI paint first.
+  // Falls back to the static stage when WebGL is unavailable or the chunk fails.
   useEffect(() => {
     const canvas = canvasRef.current;
     const probe = document.createElement('canvas');
@@ -144,42 +145,48 @@ export const App: React.FC = () => {
       return;
     }
 
+    let cancelled = false;
     let readyFrame = 0;
-    try {
-      const sm = new SceneManager(canvas);
-      sceneManagerRef.current = sm;
-      const isMobile = window.innerWidth < 768;
-      const cores = navigator.hardwareConcurrency || 4;
-      // Reduced motion keeps the 3D scene but drops to the light tier, with no intro, spin or tilt.
-      const quality = prefersReducedMotion() ? 'MEDIUM' : isMobile || cores <= 4 ? 'MEDIUM' : 'HIGH';
-      sm.reducedMotion = prefersReducedMotion();
-      sm.setQuality(quality);
-      document.documentElement.dataset.quality = quality;
-      sm.onQualityChange = (level) => {
-        document.documentElement.dataset.quality = level;
-      };
-      const initial = parseCurrentRoute();
-      sm.setRoute(sceneRoute(initial), initial.type === 'PRODUCT' ? initial.slug : undefined);
-      sm.setInitialFlavor(initialFlavorIndexRef.current);
-      if (initial.type === 'HOME') sm.armIntro(playOpening);
-      sm.onRoar = () => {
-        audioManager.play('growl');
-        document.documentElement.dispatchEvent(new CustomEvent('grizzly:roar'));
-      };
-      const unsubscribe = sm.carousel.onChanged(({ index }) => setActiveIndex(index));
-      readyFrame = requestAnimationFrame(() => {
-        readyFrame = requestAnimationFrame(() => setIsReady(true));
+    let teardown: () => void = () => {};
+    import('./webgl/sceneManager')
+      .then(({ SceneManager }) => {
+        if (cancelled) return;
+        const sm = new SceneManager(canvas);
+        sceneManagerRef.current = sm;
+        const isMobile = window.innerWidth < 768;
+        const cores = navigator.hardwareConcurrency || 4;
+        // Reduced motion keeps the 3D scene but drops to the light tier, with no intro, spin or tilt.
+        const quality = prefersReducedMotion() ? 'MEDIUM' : isMobile || cores <= 4 ? 'MEDIUM' : 'HIGH';
+        sm.reducedMotion = prefersReducedMotion();
+        sm.setQuality(quality);
+        document.documentElement.dataset.quality = quality;
+        sm.onQualityChange = (level) => {
+          document.documentElement.dataset.quality = level;
+        };
+        const initial = parseCurrentRoute();
+        sm.setRoute(sceneRoute(initial), initial.type === 'PRODUCT' ? initial.slug : undefined);
+        sm.setInitialFlavor(initialFlavorIndexRef.current);
+        if (initial.type === 'HOME') sm.armIntro(playOpening);
+        const unsubscribe = sm.carousel.onChanged(({ index }) => setActiveIndex(index));
+        readyFrame = requestAnimationFrame(() => {
+          readyFrame = requestAnimationFrame(() => setIsReady(true));
+        });
+        teardown = () => {
+          unsubscribe();
+          if (sceneManagerRef.current === sm) sceneManagerRef.current = null;
+          sm.dispose();
+        };
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setWebGlAvailable(false);
+        setIsReady(true);
       });
-      return () => {
-        cancelAnimationFrame(readyFrame);
-        unsubscribe();
-        if (sceneManagerRef.current === sm) sceneManagerRef.current = null;
-        sm.dispose();
-      };
-    } catch {
-      setWebGlAvailable(false);
-      setIsReady(true);
-    }
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(readyFrame);
+      teardown();
+    };
   }, [playOpening]);
 
   // Flavor drives the colour tokens ([data-flavor]) and a shareable hash.
@@ -192,39 +199,9 @@ export const App: React.FC = () => {
     }
   }, [activeIndex, route, isHome]);
 
-  // Document title per route.
+  // Title, description, canonical, Open Graph and JSON-LD per route (src/seo/meta.ts).
   useEffect(() => {
-    const product = route.type === 'PRODUCT' ? getProductBySlug(route.slug) : undefined;
-    document.title = product
-      ? `${product.name} – Grizzly Energy`
-      : route.type === 'PRODUCT'
-        ? 'Flavor not found – Grizzly Energy'
-        : ({
-            CART: 'Your bag – Grizzly Energy',
-            CHECKOUT: 'Checkout – Grizzly Energy',
-            SHOP: 'Shop – Grizzly Energy',
-            MIX: 'Mix your pack – Grizzly Energy',
-            HALAL: 'Halal and Zamzam – Grizzly Energy',
-            STORES: 'Find a store – Grizzly Energy',
-            NOT_FOUND: 'Page not found – Grizzly Energy',
-            HOME: 'Grizzly Energy – Fuel your wild side',
-          } as Record<string, string>)[route.type] ?? 'Grizzly Energy – Fuel your wild side';
-    const setMeta = (attr: 'name' | 'property', key: string, content: string) => {
-      let element = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
-      if (!element) {
-        element = document.createElement('meta');
-        element.setAttribute(attr, key);
-        document.head.appendChild(element);
-      }
-      element.content = content;
-    };
-    const description = product
-      ? `${product.name}: ${product.tagline} Natural caffeine, electrolytes and B vitamins.`
-      : 'Grizzly Energy: natural caffeine, natural electrolytes, B vitamins and added Zamzam water. Six flavors.';
-    setMeta('name', 'description', description);
-    setMeta('property', 'og:title', document.title);
-    setMeta('property', 'og:description', description);
-    setMeta('property', 'og:image', `/social/${product?.slug ?? 'blue-raspberry'}.png`);
+    applyHead(route);
   }, [route]);
 
   // Product page scroll moves the can away with the hero on narrow screens.
@@ -350,7 +327,12 @@ export const App: React.FC = () => {
       )}
 
       {webGlAvailable ? (
-        <canvas ref={canvasRef} className="webgl-canvas" aria-hidden="true" />
+        <canvas
+          ref={canvasRef}
+          className="webgl-canvas"
+          role="img"
+          aria-label="Grizzly Energy cans in a cold mountain night: Blue Raspberry, Mango Fuego, Watermelon, Strawberry Kiwi, Peach and Blackout Berry. Everything shown here is also written on the page."
+        />
       ) : (
         <FallbackStage activeIndex={activeIndex} />
       )}

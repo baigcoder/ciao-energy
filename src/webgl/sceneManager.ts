@@ -851,6 +851,7 @@ export class SceneManager {
       this.carousel.lastIndex = currentIdx;
       if (!this.reducedMotion) this.spinStart = now;
       this.fruit.burst(currentIdx);
+      audioManager.play('change');
     }
     // One full turn of the focused can when the flavor changes.
     const spinT = (now - this.spinStart) / 900;

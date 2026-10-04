@@ -851,7 +851,17 @@ html.is-locked {
   pointer-events: none;
 }
 
+.fallback-stage__night {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 50% 55%, color-mix(in oklab, var(--color-accent) 22%, transparent), transparent 70%),
+    var(--image-night-stage) center / cover no-repeat,
+    var(--color-surface-base);
+}
+
 .fallback-stage img {
+  position: relative;
   height: 52vh;
   width: auto;
   filter: drop-shadow(0 0 var(--space-3xl) color-mix(in oklab, var(--color-accent) 40%, transparent));

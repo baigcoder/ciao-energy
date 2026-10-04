@@ -20,8 +20,8 @@
   pointer-events: none;
 }
 
-/* Scrim: close-up chapters run the can under the header, so the bar gets a dark fade to stay legible. */
-.site-header::before {
+/* Scrim: the close-up chapters run the can under the header, so the bar gets a dark fade to stay legible. */
+body[data-scene] .site-header::before {
   content: '';
   position: absolute;
   inset: 0 0 auto;

@@ -13,7 +13,7 @@ export const CAROUSEL_CONFIG = {
   visibleSlots: 3.2,     // seven cans on desktop; the outer pair fades toward the frame edge
   visibleSlotsMobile: 1.35,
   heroScale: 1.45,       // ≈55% of the viewport height when the space allows
-  heroScaleMobile: 1.2,
+  heroScaleMobile: 1.6,
   heroLift: 1.4,         // focused can steps toward the camera
   yBase: 0.1,
   pitchX: -0.2,          // focused can: bottom toward camera, underside ellipse visible

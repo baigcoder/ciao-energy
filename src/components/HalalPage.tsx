@@ -1,6 +1,7 @@
 import React from 'react';
 import { HALAL_PAGE, BRAND, isTodo } from '../data/brand';
 import { BenefitIcon } from './BenefitIcons';
+import { HalalSeal } from './HalalSeal';
 
 /** Halal and Zamzam story. Unconfirmed facts render as clearly marked placeholders. */
 export const HalalPage: React.FC = () => {
@@ -16,7 +17,8 @@ export const HalalPage: React.FC = () => {
   );
 
   return (
-    <article className="story" aria-labelledby="story-title">
+    <article className="story is-active" aria-labelledby="story-title">
+      <div className="story__seal"><HalalSeal /></div>
       <h1 id="story-title" className="display story__title">{HALAL_PAGE.title}</h1>
       <p className="story__lead">{HALAL_PAGE.intro}</p>
       <div className="story__grid">

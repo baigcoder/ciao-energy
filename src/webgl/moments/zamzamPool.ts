@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { SceneManager } from '../sceneManager';
 import type { SceneMoment } from './types';
+import { audioManager } from '../../audio/audioManager';
 
 /**
  * Zamzam and halal. The pace slows. The night gives way to clear water seen from above, softly lit;
@@ -16,8 +17,7 @@ const CHAPTER = 5; // section position of the Zamzam chapter (benefits-4)
 const IMPACT = 1.6; // seconds from release to the drop hitting the water
 const CYCLE = 9;
 
-/** Where the ripple (and the seal) sit, as a fraction of the viewport. Kept in step with the CSS. */
-export const SEAL_POSITION = { desktop: { x: 0.68, y: 0.5 }, mobile: { x: 0.5, y: 0.36 } } as const;
+import { SEAL_POSITION } from './zamzamLayout';
 
 const FRAGMENT = /* glsl */ `
   precision highp float;
@@ -88,6 +88,7 @@ export class ZamzamPool implements SceneMoment {
   private readonly material: THREE.ShaderMaterial;
   private amount = 0;
   private dropStart = -1;
+  private dropSounded = false;
 
   constructor(private readonly host: SceneManager) {
     this.material = new THREE.ShaderMaterial({
@@ -124,7 +125,14 @@ export class ZamzamPool implements SceneMoment {
       return;
     }
     const u = this.material.uniforms;
-    if (this.dropStart < 0 || seconds - this.dropStart > CYCLE) this.dropStart = seconds;
+    if (this.dropStart < 0 || seconds - this.dropStart > CYCLE) {
+      this.dropStart = seconds;
+      this.dropSounded = false;
+    }
+    if (!this.dropSounded && seconds - this.dropStart > IMPACT && !scene.reducedMotion) {
+      this.dropSounded = true;
+      audioManager.play('drop');
+    }
     u.uAlpha.value = a;
     u.uTime.value = seconds;
     u.uDrop.value = scene.reducedMotion ? IMPACT + 3.2 : seconds - this.dropStart;

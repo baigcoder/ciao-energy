@@ -851,15 +851,19 @@
 
 /* ---------- Zamzam and halal: the seal, drawn line by line over the ripple ---------- */
 .halal-seal {
-  position: absolute;
-  left: var(--seal-x);
-  top: var(--seal-y);
   display: grid;
   justify-items: center;
   gap: var(--space-sm);
   width: var(--size-seal);
-  transform: translate(-50%, -50%);
   pointer-events: none;
+}
+
+/* In the Zamzam chapter the seal sits on the centre of the WebGL ripple. */
+.halal-seal--placed {
+  position: absolute;
+  left: var(--seal-x);
+  top: var(--seal-y);
+  transform: translate(-50%, -50%);
 }
 
 .halal-seal__art {
@@ -925,7 +929,7 @@
 }
 
 @media (max-width: 767px) {
-  .halal-seal {
+  .halal-seal--placed {
     left: var(--seal-x-narrow);
     top: var(--seal-y-narrow);
     width: min(var(--size-seal), 58vw);
@@ -970,4 +974,22 @@
   letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   text-align: center;
+}
+
+/* Headlines drift slowly sideways while their section scrolls past (scroll-driven, no JavaScript).
+   Browsers without scroll-driven animations simply keep the mask reveal. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .section-copy__title,
+    .faq__title {
+      animation: title-drift linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+  }
+}
+
+@keyframes title-drift {
+  from { translate: calc(var(--drift-distance) * -1) 0; }
+  to { translate: var(--drift-distance) 0; }
 }

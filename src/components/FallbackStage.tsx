@@ -11,6 +11,7 @@ export const FallbackStage: React.FC<FallbackStageProps> = ({ activeIndex }) => 
   const flavor = FLAVORS[activeIndex % FLAVORS.length];
   return (
     <div className="fallback-stage" aria-hidden="true">
+      <span className="fallback-stage__night" />
       <img src={getProductThumbUrl({ slug: flavor.id })} alt="" />
     </div>
   );
