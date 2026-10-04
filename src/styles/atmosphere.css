@@ -1,0 +1,232 @@
+/* ============================================================
+   ATMOSPHERE — fruit, splash, bubbles, flavor wipe (behind the
+   canvas) and the film grain + vignette overlay (above it).
+   ============================================================ */
+
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-backdrop-text);
+  overflow: hidden;
+  pointer-events: none;
+  --fruit-a: var(--color-accent);
+  --fruit-b: var(--color-accent-deep);
+  --fruit-leaf: var(--color-fruit-leaf);
+  --fruit-rind: var(--color-fruit-rind);
+  --fruit-seed: var(--color-fruit-seed);
+  --fruit-seed-light: var(--color-fruit-seed-light);
+  --fruit-kiwi: var(--color-fruit-kiwi);
+  --fruit-kiwi-core: var(--color-fruit-kiwi-core);
+  --fruit-kiwi-skin: var(--color-fruit-kiwi-skin);
+  --fruit-ice: var(--color-fruit-ice);
+  --fruit-ice-edge: var(--color-fruit-ice-edge);
+}
+
+/* Fruit + splash only in the hero and the flavor intro. */
+.atmosphere__fruit,
+.atmosphere__splash {
+  opacity: 0;
+  transition: opacity var(--motion-scene) var(--ease-out);
+}
+
+/* Flavor intro: fruit floats around the can, out of the copy column on the left. */
+.atmosphere[data-scene='flavor'] .atmosphere__fruit {
+  opacity: 1;
+}
+
+.atmosphere[data-scene='flavor'] .fruit {
+  left: calc(48% + var(--x) * 0.5%);
+}
+
+.atmosphere[data-scene='flavor'] .atmosphere__splash {
+  opacity: 1;
+}
+
+.fruit {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: calc(var(--size) * 1vw);
+  height: auto;
+  opacity: calc(0.4 + var(--depth) * 0.35);
+  /* depth of field: far pieces (low depth) are blurrier and smaller */
+  filter: blur(calc((1 - var(--depth)) * 9px + 3px)) saturate(0.85);
+  transform: translate(-50%, -50%) rotate(var(--rotate)) scale(calc(0.7 + var(--depth) * 0.5));
+  animation: fruit-float 14s var(--ease-in-out) infinite alternate;
+  animation-delay: var(--delay);
+  will-change: transform; /* own layer: the blur is rasterised once, not per frame */
+}
+
+@keyframes fruit-float {
+  to {
+    transform: translate(-50%, calc(-50% - 3vh)) rotate(calc(var(--rotate) + 14deg)) scale(calc(0.72 + var(--depth) * 0.5));
+  }
+}
+
+/* Slow liquid splash behind the can: a blurred, morphing blob in the accent. */
+.atmosphere__splash {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 34vw;
+  height: 34vw;
+  border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
+  background: radial-gradient(circle at 40% 35%, color-mix(in oklab, var(--color-accent) 70%, var(--color-white)) 0%, var(--color-accent) 38%, transparent 70%);
+  filter: blur(var(--blur-glow));
+  mix-blend-mode: screen;
+  transform: translate(-50%, -50%);
+  animation: splash-morph 18s var(--ease-in-out) infinite alternate;
+  will-change: transform;
+}
+
+/* Hero: the accent glow sits behind the centre can only. */
+.atmosphere[data-scene='hero'] .atmosphere__splash {
+  top: 36%;
+  opacity: 0.35;
+}
+
+.atmosphere[data-scene='flavor'] .atmosphere__splash {
+  opacity: 0.45;
+  left: 55%;
+}
+
+/* Transform-only so the blurred blob stays a cached layer. */
+@keyframes splash-morph {
+  50% { transform: translate(-50%, -52%) rotate(40deg) scale(1.08, 0.94); }
+  to { transform: translate(-50%, -48%) rotate(80deg) scale(0.96, 1.06); }
+}
+
+/* Carbonation in the benefit chapters. */
+.atmosphere__bubbles {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--motion-slow) var(--ease-out);
+}
+
+.atmosphere[data-scene='benefit'] .atmosphere__bubbles {
+  opacity: 1;
+}
+
+.atmosphere__bubbles span {
+  will-change: transform;
+  position: absolute;
+  bottom: -2vh;
+  left: calc(35% + var(--x) * 0.3%);
+  width: var(--size);
+  height: var(--size);
+  border-radius: var(--radius-round);
+  border: var(--border-hairline) solid var(--color-white-a45);
+  background: radial-gradient(circle at 35% 30%, var(--color-white-a45), transparent 60%);
+  animation: bubble-rise var(--duration) linear infinite;
+  animation-delay: var(--delay);
+}
+
+@keyframes bubble-rise {
+  to { transform: translate3d(calc((var(--x) - 50) * 0.04vw), -105vh, 0); opacity: 0; }
+}
+
+/* Flavor change: a liquid sweep in the new accent across the background. */
+.flavor-wipe {
+  position: absolute;
+  inset: -10% -30%;
+  background: var(--color-accent);
+  opacity: 0.55;
+  -webkit-mask: radial-gradient(60% 120% at 0% 50%, var(--color-black) 60%, transparent 61%) no-repeat;
+  mask: radial-gradient(60% 120% at 0% 50%, var(--color-black) 60%, transparent 61%) no-repeat;
+  filter: blur(var(--space-xs));
+  animation: flavor-wipe var(--motion-scene) var(--ease-in-out) forwards;
+}
+
+@keyframes flavor-wipe {
+  0% { transform: translateX(-80%) skewX(-8deg); opacity: 0.6; }
+  60% { opacity: 0.45; }
+  100% { transform: translateX(80%) skewX(-8deg); opacity: 0; }
+}
+
+/* Film grain + vignette above the canvas, below the UI. */
+.film {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-canvas);
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 45%, transparent 55%, var(--color-vignette) 100%);
+}
+
+.film::after {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background-image: var(--grain);
+  opacity: 0.035; /* static, no blend mode: one composite, not a repaint per frame */
+}
+
+/* Quality tiers: medium trims fruit, low keeps only the static vignette. */
+:root[data-quality='MEDIUM'] .fruit:nth-child(n + 6),
+:root[data-quality='MEDIUM'] .atmosphere__bubbles span:nth-child(n + 12) {
+  display: none;
+}
+
+:root[data-quality='LOW'] .atmosphere__fruit,
+:root[data-quality='LOW'] .atmosphere__bubbles,
+:root[data-quality='LOW'] .atmosphere__splash,
+:root[data-quality='LOW'] .film::after {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .fruit {
+    width: calc(var(--size) * 2vw);
+  }
+
+  .atmosphere__splash {
+    width: 70vw;
+    height: 70vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere__fruit,
+  .atmosphere__bubbles,
+  .flavor-wipe,
+  .film::after {
+    display: none;
+  }
+
+  .atmosphere__splash {
+    animation: none;
+  }
+}
+
+/* Intro roar: two accent rings burst from behind the hero can, then fade. */
+.roar {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: min(70vw, 70vh);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+}
+
+.roar span {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-round);
+  border: var(--space-2xs) solid var(--color-accent);
+  box-shadow: var(--shadow-accent-glow), inset var(--shadow-accent-glow);
+  opacity: 0;
+  animation: roar-ring var(--duration-1200) var(--ease-out-expo) forwards;
+}
+
+.roar span + span {
+  animation-delay: var(--duration-200);
+}
+
+@keyframes roar-ring {
+  0% { transform: scale(0.15); opacity: 0.9; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roar { display: none; }
+}

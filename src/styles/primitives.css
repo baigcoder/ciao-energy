@@ -1,0 +1,89 @@
+/*
+ * PRIMITIVES — raw values only. Components never read these directly;
+ * they feed the semantic layer in tokens.css.
+ */
+:root {
+  /* Neutrals */
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --color-white-a04: rgba(255, 255, 255, 0.04);
+  --color-white-a08: rgba(255, 255, 255, 0.08);
+  --color-white-a12: rgba(255, 255, 255, 0.12);
+  --color-white-a20: rgba(255, 255, 255, 0.2);
+  --color-white-a50: rgba(255, 255, 255, 0.5);
+  --color-white-a30: rgba(255, 255, 255, 0.3);
+  --color-white-a45: rgba(255, 255, 255, 0.45);
+  --color-white-a60: rgba(255, 255, 255, 0.6);
+  --color-white-a72: rgba(255, 255, 255, 0.72);
+  --color-black-a40: rgba(0, 0, 0, 0.4);
+  --color-black-a70: rgba(0, 0, 0, 0.7);
+  --color-grey-900: #0d0d0e;
+  --color-grey-800: #1c1c1e;
+  --color-grey-700: #2e2e30;
+  --color-grey-500: #5c5c5e;
+  --color-grey-400: #7a7a7c;
+  --color-ice-200: #c9dff2;
+  --color-red-400: #ff6b6b;
+  --color-green-400: #71bd96;
+
+  /* Natural fruit colours (atmosphere illustrations) */
+  --color-leaf-500: #3f9b3a;
+  --color-rind-600: #2f7a2c;
+  --color-seed-900: #1a120c;
+  --color-seed-100: #f6e7a8;
+  --color-kiwi-400: #7cc23a;
+  --color-kiwi-100: #e9f3c9;
+  --color-kiwi-skin-700: #6b4a26;
+  --color-ice-white-a35: rgba(225, 240, 255, 0.35);
+  --color-ice-white-a60: rgba(240, 248, 255, 0.6);
+
+  /* Type families */
+  --font-geist: 'Geist', Arial, sans-serif;
+  --font-geist-mono: 'Geist Mono', ui-monospace, monospace;
+  --font-franklin: 'Libre Franklin', 'Arial Black', Arial, sans-serif;
+
+  /* Type scale (rem; root is 14px at ≤1680px wide and scales to 16px at 1920px) */
+  --size-0667: 0.6667rem;
+  --size-075: 0.75rem;
+  --size-0875: 0.875rem;
+  --size-1: 1rem;
+  --size-1125: 1.125rem;
+  --size-125: 1.25rem;
+  --size-15: 1.5rem;
+  --size-225: 2.25rem;
+  --size-3: 3rem;
+  --size-6: 6rem;
+  --size-9: 9rem;
+
+  /* Spacing scale (rem, 14px base: 3.5 / 7 / 10.5 / 14 / 17.5 / 21 / 28 / 42 / 56 / 84 / 112 / 140) */
+  --spacing-025: 0.25rem;
+  --spacing-05: 0.5rem;
+  --spacing-075: 0.75rem;
+  --spacing-1: 1rem;
+  --spacing-125: 1.25rem;
+  --spacing-15: 1.5rem;
+  --spacing-2: 2rem;
+  --spacing-3: 3rem;
+  --spacing-4: 4rem;
+  --spacing-6: 6rem;
+  --spacing-8: 8rem;
+  --spacing-10: 10rem;
+
+  /* Radius */
+  --radius-025: 0.25rem;
+  --radius-05: 0.5rem;
+  --radius-1: 1rem;
+  --radius-round: 999px;
+
+  /* Shadows */
+  --shadow-glow-white: 0 0 20px 0 rgba(255, 255, 255, 0.6);
+  --shadow-ring-white: 0 0 0 1px rgba(255, 255, 255, 0.2);
+
+  /* Motion */
+  --duration-200: 200ms;
+  --duration-400: 400ms;
+  --duration-800: 800ms;
+  --duration-1200: 1200ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+}

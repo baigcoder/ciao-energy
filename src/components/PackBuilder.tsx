@@ -1,0 +1,159 @@
+import React, { useMemo, useState } from 'react';
+import { FLAVORS } from '../data/flavors';
+import { PACK_OPTIONS, formatPrice, PLACEHOLDER_PRICING } from '../data/products';
+import { useCart } from '../store/cart';
+import { CanTop } from './CanTop';
+import { ButtonLabel } from './ButtonLabel';
+import { flyToBag } from './flyToBag';
+import { audioManager } from '../audio/audioManager';
+
+interface PackBuilderProps {
+  onNavigate: (url: string) => void;
+}
+
+const SIZES = PACK_OPTIONS.filter((pack) => pack.count >= 6);
+
+/**
+ * Mix your own pack: pick 6, 12 or 24, then fill the slots (drag a flavor onto a
+ * slot, or click/press Enter on a flavor to fill the next empty slot). Clicking a
+ * filled slot empties it. One Add to bag for the whole pack.
+ */
+export const PackBuilder: React.FC<PackBuilderProps> = ({ onNavigate }) => {
+  const [packId, setPackId] = useState(SIZES[0].id);
+  const pack = SIZES.find((option) => option.id === packId) ?? SIZES[0];
+  const [slots, setSlots] = useState<(string | null)[]>(() => Array(SIZES[0].count).fill(null));
+  const [state, setState] = useState<'idle' | 'added' | 'error'>('idle');
+  const { addMix } = useCart();
+
+  const filled = slots.filter(Boolean).length;
+  const isFull = filled === pack.count;
+
+  const resize = (id: string) => {
+    const next = SIZES.find((option) => option.id === id);
+    if (!next) return;
+    setPackId(next.id);
+    setSlots((previous) => Array.from({ length: next.count }, (_, i) => previous[i] ?? null));
+    setState('idle');
+  };
+
+  const place = (slug: string, at?: number) => {
+    setSlots((previous) => {
+      const index = at ?? previous.findIndex((slot) => slot === null);
+      if (index < 0) return previous;
+      const next = [...previous];
+      next[index] = slug;
+      return next;
+    });
+    setState('idle');
+  };
+
+  const clear = (index: number) => {
+    setSlots((previous) => previous.map((slot, i) => (i === index ? null : slot)));
+    setState('idle');
+  };
+
+  const counts = useMemo(() => {
+    const map = new Map<string, number>();
+    slots.forEach((slot) => slot && map.set(slot, (map.get(slot) ?? 0) + 1));
+    return map;
+  }, [slots]);
+
+  const add = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const mix = Array.from(counts, ([slug, count]) => ({ slug, count }));
+    const result = addMix(mix, 1);
+    if (!result.ok) {
+      setState('error');
+      return;
+    }
+    setState('added');
+    audioManager.play('open');
+    flyToBag(`/products/thumbs/${mix[0].slug}.png`, event.currentTarget);
+    setSlots(Array(pack.count).fill(null));
+  };
+
+  return (
+    <section className="builder" aria-labelledby="builder-title">
+      <h1 id="builder-title" className="display builder__title">Mix your pack</h1>
+      <p className="builder__lead">Choose a size, then fill every slot with the flavors you want.</p>
+
+      <fieldset className="builder__sizes">
+        <legend className="field-legend">Pack size</legend>
+        <div className="builder__size-options">
+          {SIZES.map((option) => (
+            <label key={option.id} className={`pack-option ${option.id === pack.id ? 'is-selected' : ''}`}>
+              <input type="radio" name="mix-size" value={option.id} checked={option.id === pack.id} onChange={() => resize(option.id)} />
+              <span className="pack-option__label">{option.label}</span>
+              <span className="pack-option__price">{formatPrice(option.price)}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className="builder__layout">
+        <div>
+          <p className="field-legend" id="palette-label">Flavors</p>
+          <ul className="builder__palette" aria-labelledby="palette-label">
+            {FLAVORS.map((flavor) => (
+              <li key={flavor.id}>
+                <button
+                  type="button"
+                  className="palette-item"
+                  data-accent={flavor.accentToken}
+                  draggable
+                  disabled={isFull}
+                  onDragStart={(event) => event.dataTransfer.setData('text/plain', flavor.id)}
+                  onClick={() => place(flavor.id)}
+                  aria-label={`Add ${flavor.name}${counts.get(flavor.id) ? `, ${counts.get(flavor.id)} in pack` : ''}`}
+                >
+                  <CanTop slug={flavor.id} size="small" />
+                  <span className="palette-item__name">{flavor.name}</span>
+                  {counts.get(flavor.id) ? <span className="palette-item__count" aria-hidden="true">{counts.get(flavor.id)}</span> : null}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <p className="field-legend" aria-live="polite">{filled} of {pack.count} filled</p>
+          <ol className={`builder__slots builder__slots--${pack.count}`} aria-label="Pack slots">
+            {slots.map((slot, index) => (
+              <li
+                key={index}
+                className={`slot ${slot ? 'is-filled' : ''}`}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const slug = event.dataTransfer.getData('text/plain');
+                  if (FLAVORS.some((flavor) => flavor.id === slug)) place(slug, index);
+                }}
+              >
+                {slot ? (
+                  <button type="button" className="slot__button" onClick={() => clear(index)} aria-label={`Slot ${index + 1}: ${FLAVORS.find((f) => f.id === slot)?.name}. Remove`}>
+                    <CanTop slug={slot} />
+                  </button>
+                ) : (
+                  <span className="slot__empty" role="img" aria-label={`Slot ${index + 1}: empty`} />
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+
+      <div className="builder__footer">
+        <p className="builder__price">
+          <span className="pdp-price__total">{formatPrice(pack.price)}</span>
+          {PLACEHOLDER_PRICING && <span className="pdp-price__note">Placeholder price</span>}
+        </p>
+        <button type="button" className={`button-primary ${state === 'added' ? 'is-success' : ''}`} disabled={!isFull} onClick={add}>
+          <ButtonLabel>{state === 'added' ? 'Added to bag' : isFull ? 'Add pack to bag' : `Fill ${pack.count - filled} more`}</ButtonLabel>
+        </button>
+        {state === 'error' && <p className="field__error" role="alert">This mix couldn’t be added. Refresh and try again.</p>}
+        {state === 'added' && (
+          <a className="text-button" href="/cart" onClick={(event) => { event.preventDefault(); onNavigate('/cart'); }}>View bag</a>
+        )}
+      </div>
+    </section>
+  );
+};

@@ -1,0 +1,754 @@
+{
+  "$comment": "Single source for Grizzly Energy label and site text. Values starting with TODO are unconfirmed and must be supplied by the brand owner; scripts/build-labels.mjs and the site both read this file.",
+  "brand": {
+    "name": "Grizzly Energy",
+    "wordmark": [
+      "GRIZZLY",
+      "ENERGY"
+    ],
+    "tagline": "Fuel your wild side",
+    "claim": [
+      "Pure focus.",
+      "Natural energy."
+    ],
+    "intro": "Crafted with natural caffeine, B vitamins and electrolytes to help fuel your focus, energy and every move.",
+    "origin": "Made in Pakistan",
+    "volume": "250 ml",
+    "productType": "Energy drink",
+    "warning": "Not recommended for children, pregnant or nursing women.",
+    "storage": "Best consumed chilled. Keep refrigerated after opening.",
+    "company": {
+      "name": "Grizzly Energy Beverage Labs",
+      "address": "TODO: confirm company address",
+      "website": "www.grizzlyenergy.pk"
+    },
+    "contactEmail": "TODO: confirm contact email",
+    "social": {
+      "tiktok": "TODO: confirm TikTok URL",
+      "instagram": "TODO: confirm Instagram URL",
+      "facebook": "TODO: confirm Facebook URL"
+    }
+  },
+  "unconfirmed": {
+    "caffeine": "TODO: confirm caffeine per 250 ml can (artwork shows both 160 mg/100 ml and 40 mg/can)",
+    "sugar": "TODO: confirm sugar per can (artwork shows a Zero sugar badge and 3.6 g sugars)",
+    "halalCertifier": "TODO: confirm halal certifier",
+    "halalLicence": "TODO: confirm halal licence number",
+    "zamzamSource": "TODO: confirm Zamzam water source and amount",
+    "barcode": "TODO: confirm barcode (EAN-13)"
+  },
+  "benefits": [
+    {
+      "id": "caffeine",
+      "title": "Natural caffeine",
+      "lines": [
+        "Natural",
+        "caffeine"
+      ],
+      "spec": "From green coffee beans",
+      "description": "Caffeine carefully dosed from green coffee beans for focus and energy when you need it.",
+      "labelDetail": "Carefully dosed from green coffee beans.",
+      "icon": "caffeine"
+    },
+    {
+      "id": "electrolytes",
+      "title": "Natural electrolytes",
+      "lines": [
+        "Natural",
+        "electrolytes"
+      ],
+      "spec": "From sea salt",
+      "description": "Electrolytes from sea salt help support hydration and performance.",
+      "labelDetail": "Helps support hydration and performance.",
+      "icon": "electrolytes"
+    },
+    {
+      "id": "vitamins",
+      "title": "B vitamins",
+      "lines": [
+        "B vitamins"
+      ],
+      "spec": "B3 · B6 · B12 · Biotin · B5",
+      "description": "B3, B6, B12, biotin and B5 contribute to normal energy-yielding metabolism and the reduction of tiredness and fatigue.",
+      "labelDetail": "Help support energy metabolism and reduce fatigue.",
+      "icon": "vitamins"
+    },
+    {
+      "id": "zamzam",
+      "title": "Added Zamzam water",
+      "lines": [
+        "Added",
+        "Zamzam water"
+      ],
+      "spec": "Zamzam water",
+      "description": "Every can is made with added Zamzam water.",
+      "labelDetail": "Made with added Zamzam water.",
+      "icon": "zamzam"
+    }
+  ],
+  "badges": [
+    "Natural caffeine",
+    "No artificial colors",
+    "No preservatives"
+  ],
+  "nutrition": {
+    "serving": "Per can (250 ml)",
+    "rows": [
+      [
+        "Energy",
+        "69 kJ / 16 kcal"
+      ],
+      [
+        "Fat",
+        "0 g"
+      ],
+      [
+        "of which saturates",
+        "0 g"
+      ],
+      [
+        "Carbohydrates",
+        "3.6 g"
+      ],
+      [
+        "of which sugars",
+        "TODO"
+      ],
+      [
+        "Protein",
+        "0 g"
+      ],
+      [
+        "Salt",
+        "0.10 g"
+      ],
+      [
+        "Niacin (vitamin B3)",
+        "8.0 mg"
+      ],
+      [
+        "Vitamin B6",
+        "0.70 mg"
+      ],
+      [
+        "Vitamin B12",
+        "1.25 µg"
+      ],
+      [
+        "Biotin (vitamin B7)",
+        "25 µg"
+      ],
+      [
+        "Pantothenic acid (B5)",
+        "3.0 mg"
+      ],
+      [
+        "Caffeine",
+        "TODO"
+      ]
+    ],
+    "note": "Values marked TODO are awaiting confirmation."
+  },
+  "label": {
+    "size": [
+      4096,
+      3206
+    ],
+    "panels": {
+      "left": [
+        0.02,
+        0.37
+      ],
+      "front": [
+        0.396,
+        0.716
+      ],
+      "right": [
+        0.735,
+        0.985
+      ]
+    },
+    "frontCenterU": 0.556,
+    "benefitBlocks": [
+      [
+        0.735,
+        0.7,
+        0.985,
+        0.8
+      ],
+      [
+        0.735,
+        0.585,
+        0.985,
+        0.685
+      ],
+      [
+        0.735,
+        0.47,
+        0.985,
+        0.57
+      ],
+      [
+        0.735,
+        0.355,
+        0.985,
+        0.455
+      ]
+    ],
+    "drawScale": 2,
+    "neutral": {
+      "caffeine": "Contains caffeine from green coffee beans.",
+      "ingredients": "Full ingredient list to follow."
+    }
+  },
+  "flavors": [
+    {
+      "slug": "blue-raspberry",
+      "name": "Blue Raspberry",
+      "lines": [
+        "Blue",
+        "Raspberry"
+      ],
+      "accentToken": "blue",
+      "accent": "#1f9beb",
+      "accentDeep": "#0b2c4a",
+      "taste": "Bold and juicy raspberry flavor with a smooth finish.",
+      "description": "Bold and juicy blue raspberry with a smooth finish. Natural caffeine, B vitamins and electrolytes from sea salt.",
+      "ingredients": "TODO: confirm Blue Raspberry ingredients",
+      "front": {
+        "src": "reference_new_lable/blue-raspberry.jpg",
+        "crop": [
+          822,
+          18,
+          544,
+          1086
+        ],
+        "patches": [
+          {
+            "box": [
+              0,
+              6,
+              544,
+              52
+            ],
+            "fill": [
+              "#0f347a",
+              "#1a5bd0",
+              "#0f347a"
+            ],
+            "text": "BLUE RASPBERRY",
+            "font": "italic 900 28px 'Libre Franklin'",
+            "color": "#ffffff"
+          },
+          {
+            "box": [
+              150,
+              806,
+              250,
+              38
+            ],
+            "fill": "#0d1830",
+            "text": "BLUE RASPBERRY",
+            "font": "italic 900 25px 'Libre Franklin'",
+            "color": "#3aa7ff"
+          },
+          {
+            "box": [
+              180,
+              846,
+              190,
+              17
+            ],
+            "fill": "#05080d",
+            "text": "NATURALLY FLAVORED",
+            "font": "italic 400 11px 'Geist'",
+            "color": "#e8eef5"
+          },
+          {
+            "box": [
+              60,
+              938,
+              82,
+              22
+            ],
+            "fill": "#05080d",
+            "text": "NATURAL",
+            "font": "700 13px 'Geist'",
+            "color": "#ffffff"
+          },
+          {
+            "box": [
+              96,
+              988,
+              160,
+              60
+            ],
+            "fill": "#05080d",
+            "text": "HALAL CERTIFIED",
+            "font": "700 12px 'Geist'",
+            "color": "#ffffff",
+            "border": "#ffffff"
+          }
+        ],
+        "silver": [
+          20,
+          380,
+          504,
+          210
+        ]
+      }
+    },
+    {
+      "slug": "mango-fuego",
+      "name": "Mango Fuego",
+      "lines": [
+        "Mango",
+        "Fuego"
+      ],
+      "accentToken": "amber",
+      "accent": "#f29a1d",
+      "accentDeep": "#4a2a05",
+      "taste": "Bold and juicy mango flavor with a fiery tropical twist.",
+      "description": "Bold and juicy mango with a fiery tropical twist. Natural caffeine, B vitamins and electrolytes from sea salt.",
+      "ingredients": "TODO: confirm Mango Fuego ingredients",
+      "front": {
+        "src": "reference_new_lable/mango-fuego.jpg",
+        "crop": [
+          505,
+          44,
+          440,
+          1058
+        ],
+        "patches": [
+          {
+            "box": [
+              132,
+              811,
+              160,
+              23
+            ],
+            "fill": "auto",
+            "text": "NATURALLY FLAVORED",
+            "font": "italic 400 12px 'Geist'",
+            "color": "#e9edf2"
+          },
+          {
+            "box": [
+              32,
+              902,
+              56,
+              19
+            ],
+            "fill": "auto",
+            "text": "NATURAL",
+            "font": "700 12px 'Geist'",
+            "color": "#ffffff"
+          },
+          {
+            "box": [
+              45,
+              978,
+              64,
+              16
+            ],
+            "fill": "auto",
+            "text": "CERTIFIED",
+            "font": "500 8.5px 'Geist'",
+            "color": "#e9edf2"
+          }
+        ],
+        "silver": [
+          10,
+          347,
+          425,
+          200
+        ]
+      }
+    },
+    {
+      "slug": "watermelon",
+      "name": "Watermelon",
+      "lines": [
+        "Water",
+        "melon"
+      ],
+      "accentToken": "red",
+      "accent": "#e8433a",
+      "accentDeep": "#4a1010",
+      "taste": "Juicy and refreshing watermelon flavor with a crisp finish.",
+      "description": "Juicy, refreshing watermelon with a crisp finish. Natural caffeine, B vitamins and electrolytes from sea salt.",
+      "ingredients": "TODO: confirm Watermelon ingredients",
+      "front": {
+        "src": "reference_new_lable/watermelon.jpg",
+        "crop": [
+          505,
+          44,
+          440,
+          1058
+        ],
+        "patches": [
+          {
+            "box": [
+              132,
+              811,
+              160,
+              23
+            ],
+            "fill": "auto",
+            "text": "NATURALLY FLAVORED",
+            "font": "italic 400 12px 'Geist'",
+            "color": "#e9edf2"
+          },
+          {
+            "box": [
+              32,
+              902,
+              56,
+              19
+            ],
+            "fill": "auto",
+            "text": "NATURAL",
+            "font": "700 12px 'Geist'",
+            "color": "#ffffff"
+          },
+          {
+            "box": [
+              45,
+              978,
+              64,
+              16
+            ],
+            "fill": "auto",
+            "text": "CERTIFIED",
+            "font": "500 8.5px 'Geist'",
+            "color": "#e9edf2"
+          }
+        ],
+        "silver": [
+          10,
+          347,
+          425,
+          200
+        ]
+      }
+    },
+    {
+      "slug": "strawberry-kiwi",
+      "name": "Strawberry Kiwi",
+      "lines": [
+        "Strawberry",
+        "Kiwi"
+      ],
+      "accentToken": "crimson",
+      "accent": "#e32b56",
+      "accentDeep": "#4a0c1d",
+      "taste": "Bold and juicy strawberry kiwi flavor with a smooth finish.",
+      "description": "Bold and juicy strawberry and kiwi with a smooth finish. Natural caffeine, B vitamins and electrolytes from sea salt.",
+      "ingredients": "TODO: confirm Strawberry Kiwi ingredients",
+      "front": {
+        "src": "reference_new_lable/strawberry-kiwi.jpg",
+        "crop": [
+          505,
+          44,
+          440,
+          1058
+        ],
+        "patches": [
+          {
+            "box": [
+              132,
+              811,
+              160,
+              23
+            ],
+            "fill": "auto",
+            "text": "NATURALLY FLAVORED",
+            "font": "italic 400 12px 'Geist'",
+            "color": "#e9edf2"
+          },
+          {
+            "box": [
+              32,
+              902,
+              56,
+              19
+            ],
+            "fill": "auto",
+            "text": "NATURAL",
+            "font": "700 12px 'Geist'",
+            "color": "#ffffff"
+          },
+          {
+            "box": [
+              45,
+              978,
+              64,
+              16
+            ],
+            "fill": "auto",
+            "text": "CERTIFIED",
+            "font": "500 8.5px 'Geist'",
+            "color": "#e9edf2"
+          }
+        ],
+        "silver": [
+          10,
+          347,
+          425,
+          200
+        ]
+      }
+    },
+    {
+      "slug": "peach",
+      "name": "Peach",
+      "lines": [
+        "Peach"
+      ],
+      "accentToken": "orange",
+      "accent": "#f0843a",
+      "accentDeep": "#4a2410",
+      "taste": "Bold and juicy peach flavor with a smooth finish.",
+      "description": "Bold and juicy peach with a smooth finish. Natural caffeine, B vitamins and electrolytes from sea salt.",
+      "ingredients": "TODO: confirm Peach ingredients",
+      "front": {
+        "src": "reference_new_lable/peach.jpg",
+        "crop": [
+          505,
+          44,
+          440,
+          1058
+        ],
+        "patches": [
+          {
+            "box": [
+              132,
+              811,
+              160,
+              23
+            ],
+            "fill": "auto",
+            "text": "NATURALLY FLAVORED",
+            "font": "italic 400 12px 'Geist'",
+            "color": "#e9edf2"
+          },
+          {
+            "box": [
+              32,
+              902,
+              56,
+              19
+            ],
+            "fill": "auto",
+            "text": "NATURAL",
+            "font": "700 12px 'Geist'",
+            "color": "#ffffff"
+          },
+          {
+            "box": [
+              45,
+              978,
+              64,
+              16
+            ],
+            "fill": "auto",
+            "text": "CERTIFIED",
+            "font": "500 8.5px 'Geist'",
+            "color": "#e9edf2"
+          }
+        ],
+        "silver": [
+          10,
+          347,
+          425,
+          200
+        ]
+      }
+    },
+    {
+      "slug": "blackout-berry",
+      "name": "Blackout Berry",
+      "lines": [
+        "Blackout",
+        "Berry"
+      ],
+      "accentToken": "violet",
+      "accent": "#9b5de5",
+      "accentDeep": "#2a1747",
+      "edition": "Limited edition",
+      "taste": "Bold and juicy berry flavor with a smooth finish.",
+      "description": "Limited edition. Bold and juicy dark berries with a smooth finish. Natural caffeine, B vitamins and electrolytes from sea salt.",
+      "ingredients": "TODO: confirm Blackout Berry ingredients",
+      "front": {
+        "src": "reference_new_lable/blackout-berry.jpg",
+        "crop": [
+          505,
+          44,
+          440,
+          1058
+        ],
+        "patches": [
+          {
+            "box": [
+              132,
+              811,
+              160,
+              23
+            ],
+            "fill": "auto",
+            "text": "NATURALLY FLAVORED",
+            "font": "italic 400 12px 'Geist'",
+            "color": "#e9edf2"
+          },
+          {
+            "box": [
+              32,
+              902,
+              56,
+              19
+            ],
+            "fill": "auto",
+            "text": "NATURAL",
+            "font": "700 12px 'Geist'",
+            "color": "#ffffff"
+          },
+          {
+            "box": [
+              45,
+              978,
+              64,
+              16
+            ],
+            "fill": "auto",
+            "text": "CERTIFIED",
+            "font": "500 8.5px 'Geist'",
+            "color": "#e9edf2"
+          }
+        ],
+        "silver": [
+          10,
+          347,
+          425,
+          200
+        ]
+      }
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is Grizzly Energy?",
+      "a": "A sparkling energy drink made with natural caffeine, B vitamins and electrolytes from sea salt, in six flavors."
+    },
+    {
+      "q": "How much caffeine is in a can?",
+      "a": "TODO: confirm caffeine per 250 ml can before publishing."
+    },
+    {
+      "q": "Does Grizzly Energy contain sugar?",
+      "a": "TODO: confirm sugar per 250 ml can before publishing."
+    },
+    {
+      "q": "Is Grizzly Energy halal?",
+      "a": "Yes, Grizzly Energy is halal certified."
+    },
+    {
+      "q": "What is the Zamzam water in Grizzly Energy?",
+      "a": "Every can is made with added Zamzam water."
+    },
+    {
+      "q": "Where is Grizzly Energy made?",
+      "a": "Grizzly Energy is made in Pakistan by Grizzly Energy Beverage Labs."
+    },
+    {
+      "q": "Who should not drink Grizzly Energy?",
+      "a": "Grizzly Energy is not recommended for children, or for pregnant or nursing women."
+    },
+    {
+      "q": "How should I store a can?",
+      "a": "Best consumed chilled. Keep refrigerated after opening."
+    }
+  ],
+  "commerce": {
+    "$comment": "PLACEHOLDER commerce values: prices, threshold, delivery fee and promo are not real until confirmed.",
+    "currency": "PKR",
+    "locale": "en-PK",
+    "placeholderPricing": true,
+    "packs": [
+      {
+        "id": "single",
+        "count": 1,
+        "price": 250,
+        "label": "1 can"
+      },
+      {
+        "id": "pack-6",
+        "count": 6,
+        "price": 1400,
+        "label": "6 cans",
+        "badge": "Most popular"
+      },
+      {
+        "id": "pack-12",
+        "count": 12,
+        "price": 2700,
+        "label": "12 cans",
+        "badge": "Save 10%"
+      },
+      {
+        "id": "case-24",
+        "count": 24,
+        "price": 5200,
+        "label": "24 cans",
+        "badge": "Best value"
+      }
+    ],
+    "stock": "TODO: confirm stock per flavor (all shown as in stock)",
+    "freeDeliveryThreshold": 3000,
+    "deliveryFee": 250,
+    "deliveryNote": "TODO: confirm delivery areas, times and fees",
+    "promo": {
+      "code": "WILD10",
+      "percent": 10,
+      "$comment": "TODO: placeholder demo code; replace with real promotions"
+    },
+    "paymentMethods": [
+      {
+        "id": "cod",
+        "label": "Cash on delivery",
+        "available": true
+      },
+      {
+        "id": "card",
+        "label": "Card payment",
+        "available": false,
+        "note": "Coming soon"
+      }
+    ],
+    "provinces": [
+      "Punjab",
+      "Sindh",
+      "Khyber Pakhtunkhwa",
+      "Balochistan",
+      "Islamabad Capital Territory",
+      "Gilgit-Baltistan",
+      "Azad Jammu and Kashmir"
+    ]
+  },
+  "reviews": [],
+  "halalPage": {
+    "title": "Halal and Zamzam",
+    "intro": "Grizzly Energy is halal certified and made with added Zamzam water.",
+    "certificate": "TODO: upload halal certificate image, certifier name and licence number",
+    "zamzam": "TODO: confirm the Zamzam water source, how it is sourced and the amount per can",
+    "process": "TODO: describe production and quality checks"
+  },
+  "stores": {
+    "$comment": "TODO: retail stores (name, city, address, map link). Empty until confirmed; the store page shows a coming-soon state.",
+    "items": []
+  },
+  "newsletterOffer": "TODO: subscriber offer (discount amount, code and terms)",
+  "limitedEdition": {
+    "slug": "blackout-berry",
+    "endsAt": "TODO: limited edition end date (ISO 8601, e.g. 2026-12-31T23:59:00+05:00)"
+  }
+}

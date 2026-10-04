@@ -1,0 +1,211 @@
+/* ============================================================
+   LOADER — the wordmark fills with liquid light from the bottom,
+   a glowing level line rides the fill edge, ENERGY in the flavor
+   accent, hairline bar + zero-padded percent. Exit: two panels part.
+   --loader-fill is 0..1 (set from React).
+   ============================================================ */
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-loader);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.loader__panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50.5%;
+  background: var(--color-surface-base);
+  transition: transform var(--motion-slow) var(--ease-in-out);
+}
+
+.loader__panel--top {
+  top: 0;
+}
+
+.loader__panel--bottom {
+  bottom: 0;
+}
+
+/* Accent glow that rises and brightens with the fill. */
+.loader__glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--layout-loader-word-max);
+  aspect-ratio: 2 / 1;
+  border-radius: var(--radius-round);
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--color-accent) 40%, transparent), transparent);
+  opacity: calc(0.15 + var(--loader-fill) * 0.55);
+  filter: blur(var(--blur-glow));
+  transform: translate(-50%, calc(-20% - var(--loader-fill) * 20%));
+  animation: loader-breathe var(--motion-cloud) var(--ease-in-out) infinite alternate;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.loader__stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-md);
+  width: min(var(--layout-loader-word-max), calc(100vw - var(--layout-gutter) * 2));
+  transition:
+    transform var(--motion-slow) var(--ease-in-out),
+    opacity var(--motion-fast) var(--ease-out),
+    filter var(--motion-slow) var(--ease-out);
+}
+
+.loader__word {
+  position: relative;
+  display: block;
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-display);
+  font-style: italic;
+  font-size: var(--font-size-giant);
+  line-height: var(--line-height-giant);
+  letter-spacing: var(--letter-spacing-display);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Empty glass: a hairline outline of the letters. */
+.loader__word-base {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: var(--border-hairline) var(--color-white-a30);
+}
+
+/* Liquid: silver-to-white light, clipped to the fill level. */
+.loader__word-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    var(--color-accent) 0%,
+    var(--color-text-primary) 45%,
+    var(--color-text-primary) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  clip-path: inset(calc((1 - var(--loader-fill)) * 100%) 0 0 0);
+}
+
+/* The level line: a thin glowing bar riding the top of the fill. */
+.loader__word-edge {
+  position: absolute;
+  left: calc(var(--space-sm) * -1);
+  right: calc(var(--space-sm) * -1);
+  top: calc((1 - var(--loader-fill)) * 100%);
+  height: var(--border-hairline);
+  background: linear-gradient(90deg, transparent, var(--color-accent), var(--color-text-primary), var(--color-accent), transparent);
+  box-shadow: var(--shadow-accent-glow);
+  opacity: calc(1 - var(--loader-fill) * var(--loader-fill));
+}
+
+.loader__sub {
+  margin-top: calc(var(--space-md) * -1);
+  color: var(--color-accent);
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-display);
+  font-style: italic;
+  font-size: var(--font-size-3xl);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+  /* the wide tracking adds trailing space; pull it back so the word centres */
+  margin-right: calc(var(--letter-spacing-wide) * -1);
+  opacity: calc(0.35 + var(--loader-fill) * 0.65);
+}
+
+.loader__bar {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: var(--border-hairline);
+  margin-top: var(--space-xl);
+  background: var(--color-white-a12);
+  overflow: hidden;
+}
+
+.loader__bar-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--color-white-a50), var(--color-text-primary));
+  transform-origin: left center;
+  transform: scaleX(var(--loader-fill));
+}
+
+.loader__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  width: 100%;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  text-transform: uppercase;
+}
+
+.loader__tagline {
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.loader__percent {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.loader__percent-sign {
+  color: var(--color-text-muted);
+}
+
+/* Exit: the panels part, the wordmark lifts toward the viewer and dissolves. */
+.loader.is-leaving .loader__panel--top {
+  transform: translateY(-100%);
+}
+
+.loader.is-leaving .loader__panel--bottom {
+  transform: translateY(100%);
+}
+
+.loader.is-leaving .loader__stage {
+  transform: scale(1.08);
+  opacity: 0;
+  filter: blur(var(--space-xs));
+}
+
+.loader.is-leaving .loader__glow {
+  opacity: 0;
+}
+
+@keyframes loader-breathe {
+  from { scale: 0.92; }
+  to { scale: 1.06; }
+}
+
+@media (max-width: 767px) {
+  .loader__word {
+    font-size: var(--font-size-4xl);
+  }
+
+  .loader__sub {
+    font-size: var(--font-size-2xl);
+    margin-top: 0;
+  }
+
+  .loader__tagline {
+    letter-spacing: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader__glow { animation: none; }
+  .loader__panel,
+  .loader__stage { transition: opacity var(--motion-fast) linear; }
+  .loader.is-leaving .loader__panel { transform: none; opacity: 0; }
+  .loader.is-leaving .loader__stage { transform: none; filter: none; }
+}

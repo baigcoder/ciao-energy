@@ -1,0 +1,300 @@
+/*
+ * SEMANTIC TOKENS — the only layer components read.
+ * Values reference primitives.css. Flavor tokens switch through [data-flavor]
+ * on <html>; registered as colors so backgrounds and states cross-fade.
+ */
+@import './primitives.css';
+@import './flavor-tokens.css';
+
+@property --color-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1f9beb;
+}
+@property --color-accent-deep {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0b2c4a;
+}
+@property --color-accent-next {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f29a1d;
+}
+
+:root {
+  /* Surfaces */
+  --color-surface-base: var(--color-black);
+  --color-surface-muted: var(--color-ice-200);
+  --color-surface-raised: var(--color-white-a04);
+  --color-surface-overlay: var(--color-black-a40);
+  --color-floor-high: var(--color-grey-400);
+  --color-floor-mid: var(--color-grey-500);
+  --color-floor-low: var(--color-grey-800);
+
+  /* Text */
+  --color-text-primary: var(--color-white);
+  --color-text-muted: var(--color-white-a60);
+  --color-text-faint: var(--color-white-a30);
+  --color-text-inverse: var(--color-black);
+  --color-text-error: var(--color-red-400);
+  --color-text-success: var(--color-green-400);
+
+  /* Lines */
+  --color-line: var(--color-white-a50); /* control boundaries: ≥3:1 on black (1.4.11) */
+  --color-line-decor: var(--color-white-a20); /* purely decorative rules */
+  --color-line-subtle: var(--color-white-a12);
+  --color-line-strong: var(--color-white-a60);
+  --color-focus-ring: var(--color-white);
+
+  /* Actions */
+  --color-action-primary: var(--color-white);
+  --color-action-primary-text: var(--color-black);
+  --color-action-ghost-hover: var(--color-white-a08);
+
+  /* Flavor accents: one token per flavor, generated into flavor-tokens.css
+     from src/data/grizzly.json. Defaults to the first flavor. */
+  --color-accent: var(--color-flavor-blue);
+  --color-accent-deep: var(--color-flavor-blue-deep);
+  --color-accent-next: var(--color-flavor-amber);
+
+  /* Fruit illustration colours */
+  --color-fruit-leaf: var(--color-leaf-500);
+  --color-fruit-rind: var(--color-rind-600);
+  --color-fruit-seed: var(--color-seed-900);
+  --color-fruit-seed-light: var(--color-seed-100);
+  --color-fruit-kiwi: var(--color-kiwi-400);
+  --color-fruit-kiwi-core: var(--color-kiwi-100);
+  --color-fruit-kiwi-skin: var(--color-kiwi-skin-700);
+  --color-fruit-ice: var(--color-ice-white-a35);
+  --color-fruit-ice-edge: var(--color-ice-white-a60);
+  --color-vignette: var(--color-black-a70);
+
+  /* Typography */
+  --font-family-body: var(--font-geist);
+  --font-family-mono: var(--font-geist-mono);
+  --font-family-display: var(--font-franklin);
+  --font-weight-body: 300;
+  --font-weight-medium: 400;
+  --font-weight-display: 900;
+  --font-size-xs: var(--size-0667);
+  --font-size-sm: var(--size-075);
+  --font-size-md: var(--size-0875);
+  --font-size-lg: var(--size-1);
+  --font-size-xl: var(--size-1125);
+  --font-size-2xl: var(--size-125);
+  --font-size-question: var(--size-15);
+  --font-size-menu: var(--size-225);
+  --font-size-3xl: var(--size-3);
+  --font-size-4xl: var(--size-9);
+  --font-size-compact-display: var(--size-6); /* giant titles on short laptop screens */
+  --font-size-giant: clamp(var(--size-3), 11.5vw, 15rem);
+  --line-height-body: 1.5;
+  --line-height-display: 0.82;
+  --letter-spacing-wide: 0.9em;
+  --letter-spacing-display: -0.01em;
+
+  /* Spacing */
+  --space-3xs: var(--spacing-025);
+  --space-2xs: var(--spacing-05);
+  --space-xs: var(--spacing-075);
+  --space-sm: var(--spacing-1);
+  --space-md: var(--spacing-125);
+  --space-lg: var(--spacing-15);
+  --space-xl: var(--spacing-2);
+  --space-2xl: var(--spacing-3);
+  --space-3xl: var(--spacing-4);
+  --space-4xl: var(--spacing-6);
+  --space-5xl: var(--spacing-8);
+  --space-6xl: var(--spacing-10);
+
+  /* Layout */
+  --layout-frame-inset: 5.5rem;   /* corner brackets ≈ 80px from the edge at 1920 */
+  --layout-gutter: 4.75rem;       /* header content ≈ 76px from the edge */
+  --layout-text-inset: 12.25rem;  /* section copy ≈ 196px from the edge */
+  --layout-copy-max: 28rem;
+  --layout-faq-max: 48rem;
+  --layout-form-max: 35rem;
+  --layout-header-height: 9.5rem;
+  --control-size: max(44px, 2.75rem); /* ≥44px touch target at every root size */
+  --control-size-icon: 3.875rem;  /* benefit icon buttons */
+
+  /* Radius / shadow */
+  --radius-xs: var(--radius-025);
+  --radius-sm: var(--radius-05);
+  --radius-md: var(--radius-1);
+  --radius-round: 999px;
+  --shadow-glow: var(--shadow-glow-white);
+  --shadow-ring: var(--shadow-ring-white);
+  --shadow-accent-glow: 0 0 1.5rem 0 var(--color-accent);
+
+  /* Motion */
+  --motion-instant: var(--duration-200);
+  --motion-fast: var(--duration-400);
+  --motion-slow: var(--duration-800);
+  --motion-scene: var(--duration-1200);
+  --ease-out: var(--ease-out-expo);
+  --ease-in-out: var(--ease-in-out-quart);
+
+  /* Hairlines, dots, focus */
+  --border-hairline: 1px;
+  --size-dot: 2px;
+  --size-bar: 2px;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 3px;
+  --focus-ring-offset-raised: 4px;
+
+  /* Line heights */
+  --line-height-tight: 1.15;
+  --line-height-snug: 1.3;
+  --line-height-tag: 1.6;
+  --line-height-giant: 0.8;
+
+  /* Interaction states */
+  --opacity-hover: 0.72;
+  --opacity-pressed: 0.5;
+  --opacity-dimmed: 0.45;
+  --opacity-disabled: 0.6;
+  --opacity-faint: 0.25;
+  --scale-pressed: 0.96;
+  --scale-hover: 1.25;
+  --scale-shrink: 0.85;
+
+  /* Effects */
+  --blur-glint: 2px;
+  --blur-glass: 24px;
+  --blur-glow: 64px;
+  --saturate-glass: 1.2;
+
+  /* Motion choreography */
+  --stagger-char: 22ms;
+  --stagger-item: 50ms;
+  --delay-reveal-body: 160ms;
+  --delay-reveal-line: 120ms;
+  --motion-pulse: 1600ms;
+  --motion-bars: 900ms;
+  --motion-cloud: 22s;
+  --reveal-distance: 105%;
+
+  /* Component geometry (measured from the reference at 1920×920) */
+  --size-logo: 9.5rem;
+  --size-benefit-icon: 1.75rem;
+  --size-field: 4rem;
+  --layout-chrome-top: 8.25rem;      /* corner brackets and menu panel top */
+  --layout-menu-right: 6.75rem;
+  --layout-menu-min: 19.5rem;
+  --layout-tick-top: 13.5rem;
+  --layout-tick-bottom: 8rem;
+  --layout-hint-bottom: 12rem;
+  --layout-loader-word-max: 64rem;   /* loader wordmark width cap */
+  --layout-arrow-offset: 15rem;      /* hero arrows from the centre line, either side of the flavor name */
+  --layout-arrow-top: 76%;           /* hero arrows ride the flavor-name row, clear of the cans */
+  --layout-slider-width: 37.5rem;
+  --layout-letters-inset: 8.2rem;
+  --layout-footer-max: 50rem;
+  --layout-intro-max: 30rem;
+  --layout-faq-lead: 62svh;          /* FAQ title sits under the rising lineup */
+  --hero-fade-rate: 16;              /* hero HUD gone by half the first segment */
+
+  /* Backdrop composition (viewport-relative by design) */
+  --backdrop-glow-width: 22vw;
+  --backdrop-glow-height: 30vh;
+  --backdrop-glow-bottom: -16vh;
+  --backdrop-glow-a-left: 33vw;
+  --backdrop-glow-b-left: 47vw;
+  --backdrop-glow-a-opacity: 0.42;
+  --backdrop-glow-b-opacity: 0.32;
+  --backdrop-cloud-size: 55vw;
+  --backdrop-cloud-opacity: 0.8;
+  --backdrop-cloud-drift-x: 6vw;
+  --backdrop-cloud-drift-y: 4vh;
+  --backdrop-cloud-drift-scale: 1.18;
+
+  /* Layers */
+  --z-backdrop: 0;
+  --z-backdrop-text: 1;
+  --z-canvas: 2;
+  --z-content: 3;
+  --z-chrome: 10;
+  --z-overlay: 20;
+  --z-loader: 30;
+
+  transition:
+    --color-accent var(--motion-slow) var(--ease-out),
+    --color-accent-deep var(--motion-slow) var(--ease-out),
+    --color-accent-next var(--motion-slow) var(--ease-out);
+}
+
+/*
+ * LEGACY ALIASES — consumed only by commerce.css (shop, product page, cart),
+ * which is rebuilt in Phase 2. Do not use in new components.
+ */
+:root {
+  --color-canvas: var(--color-surface-base);
+  --color-text-secondary: var(--color-white-a72);
+  --color-border: var(--color-line);
+  --color-border-subtle: var(--color-line-subtle);
+  --color-border-focus: var(--color-focus-ring);
+  --color-success: var(--color-text-success);
+  --color-error: var(--color-text-error);
+  --color-scheme-1--taste-primary: var(--color-accent-deep);
+  --color-scheme-1--taste-secondary: var(--color-accent);
+  --font-display: var(--font-family-display);
+  --font-body: var(--font-family-body);
+  --font-mono: var(--font-family-mono);
+  --space-4: var(--spacing-025);
+  --space-8: var(--spacing-05);
+  --space-12: var(--spacing-075);
+  --space-16: var(--spacing-1);
+  --space-24: var(--spacing-15);
+  --space-32: var(--spacing-2);
+  --space-48: var(--spacing-3);
+  --space-64: var(--spacing-4);
+  --page-padding-desktop: 4%;
+  --page-padding-mobile: 1rem;
+  --container-max-width: 120rem;
+  --nav-height-desktop: 5rem;
+  --nav-height-mobile: 4rem;
+  --motion-standard: var(--duration-400);
+}
+
+:root {
+  /* Commerce geometry */
+  --layout-drawer-width: 30rem;
+  --layout-panel-left: 54%;
+  --layout-panel-max: 34rem;
+  --layout-page-top: 11rem;
+  --size-thumb: 3.375rem;
+  --size-related-thumb: 7.5rem;
+  --size-meter: 0.25rem;
+  --color-scrim: var(--color-black-a70);
+  --color-surface-panel: var(--color-grey-900);
+}
+:root {
+  --stroke-icon: 1.4;
+  --stroke-icon-thin: 1.2;
+  --size-label-column: 7rem;
+  --tilt-hover: -4deg;
+  --underline-offset: 0.3em;
+}
+:root { --layout-faq-lead-compact: 48svh; }
+
+:root {
+  /* Shop extras */
+  --size-can-top: 3.5rem;
+  --size-can-top-small: 1.75rem;
+  --size-hotspot: 2.25rem;
+  --layout-checkout-max: 72rem;
+  --layout-story-max: 60rem;
+  --size-bear-watermark: 34rem;
+  --size-palette-min: 9rem;
+  --size-story-col: 16rem;
+  --layout-hotspot-panel: 20rem;
+  /* Pointer layer, benefit hexagon, notices (Stage 5) */
+  --size-cursor: 2.25rem;
+  --size-cursor-hover: 3.5rem;
+  --size-hex-emblem: 4.5rem;
+  --layout-notice-max: 26rem;
+  --stroke-hex: 2.5;
+}
+:root { --opacity-watermark: 0.12; }
