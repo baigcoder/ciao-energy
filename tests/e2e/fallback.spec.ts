@@ -15,9 +15,9 @@ test.beforeEach(async ({ page }) => {
 test('home works without WebGL: flavors, copy and the shop button', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('progressbar', { name: 'Loading Grizzly Energy' })).toBeHidden({ timeout: 30_000 });
-  await expect(page.getByRole('heading', { level: 2, name: 'Blue Raspberry' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Blue Raspberry' }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Next flavor' }).click();
-  await expect(page.getByRole('heading', { level: 2, name: 'Mango Fuego' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Mango Fuego' }).first()).toBeVisible();
   await expect(page.locator('.fallback-stage img')).toBeVisible();
 });
 
