@@ -16,6 +16,10 @@ interface PreloaderProps {
  * Black screen. While the scene's opening plays behind it (a can cracking open, mist rolling out),
  * the wordmark forms in brushed silver as progress completes, with a hairline bar and a zero-padded
  * percentage. On exit the wordmark lifts away and the scene carries on. Fill is a CSS variable.
+ *
+ * Lifecycle, mirrored on html[data-loader] for tests and styling:
+ *   (no attribute) = boot, before this runs  →  loading  →  ready (scene is up, minimum time not yet met)
+ *   →  exit (wordmark lifting away)  →  complete (unmounted).  Routes that never get a loader read "none".
  */
 export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, minDurationMs, showStage }) => {
   const [percent, setPercent] = useState(0);
@@ -76,6 +80,12 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, 
     }, 700);
     return () => window.clearTimeout(timer);
   }, [phase, onDone, onLeave]);
+
+  // Publish the lifecycle state.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.loader = phase === 'loading' ? (isReady ? 'ready' : 'loading') : phase === 'leaving' ? 'exit' : 'complete';
+  }, [phase, isReady]);
 
   // Tell the page a loader is up so the hero chrome stays hidden behind the see-through opening.
   useEffect(() => {

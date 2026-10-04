@@ -39,6 +39,16 @@ import { useCanKeys } from './hooks/useCanKeys';
 import { OPENING_MIN_SECONDS, openingShouldPlay } from './webgl/moments/openingConfig';
 
 const MIN_LOADER_MS = 900;
+/** A product page only waits for the scene's first frame (its can), not for a cinematic. */
+const PRODUCT_LOADER_MS = 250;
+
+/**
+ * Which loader a hard load of a route gets. Only the home story has the cinematic opening; a product page
+ * holds a short, plain loader until its can is on screen; every other route (shop, bag, checkout, halal,
+ * stores, privacy, 404) is plain content and never waits for the 3D scene.
+ */
+type LoaderMode = 'cinematic' | 'product' | 'none';
+const loaderModeFor = (route: AppRoute): LoaderMode => (route.type === 'HOME' ? 'cinematic' : route.type === 'PRODUCT' ? 'product' : 'none');
 
 export type AppRoute =
   | { type: 'HOME' }
@@ -92,6 +102,10 @@ export const App: React.FC = () => {
   const [playOpening] = useState(() => typeof window !== 'undefined' && parseCurrentRoute().type === 'HOME' && !prefersReducedMotion() && openingShouldPlay());
   const [isReady, setIsReady] = useState(false);
   const [route, setRoute] = useState<AppRoute>(parseCurrentRoute);
+  const [loaderMode] = useState<LoaderMode>(() => (typeof window === 'undefined' ? 'none' : loaderModeFor(parseCurrentRoute())));
+  useEffect(() => {
+    if (loaderMode === 'none') document.documentElement.dataset.loader = 'none';
+  }, [loaderMode]);
   const [activeIndex, setActiveIndex] = useState<number>(getInitialFlavorIndex);
   const initialFlavorIndexRef = useRef(activeIndex);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -364,7 +378,15 @@ export const App: React.FC = () => {
   return (
     <>
       <a className="skip-link" href="#main">Skip to content</a>
-      <Preloader isReady={isReady} onDone={handlePreloaderDone} onLeave={handlePreloaderLeave} minDurationMs={playOpening && webGlAvailable ? OPENING_MIN_SECONDS * 1000 : MIN_LOADER_MS} showStage={playOpening && webGlAvailable} />
+      {loaderMode !== 'none' && (
+        <Preloader
+          isReady={isReady}
+          onDone={handlePreloaderDone}
+          onLeave={handlePreloaderLeave}
+          minDurationMs={loaderMode === 'product' ? PRODUCT_LOADER_MS : playOpening && webGlAvailable ? OPENING_MIN_SECONDS * 1000 : MIN_LOADER_MS}
+          showStage={loaderMode === 'cinematic' && playOpening && webGlAvailable}
+        />
+      )}
 
       {!webGlAvailable && (
         <>

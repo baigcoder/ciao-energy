@@ -10,12 +10,14 @@ interface CartContentsProps {
   headingId: string;
   /** The checkout page shows a read-only summary instead of controls. */
   readOnly?: boolean;
+  /** The heading level: h1 when this is the whole page (/cart), h2 inside the drawer and checkout. */
+  headingAs?: 'h1' | 'h2';
 }
 
 type PromoState = 'idle' | 'error' | 'success';
 
 /** Bag line items, delivery progress, promo, totals; shared by drawer, /cart and checkout. */
-export const CartContents: React.FC<CartContentsProps> = ({ onNavigate, headingId, readOnly = false }) => {
+export const CartContents: React.FC<CartContentsProps> = ({ onNavigate, headingId, readOnly = false, headingAs: Heading = 'h2' }) => {
   const { items, totalCount, totals, updateQuantity, removeItem, undoRemove, removed, promo, applyPromo, removePromo, persistent, saved, saveForLater, moveToBag, removeSaved } = useCart();
   const [code, setCode] = useState('');
   const [promoState, setPromoState] = useState<PromoState>('idle');
@@ -37,9 +39,9 @@ export const CartContents: React.FC<CartContentsProps> = ({ onNavigate, headingI
 
   return (
     <div className="bag">
-      <h2 id={headingId} className="bag__title display">
+      <Heading id={headingId} className="bag__title display">
         {readOnly ? 'Order summary' : 'Your bag'} <span className="bag__count">{totalCount > 0 ? `(${totalCount})` : ''}</span>
-      </h2>
+      </Heading>
 
       {!readOnly && (
         <div className="bag__undo-region" role="status">
