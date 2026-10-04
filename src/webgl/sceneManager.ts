@@ -1211,7 +1211,9 @@ export class SceneManager {
         const featRotZ = this.data.canRotZ;
 
         if (isMobile) {
-          featScale *= 0.58;
+          // Phones: benefit chapters keep the label at 0.58 so it clears the copy; the
+          // flavor intro and the tagline scene keep a bigger can (blended through labelDim).
+          featScale *= 0.7 - 0.12 * this.data.labelDim;
           featY += 1.45; // phones: copy sits at the bottom, so the can rides higher
           featX = 0.58;
         }
