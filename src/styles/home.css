@@ -1021,3 +1021,11 @@
   background: radial-gradient(closest-side, var(--color-surface-overlay), transparent);
   pointer-events: none;
 }
+
+/* On phones the falloff stops at the screen edge: its desktop inset (--space-4xl) pushed the document
+   67px wider than a 390px screen and dragged the header bag off-screen. */
+@media (max-width: 767px) {
+  .benefit .section-copy::before {
+    inset-inline: calc(var(--space-md) * -1);
+  }
+}

@@ -8,6 +8,20 @@
   padding: var(--layout-page-top) var(--layout-text-inset) var(--space-3xl);
 }
 
+/* The 196px editorial inset only fits wide screens: on phones it left no content width, so the page
+   widened past the screen and the cards sat pushed to the right. */
+@media (max-width: 1023px) {
+  .shop-page {
+    padding-inline: var(--space-2xl);
+  }
+}
+
+@media (max-width: 767px) {
+  .shop-page {
+    padding-inline: var(--space-md);
+  }
+}
+
 .shop-page__head {
   display: grid;
   gap: var(--space-sm);
@@ -28,7 +42,7 @@
 
 .shop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--size-shop-card), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--size-shop-card), 100%), 1fr));
   gap: var(--space-md);
   margin: 0 0 var(--space-xl);
   padding: 0;
@@ -138,14 +152,14 @@
 
 @media (max-width: 767px) {
   .shop-card {
-    grid-template-columns: var(--size-shop-can-narrow) 1fr;
+    grid-template-columns: var(--size-shop-can-narrow) minmax(0, 1fr);
   }
 }
 
 /* ---------- Product page: facts and trust ---------- */
 .facts {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--size-fact), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--size-fact), 100%), 1fr));
   gap: var(--space-xs) var(--space-lg);
   margin: 0;
 }
@@ -176,7 +190,7 @@
 
 .trust-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--size-fact), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--size-fact), 100%), 1fr));
   gap: var(--space-sm);
 }
 

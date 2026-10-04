@@ -739,7 +739,7 @@ select.field__input--plain option {
 
 .story__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--size-story-col), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--size-story-col), 100%), 1fr));
   gap: var(--space-lg);
 }
 

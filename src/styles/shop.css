@@ -567,6 +567,12 @@
   padding: var(--layout-page-top) var(--layout-text-inset);
 }
 
+@media (max-width: 1023px) {
+  .pdp-missing {
+    padding-inline: var(--space-md);
+  }
+}
+
 .pdp-missing__title {
   font-size: var(--font-size-3xl);
 }
