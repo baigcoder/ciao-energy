@@ -20,6 +20,23 @@
   pointer-events: none;
 }
 
+/* Scrim: close-up chapters run the can under the header, so the bar gets a dark fade to stay legible. */
+.site-header::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--layout-header-scrim);
+  background: linear-gradient(to bottom, var(--color-surface-base), transparent);
+  opacity: 0;
+  transition: opacity var(--motion-standard) var(--ease-out);
+  pointer-events: none;
+}
+
+body[data-scene='benefit'] .site-header::before,
+body[data-scene='argument'] .site-header::before {
+  opacity: var(--opacity-scrim);
+}
+
 .site-header__bar {
   position: relative;
   display: grid;

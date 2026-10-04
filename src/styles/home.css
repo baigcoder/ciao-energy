@@ -265,6 +265,22 @@
   text-align: center;
 }
 
+/* Wide screens: the flavor name sits on one line so the can can be taller (≈55% of the viewport). */
+@media (min-width: 768px) {
+  .hero__title-wrap {
+    min-height: calc(var(--font-size-3xl) * var(--line-height-display));
+    margin-bottom: var(--space-lg);
+  }
+
+  .hero__title .reveal__line {
+    display: inline-block;
+  }
+
+  .hero__title .reveal__line + .reveal__line {
+    margin-left: 0.28em;
+  }
+}
+
 .hero .reveal__unit {
   animation: reveal-up var(--motion-fast) var(--ease-out) forwards;
   animation-delay: calc(var(--i) * var(--stagger-char));

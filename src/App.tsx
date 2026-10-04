@@ -4,7 +4,7 @@ import { getProductBySlug } from './data/products';
 import { SceneManager } from './webgl/sceneManager';
 import { Preloader } from './components/Preloader';
 import { audioManager } from './audio/audioManager';
-import { CiaoHeader } from './components/CiaoHeader';
+import { SiteHeader } from './components/SiteHeader';
 import { MenuDrawer } from './components/MenuDrawer';
 import { SiteFrame } from './components/SiteFrame';
 import { StageBackdrop } from './components/StageBackdrop';
@@ -143,25 +143,22 @@ export const App: React.FC = () => {
 
     let readyFrame = 0;
     try {
-      const packshotSlug = new URLSearchParams(window.location.search).get('packshot');
-      const sm = new SceneManager(canvas, Boolean(packshotSlug));
+      const sm = new SceneManager(canvas);
       sceneManagerRef.current = sm;
-      if (!packshotSlug) {
-        const isMobile = window.innerWidth < 768;
-        const cores = navigator.hardwareConcurrency || 4;
-        const quality = prefersReducedMotion() ? 'LOW' : isMobile || cores <= 4 ? 'MEDIUM' : 'HIGH';
-        sm.setQuality(quality);
-        sm.reducedMotion = prefersReducedMotion();
-        document.documentElement.dataset.quality = quality;
-        sm.onQualityChange = (level) => {
-          document.documentElement.dataset.quality = level;
-        };
-      }
+      const isMobile = window.innerWidth < 768;
+      const cores = navigator.hardwareConcurrency || 4;
+      // Reduced motion keeps the 3D scene but drops to the light tier, with no intro, spin or tilt.
+      const quality = prefersReducedMotion() ? 'MEDIUM' : isMobile || cores <= 4 ? 'MEDIUM' : 'HIGH';
+      sm.reducedMotion = prefersReducedMotion();
+      sm.setQuality(quality);
+      document.documentElement.dataset.quality = quality;
+      sm.onQualityChange = (level) => {
+        document.documentElement.dataset.quality = level;
+      };
       const initial = parseCurrentRoute();
-      if (packshotSlug) sm.setRoute('PRODUCT', packshotSlug);
-      else sm.setRoute(sceneRoute(initial), initial.type === 'PRODUCT' ? initial.slug : undefined);
+      sm.setRoute(sceneRoute(initial), initial.type === 'PRODUCT' ? initial.slug : undefined);
       sm.setInitialFlavor(initialFlavorIndexRef.current);
-      if (!packshotSlug && initial.type === 'HOME') sm.armIntro();
+      if (initial.type === 'HOME') sm.armIntro();
       sm.onRoar = () => {
         audioManager.play('growl');
         document.documentElement.dispatchEvent(new CustomEvent('grizzly:roar'));
@@ -251,8 +248,6 @@ export const App: React.FC = () => {
       const top = title.getBoundingClientRect().top + window.scrollY;
       const logo = document.querySelector<HTMLElement>('.site-logo');
       sceneManagerRef.current?.setHeroSafeBottom(top, logo ? logo.getBoundingClientRect().bottom : 0);
-      const slider = document.querySelector<HTMLElement>('.flavor-slider');
-      if (slider) sceneManagerRef.current?.setPedestalBand(slider.getBoundingClientRect().bottom + window.scrollY + 8, window.innerHeight - 4);
     };
     update();
     const observer = new ResizeObserver(update);
@@ -327,13 +322,16 @@ export const App: React.FC = () => {
       <a className="skip-link" href="#main">Skip to content</a>
       <Preloader isReady={isReady} onDone={handlePreloaderDone} onLeave={handlePreloaderLeave} />
 
-      <StageBackdrop scene={isHome ? scene : route.type === 'PRODUCT' ? 'flavor' : 'faq'} flavorLines={isHome ? [FLAVORS[activeIndex % FLAVORS.length].line1, FLAVORS[activeIndex % FLAVORS.length].line2] : []} />
-
-      <Atmosphere
-        scene={isHome ? scene : 'page'}
-        flavorSlug={FLAVORS[activeIndex % FLAVORS.length].id}
-        accentToken={FLAVORS[activeIndex % FLAVORS.length].accentToken}
-      />
+      {!webGlAvailable && (
+        <>
+          <StageBackdrop scene={isHome ? scene : route.type === 'PRODUCT' ? 'flavor' : 'faq'} flavorLines={isHome ? [FLAVORS[activeIndex % FLAVORS.length].line1, FLAVORS[activeIndex % FLAVORS.length].line2] : []} />
+          <Atmosphere
+            scene={isHome ? scene : 'page'}
+            flavorSlug={FLAVORS[activeIndex % FLAVORS.length].id}
+            accentToken={FLAVORS[activeIndex % FLAVORS.length].accentToken}
+          />
+        </>
+      )}
 
       {webGlAvailable ? (
         <canvas ref={canvasRef} className="webgl-canvas" aria-hidden="true" />
@@ -343,7 +341,7 @@ export const App: React.FC = () => {
 
       <SiteFrame scene={isHome ? scene : 'page'} />
 
-      <CiaoHeader
+      <SiteHeader
         isMenuOpen={isMenuOpen}
         onToggleMenu={() => setIsMenuOpen((open) => !open)}
         onNavigateHome={() => (isHome ? scrollToSection('gamme') : navigate('/'))}

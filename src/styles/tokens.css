@@ -153,6 +153,7 @@
   /* Interaction states */
   --opacity-hover: 0.72;
   --opacity-pressed: 0.5;
+  --opacity-scrim: 0.85;
   --opacity-dimmed: 0.45;
   --opacity-disabled: 0.6;
   --opacity-faint: 0.25;
@@ -188,6 +189,7 @@
   --layout-hint-bottom: 12rem;
   --layout-loader-word-max: 64rem;   /* loader wordmark width cap */
   --layout-arrow-offset: 15rem;      /* hero arrows from the centre line, either side of the flavor name */
+  --layout-header-scrim: 8.5rem;     /* dark fade behind the header over close-up chapters */
   --layout-arrow-top: 76%;           /* hero arrows ride the flavor-name row, clear of the cans */
   --layout-slider-width: 37.5rem;
   --layout-letters-inset: 8.2rem;
