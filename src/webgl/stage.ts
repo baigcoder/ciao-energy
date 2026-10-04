@@ -347,6 +347,8 @@ const BACKDROP_FRAGMENT = /* glsl */ `
       // only a breath of slow haze: a clean studio gradient, never blotchy
       float haze = vnoise(vec2(uv.x * asp * 0.9 + t * 0.01, uv.y * 1.3 - t * 0.006));
       field *= 0.96 + 0.08 * haze;
+      // as in the reference: the field falls to near-black toward the top of the frame
+      field = mix(field, deep, smoothstep(0.42, 0.95, uv.y) * 0.92);
       // a whisper of the range, in a darker shade of the field, so it is still the wild
       float ridge = 0.32 + 0.05 * sin(uv.x * asp * 3.1 + 1.3) + 0.03 * sin(uv.x * asp * 7.7);
       field *= mix(1.0, 0.82, smoothstep(ridge + 0.006, ridge - 0.006, uv.y) * 0.6);

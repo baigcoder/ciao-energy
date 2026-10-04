@@ -96,8 +96,10 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
 
   // Flavor intro: the camera swings round to the left while the can leans in on the right, fully in frame.
   profile: {
+    // as in the reference: a big can leaning ~25° fills the right two-thirds, lid near the header,
+    // base running off the lower-right edge
     camera: cam(-1.4, 0.2, 27, 0.03, 0.05, 0),
-    product: { scale: 1.35, posX: -0.9, posY: 0.1, posZ: 0, rotX: 6 * DEG, rotY: 0.34, rotZ: 12 * DEG, spin: 0 },
+    product: { scale: 2.45, posX: 1.9, posY: -1.15, posZ: 0, rotX: 6 * DEG, rotY: -0.32, rotZ: 20 * DEG, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0.12 },
     stage: { ...STAGE, floorY: -4.4, reflect: 0.5, mistFg: 0.2, stars: 0, field: 1 },
     spacing: CAROUSEL_CONFIG.spacing,
@@ -125,7 +127,7 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
   // Finale: all six cans on a mountain-shaped lineup, each lit in its own colour.
   range: {
     camera: cam(0, 0.3, 32, 0.02),
-    product: { scale: 0.88, posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, spin: 0 },
+    product: { scale: 1.02, posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0 },
     stage: { ...STAGE, floorY: -2.3, reflect: 1, mistFg: 0.2, glow: 0.4, studio: 1 },
     spacing: CAROUSEL_CONFIG.spacing,

@@ -946,7 +946,9 @@ export class SceneManager {
     }
     // One full turn of the focused can when the flavor changes.
     const spinT = (now - this.spinStart) / 900;
-    this.spinOffset = spinT >= 0 && spinT < 1 ? (spinT < 0.5 ? 4 * spinT ** 3 : 1 - (-2 * spinT + 2) ** 3 / 2) * Math.PI * 2 : 0;
+    // the ring itself slides to the new flavor (as in the reference): no extra full turn of the can
+    this.spinOffset = 0;
+    void spinT;
   }
 
   /** Accent colour wave: starts when the focused flavor changes, floods out from the focus can. */
@@ -1166,9 +1168,10 @@ export class SceneManager {
           // Phones shrink the can (benefit close-ups most, blended through labelDim). The
           // vertical pose scales with it, so the lit benefit block keeps its place on screen
           // instead of the can for the lowest block leaving the top of the frame.
-          const k = 0.7 - 0.12 * this.data.labelDim;
+          // (the desktop intro can is very large; phones keep it to the old on-screen size)
+          const k = 0.45 + 0.13 * this.data.labelDim;
           featScale *= k;
-          featY = featY * k + 1.45; // copy sits at the bottom, so the can rides higher
+          featY = featY * k + 1.45 + 1.4 * (1 - this.data.labelDim); // copy sits at the bottom, so the can rides higher
           featX = 0.58;
         }
         featRotY += (this.pointer.smoothX / 1280) * this.tilt() + this.spinOffset;
@@ -1454,7 +1457,7 @@ const LINEUP_SLOTS = Array.from({ length: 12 }, (_, k) => {
     // one tight row receding in depth: near and low at the left (showing bottoms), far and high
     // at the right (showing tops), the cans twisting along it; the floor below stays empty
     x: t * 1.62,
-    y: 0.75 + t * 0.38 - 0.012 * t * t, // rising, flattening toward the far end
+    y: 0.45 + t * 0.4 - 0.012 * t * t, // rising, flattening toward the far end
     z: 2.4 - t * 0.85,
     rotX: -0.5 + (k / 11) * 1.1,
     rotY: -0.3,
