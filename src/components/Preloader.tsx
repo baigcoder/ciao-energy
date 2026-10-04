@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BRAND } from '../data/brand';
-import { getProductThumbUrl } from '../data/products';
 
 interface PreloaderProps {
   isReady: boolean;
@@ -92,7 +91,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, 
   const fill = percent / 100;
   return (
     <div
-      className={`loader ${phase === 'leaving' ? 'is-leaving' : ''} ${showStage ? 'loader--stage' : ''}`}
+      className={`loader ${phase === 'leaving' ? 'is-leaving' : ''} ${showStage ? 'loader--stage' : ''} ${showStage && isReady ? 'is-staged' : ''}`}
       style={{ '--loader-fill': fill } as React.CSSProperties}
       role="progressbar"
       aria-label={`Loading ${BRAND.name}`}
@@ -100,10 +99,9 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, 
       aria-valuemax={100}
       aria-valuenow={percent}
     >
-      {/* First paint: the night and a still can, so the screen is never empty while the 3D loads. */}
-      <span className={`loader__still ${showStage && isReady ? 'is-hidden' : ''}`} aria-hidden="true">
-        <img src={getProductThumbUrl({ slug: 'blue-raspberry' })} alt="" width={187} height={491} />
-      </span>
+      {/* First paint: the night stage, darkened, so the screen is never empty while the 3D loads.
+          No still can here: it would sit on the wordmark; the 3D opening brings the can. */}
+      <span className={`loader__still ${showStage && isReady ? 'is-hidden' : ''}`} aria-hidden="true" />
       <span className="loader__glow" aria-hidden="true" />
       {showStage && <span className="loader__skip">Press any key or tap to skip</span>}
       <div className="loader__stage" aria-hidden="true">
@@ -112,7 +110,10 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, 
           <span className="loader__word-fill">{BRAND.wordmark[0]}</span>
           <span className="loader__word-edge" />
         </span>
-        <span className="loader__sub">{BRAND.wordmark[1]}</span>
+        <span className="loader__sub">
+          <span className="loader__sub-base">{BRAND.wordmark[1]}</span>
+          <span className="loader__sub-fill">{BRAND.wordmark[1]}</span>
+        </span>
         <span className="loader__bar">
           <span className="loader__bar-fill" />
         </span>

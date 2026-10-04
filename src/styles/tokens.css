@@ -112,6 +112,8 @@
   --line-height-display: 0.82;
   --letter-spacing-wide: 0.9em;
   --letter-spacing-display: -0.01em;
+  --space-italic-lead: 0.06em;      /* room before an italic display word */
+  --space-italic-overhang: 0.14em;  /* room for an italic display word's last-letter overhang */
 
   /* Spacing */
   --space-3xs: var(--spacing-025);

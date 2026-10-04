@@ -17,9 +17,6 @@
 }
 
 /* The 3D opening plays behind the loader: the overlay only carries the wordmark and the percentage. */
-
-
-/* The 3D opening plays behind the loader: the overlay only carries the wordmark and the percentage. */
 .loader--stage {
   background: transparent;
 }
@@ -29,22 +26,16 @@
   pointer-events: none;
 }
 
-/* Still of the night stage with a can: visible from the first paint, hidden once the 3D opening can play. */
+/* Still of the night stage: visible from the first paint, hidden once the 3D opening can play.
+   A veil and a vignette keep it a backdrop, so the wordmark is the only thing that reads. */
 .loader__still {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-  background: var(--image-night-stage) center / cover no-repeat;
-  opacity: 0.75;
+  background:
+    radial-gradient(ellipse at 50% 45%, transparent 0%, var(--color-vignette) 75%),
+    linear-gradient(var(--color-surface-overlay), var(--color-surface-overlay)),
+    var(--image-night-stage) center 62% / cover no-repeat;
   transition: opacity var(--motion-slow) var(--ease-out);
-}
-
-.loader__still img {
-  height: 46vh;
-  width: auto;
-  margin-top: 14vh;
-  opacity: 0.55;
 }
 
 .loader__still.is-hidden {
@@ -71,7 +62,7 @@
   position: relative;
   display: grid;
   justify-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm);
   width: min(var(--layout-loader-word-max), calc(100vw - var(--layout-gutter) * 2));
   transition:
     transform var(--motion-slow) var(--ease-in-out),
@@ -92,11 +83,17 @@
   white-space: nowrap;
 }
 
-/* Empty glass: a hairline outline of the letters. */
+/* Frosted ice: the whole word is legible from the first frame, silver forms over it. */
+.loader__word-base,
+.loader__word-fill {
+  /* room for the italic overhang, so the last letter's corner is never clipped */
+  padding-inline: var(--space-italic-lead) var(--space-italic-overhang);
+}
+
 .loader__word-base {
   display: block;
-  color: transparent;
-  -webkit-text-stroke: var(--border-hairline) var(--color-white-a30);
+  color: var(--color-white-a08);
+  -webkit-text-stroke: var(--border-hairline) var(--color-white-a20);
 }
 
 /* Brushed silver, forming left to right out of the mist: a feathered mask follows the fill. */
@@ -125,17 +122,35 @@
 }
 
 .loader__sub {
-  margin-top: calc(var(--space-md) * -1);
-  color: var(--color-accent);
+  position: relative;
+  display: block;
+  margin-top: calc(var(--space-sm) * -1);
   font-family: var(--font-family-display);
   font-weight: var(--font-weight-display);
   font-style: italic;
   font-size: var(--font-size-3xl);
-  letter-spacing: var(--letter-spacing-wide);
+  line-height: 1;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
-  /* the wide tracking adds trailing space; pull it back so the word centres */
-  margin-right: calc(var(--letter-spacing-wide) * -1);
-  opacity: calc(0.35 + var(--loader-fill) * 0.65);
+  white-space: nowrap;
+  /* the tracking adds trailing space; pull it back so the word centres */
+  margin-right: calc(var(--letter-spacing-label) * -1);
+}
+
+.loader__sub-base {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: var(--border-hairline) color-mix(in oklab, var(--color-accent) 45%, transparent);
+}
+
+/* ENERGY fills with the flavor colour just behind the silver sweep. */
+.loader__sub-fill {
+  position: absolute;
+  inset: 0;
+  color: var(--color-accent);
+  text-shadow: var(--shadow-accent-glow);
+  -webkit-mask-image: linear-gradient(100deg, var(--color-white) calc(var(--loader-fill) * 140% - 40%), transparent calc(var(--loader-fill) * 140% - 15%));
+  mask-image: linear-gradient(100deg, var(--color-white) calc(var(--loader-fill) * 140% - 40%), transparent calc(var(--loader-fill) * 140% - 15%));
 }
 
 .loader__bar {
@@ -143,7 +158,7 @@
   display: block;
   width: 100%;
   height: var(--border-hairline);
-  margin-top: var(--space-xl);
+  margin-top: var(--space-2xl);
   background: var(--color-white-a12);
   overflow: hidden;
 }
@@ -167,7 +182,7 @@
 }
 
 .loader__tagline {
-  letter-spacing: var(--letter-spacing-wide);
+  letter-spacing: var(--letter-spacing-label);
 }
 
 .loader__percent {
@@ -198,7 +213,8 @@
 
 @media (max-width: 767px) {
   .loader__word {
-    font-size: min(var(--font-size-4xl), 17vw);
+    /* fits inside the side gutters with the italic overhang room */
+    font-size: min(var(--font-size-4xl), 15vw);
   }
 
   .loader__sub {
@@ -233,12 +249,12 @@ html[data-loading='true'] .site-frame {
   transition: opacity var(--motion-slow) var(--ease-out);
 }
 
-/* With the can in frame the wordmark sits in the upper half, the can's lid below it. */
-.loader--stage .loader__stage {
+/* Centred until the 3D opening is on screen; then the lockup lifts to make room for the lid below. */
+.loader--stage.is-staged .loader__stage {
   transform: translateY(-17vh);
 }
 
-.loader--stage.is-leaving .loader__stage {
+.loader--stage.is-staged.is-leaving .loader__stage {
   transform: translateY(-17vh) scale(1.06);
 }
 
