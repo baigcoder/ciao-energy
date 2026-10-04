@@ -28,6 +28,7 @@ import { HalalPage } from './components/HalalPage';
 import { NotFoundPage } from './components/NotFoundPage';
 import { FlavorFinder } from './components/FlavorFinder';
 import { StoreLocator } from './components/StoreLocator';
+import { PrivacyPage } from './components/PrivacyPage';
 import { PointerFX } from './components/PointerFX';
 import { CookieNotice } from './components/CookieNotice';
 import type { MenuItem } from './components/MenuDrawer';
@@ -47,6 +48,7 @@ export type AppRoute =
   | { type: 'MIX' }
   | { type: 'HALAL' }
   | { type: 'STORES' }
+  | { type: 'PRIVACY' }
   | { type: 'NOT_FOUND' }
   | { type: 'PRODUCT'; slug: string };
 
@@ -58,6 +60,7 @@ const STATIC_ROUTES: Record<string, AppRoute> = {
   '/mix': { type: 'MIX' },
   '/halal-zamzam': { type: 'HALAL' },
   '/stores': { type: 'STORES' },
+  '/privacy': { type: 'PRIVACY' },
 };
 
 function parseCurrentRoute(): AppRoute {
@@ -383,6 +386,10 @@ export const App: React.FC = () => {
       ) : route.type === 'HALAL' ? (
         <main id="main" className="page">
           <HalalPage />
+        </main>
+      ) : route.type === 'PRIVACY' ? (
+        <main id="main" className="page">
+          <PrivacyPage />
         </main>
       ) : route.type === 'STORES' ? (
         <main id="main" className="page">

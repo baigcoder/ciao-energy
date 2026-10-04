@@ -218,6 +218,7 @@
   --layout-footer-max: 50rem;
   --layout-intro-max: 30rem;
   --layout-faq-lead: 62svh;          /* FAQ title sits under the rising lineup */
+  --cta-fade-rate: 36;               /* finale call to action gone about a third into the next segment */
   --hero-fade-rate: 30;              /* hero HUD gone a quarter into the first segment, before it reaches the cans */
 
   /* Backdrop composition (viewport-relative by design) */

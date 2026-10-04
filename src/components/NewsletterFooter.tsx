@@ -1,4 +1,4 @@
-import React, { useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { BRAND, NEWSLETTER_OFFER, isTodo } from '../data/brand';
 import { ButtonLabel } from './ButtonLabel';
 
@@ -7,8 +7,8 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Newsletter sign-up. There is no mailing backend in this repo, so
- * submission is simulated; the form still exposes real validation and states.
+ * Newsletter sign-up. There is no mailing backend yet, so nothing is sent or stored: the form
+ * validates the address and then says so plainly (never claims a subscription that didn't happen).
  */
 export const NewsletterFooter: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +16,8 @@ export const NewsletterFooter: React.FC = () => {
   const [error, setError] = useState('');
   const inputId = useId();
   const messageId = useId();
+  const timer = useRef(0);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -25,7 +27,8 @@ export const NewsletterFooter: React.FC = () => {
       return;
     }
     setStatus('submitting');
-    window.setTimeout(() => {
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
       setStatus('success');
       setEmail('');
     }, 800);
@@ -69,11 +72,11 @@ export const NewsletterFooter: React.FC = () => {
 
           <p id={messageId} className={`newsletter__message ${status === 'error' ? 'is-error' : ''}`} role={status === 'error' ? 'alert' : 'status'}>
             {status === 'error' && error}
-            {status === 'success' && 'You’re subscribed. Watch your inbox for the next drop.'}
+            {status === 'success' && 'Thanks! Sign-ups open soon. We haven’t saved your address, so check back here to join the pack.'}
           </p>
 
           <p className="newsletter__legal">
-            By subscribing you accept our <a href="#privacy">privacy policy</a>.
+            By subscribing you accept our <a href="/privacy">privacy policy</a>.
           </p>
         </form>
       </div>
@@ -88,9 +91,8 @@ export const SiteFooter: React.FC = () => (
     <nav className="site-footer__bar" aria-label="Footer">
       {!isTodo(BRAND.social.tiktok) && <a className="button-outline" href={BRAND.social.tiktok} target="_blank" rel="noopener noreferrer">TikTok</a>}
       <a className="site-footer__link" href={`https://${BRAND.company.website}`} target="_blank" rel="noopener noreferrer">{BRAND.company.website}</a>
-      <a className="site-footer__link" href="#legal">Legal notice</a>
-      <a className="site-footer__link" href="#terms">Terms</a>
-      <a className="site-footer__link" href="#privacy">Privacy policy</a>
+      {/* Legal notice and terms appear once their text is supplied (see grizzly.json TODO list). */}
+      <a className="site-footer__link" href="/privacy">Privacy policy</a>
       {!isTodo(BRAND.social.instagram) && <a className="button-outline" href={BRAND.social.instagram} target="_blank" rel="noopener noreferrer">Instagram</a>}
     </nav>
   </footer>

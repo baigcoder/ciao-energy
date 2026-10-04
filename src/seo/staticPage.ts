@@ -6,6 +6,7 @@
  */
 import { BADGES, BRAND, GRIZZLY_BENEFITS, NUTRITION, isTodo } from '../data/brand';
 import { FAQ_ITEMS } from '../data/faq';
+import { PRIVACY } from '../data/privacy';
 import { PRODUCTS, getProductBySlug, getProductThumbUrl } from '../data/products';
 import { pageMeta, productFacts, type SeoRoute } from './meta';
 
@@ -51,6 +52,7 @@ function faq(): string {
 function footer(): string {
   const bits = [`${escapeHtml(BRAND.company.name)}`, escapeHtml(BRAND.origin)];
   if (!isTodo(BRAND.contactEmail)) bits.push(`<a href="mailto:${escapeHtml(BRAND.contactEmail)}">${escapeHtml(BRAND.contactEmail)}</a>`);
+  bits.push('<a href="/privacy">Privacy</a>');
   return `<footer><p>${bits.join(' · ')}</p></footer>`;
 }
 
@@ -91,6 +93,10 @@ function body(route: SeoRoute): string {
       return `${header()}<main id="main"><h1>Mix your pack</h1><p>Build a 6, 12 or 24 can pack from any mix of the six flavors.</p>${range()}</main>${footer()}`;
     case 'STORES':
       return `${header()}<main id="main"><h1>Find a store</h1><p>The store list is coming soon. You can order online in the meantime.</p><p><a href="/shop">Shop the range</a></p></main>${footer()}`;
+    case 'PRIVACY':
+      return `${header()}<main id="main"><h1>${escapeHtml(PRIVACY.title)}</h1><p>${escapeHtml(PRIVACY.intro)}</p>${PRIVACY.sections
+        .map((section) => `<h2>${escapeHtml(section.heading)}</h2>${section.items.map((item) => `<p>${escapeHtml(item)}</p>`).join('')}`)
+        .join('')}<p>${escapeHtml(PRIVACY.note)}</p></main>${footer()}`;
     case 'CART':
       return `${header()}<main id="main"><h1>Your bag</h1><p><a href="/shop">Shop the range</a></p></main>`;
     case 'CHECKOUT':

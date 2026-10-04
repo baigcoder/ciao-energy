@@ -7,6 +7,7 @@
  * figures, no reviews, no addresses until they are confirmed.
  */
 import { BADGES, BRAND, GRIZZLY_FLAVORS, isTodo } from '../data/brand';
+import { PRIVACY } from '../data/privacy';
 import { FAQ_ITEMS } from '../data/faq';
 import { PRODUCTS, type Product } from '../data/products';
 
@@ -16,6 +17,7 @@ export type SeoRoute =
   | { type: 'MIX' }
   | { type: 'HALAL' }
   | { type: 'STORES' }
+  | { type: 'PRIVACY' }
   | { type: 'CART' }
   | { type: 'CHECKOUT' }
   | { type: 'NOT_FOUND' }
@@ -182,6 +184,15 @@ export function pageMeta(route: SeoRoute): PageMeta {
         noindex: false,
         jsonLd: [breadcrumb([{ name: 'Home', path: '/' }, { name: 'Find a store', path: '/stores' }])],
       };
+    case 'PRIVACY':
+      return {
+        path: '/privacy',
+        title: `Privacy – ${BRAND.name}`,
+        description: PRIVACY.intro,
+        image: imageFor(),
+        noindex: false,
+        jsonLd: [breadcrumb([{ name: 'Home', path: '/' }, { name: 'Privacy', path: '/privacy' }])],
+      };
     case 'CART':
       return { path: '/cart', title: `Your bag – ${BRAND.name}`, description: `Your ${BRAND.name} bag.`, image: imageFor(), noindex: true, jsonLd: [] };
     case 'CHECKOUT':
@@ -200,6 +211,7 @@ export function indexableRoutes(): SeoRoute[] {
     { type: 'MIX' },
     { type: 'HALAL' },
     { type: 'STORES' },
+    { type: 'PRIVACY' },
   ];
 }
 

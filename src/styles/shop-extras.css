@@ -967,3 +967,10 @@ select.field__input--plain option {
 .story__seal .halal-seal {
   width: min(var(--size-seal), 40vw);
 }
+
+/* Privacy page lists: plain, readable, no bullets (each item is a full sentence). */
+.story-block__list {
+  display: grid;
+  gap: var(--space-sm);
+  list-style: none;
+}

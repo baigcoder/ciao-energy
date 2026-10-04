@@ -36,7 +36,7 @@ export const CookieNotice: React.FC<{ isReady: boolean }> = ({ isReady }) => {
     <aside className="cookie-notice" aria-label="Storage notice">
       <p className="cookie-notice__text">
         We only store your bag, saved items and language in this browser. No tracking, no ad cookies.{' '}
-        <a href="#privacy">Privacy policy</a>
+        <a href="/privacy">Privacy policy</a>
       </p>
       <button type="button" className="button-outline" onClick={dismiss}>
         Got it

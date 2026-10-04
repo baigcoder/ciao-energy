@@ -34,7 +34,9 @@ body[data-scene] .site-header::before {
 }
 
 body[data-scene='benefit'] .site-header::before,
-body[data-scene='argument'] .site-header::before {
+body[data-scene='argument'] .site-header::before,
+body[data-scene='faq'] .site-header::before,
+body[data-scene='newsletter'] .site-header::before {
   opacity: var(--opacity-scrim);
 }
 

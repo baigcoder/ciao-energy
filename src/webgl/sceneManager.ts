@@ -1116,7 +1116,7 @@ export class SceneManager {
         const isFeatured = p > 0.4;
         const fromScale = isFeatured ? this.data.canScale : 0;
         can.visible = isDuplicate ? isFeatured && s < 0.25 : isFeatured || s > 0.25;
-        const mobileK = isMobile ? 0.33 : 1; // phones: the whole ridge fits the narrow frame
+        const mobileK = isMobile ? 0.3 : 1; // phones: the whole ridge fits the narrow frame, with a margin
         // Each can drops in on its own beat (back row first), with a small settle.
         const local = THREE.MathUtils.clamp((s - slot.delay * 0.7) / (1 - slot.delay * 0.7), 0, 1);
         const drop = (1 - landing(local)) * 9;

@@ -959,7 +959,8 @@
 }
 
 .lineup.is-active .lineup__cta {
-  opacity: 1;
+  /* full while the finale holds; fades fast once scrolled past, before it can ride up over the cans */
+  opacity: clamp(0, calc(1 - (var(--scroll-progress, 0) - var(--section-at, 1)) * var(--cta-fade-rate)), 1);
   transform: translate(-50%, 0);
 }
 
