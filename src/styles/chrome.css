@@ -33,6 +33,7 @@ body[data-scene] .site-header::before {
   pointer-events: none;
 }
 
+body[data-scene='flavor'] .site-header::before,
 body[data-scene='benefit'] .site-header::before,
 body[data-scene='argument'] .site-header::before,
 body[data-scene='faq'] .site-header::before,

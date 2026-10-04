@@ -18,7 +18,7 @@ import { RECIPES, buildFruitMesh, type Kind } from './fruitField';
  * chapter's DOM copy and the lit label block carry the benefit.
  */
 const CHAPTER = 3; // section position of the electrolytes chapter (benefits-2)
-const BUBBLES = 180;
+const BUBBLES = 420; // carbonation: many small bubbles read as fizz, a few big ones read as a lava lamp
 
 const WALL_FRAGMENT = /* glsl */ `
   uniform vec3 uAccent;
@@ -29,8 +29,9 @@ const WALL_FRAGMENT = /* glsl */ `
     float h = vPos.y / ${(CAN.shellHeight / 2).toFixed(2)};
     float top = smoothstep(-0.8, 1.0, h);
     float ripple = 0.5 + 0.5 * sin(vPos.x * 9.0 + vPos.z * 7.0 + uTime * 0.6 + vPos.y * 4.0);
-    vec3 col = mix(vec3(0.004, 0.02, 0.04), uAccent * 0.18 + vec3(0.02, 0.07, 0.1), top);
-    col += vec3(0.25, 0.5, 0.65) * ripple * ripple * top * 0.12;
+    // the drink itself: deep flavor colour below, lit flavor colour under the opening (no fixed blue mixed in)
+    vec3 col = mix(uAccent * 0.025 + vec3(0.002, 0.004, 0.006), uAccent * 0.32 + vec3(0.02, 0.03, 0.035), top);
+    col += mix(vec3(0.6, 0.7, 0.75), uAccent, 0.5) * ripple * ripple * top * 0.1;
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -49,21 +50,29 @@ const BUBBLE_VERTEX = /* glsl */ `
     vec3 p = vec3(position.x + sway * 0.05, y, position.z + cos(uTime * 0.5 + seed.x * 6.28) * 0.05);
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
-    gl_PointSize = (4.0 + seed.w * 14.0) * uScale / max(0.5, -mv.z) * 6.0;
-    vFade = smoothstep(-1.9, -1.2, y) * (1.0 - smoothstep(1.3, 1.9, y));
+    // mostly fine bubbles, a few larger ones (seed.w cubed skews the sizes small)
+    gl_PointSize = (3.0 + seed.w * seed.w * seed.w * 14.0) * uScale / max(0.5, -mv.z) * 6.0;
+    vFade = smoothstep(-1.9, -1.2, y) * (1.0 - smoothstep(1.3, 1.9, y)) * clamp(1.6 / max(0.6, -mv.z), 0.35, 1.0);
   }
 `;
 
 const BUBBLE_FRAGMENT = /* glsl */ `
   varying float vFade;
+  uniform vec3 uAccent;
   void main() {
-    vec2 c = gl_PointCoord - 0.5;
-    float d = length(c);
-    float ring = smoothstep(0.5, 0.4, d) * smoothstep(0.22, 0.42, d);
-    float glint = smoothstep(0.1, 0.0, length(c - vec2(-0.14, 0.14)));
-    float a = (ring * 0.85 + glint * 0.9 + smoothstep(0.5, 0.0, d) * 0.06) * vFade;
-    if (a < 0.01) discard;
-    gl_FragColor = vec4(vec3(0.75, 0.92, 1.0) * a, a);
+    // a glassy sphere: bright fresnel rim, nearly clear centre, a hot key highlight up-left and a
+    // faint caustic opposite (light focused through the bubble)
+    vec2 c = (gl_PointCoord - 0.5) * 2.0;
+    float r2 = dot(c, c);
+    if (r2 > 1.0) discard;
+    float n = sqrt(1.0 - r2);
+    float rim = pow(1.0 - n, 2.2);
+    float edge = smoothstep(1.0, 0.86, sqrt(r2));
+    float key = pow(max(0.0, dot(normalize(vec3(c, n)), normalize(vec3(-0.45, 0.55, 0.7)))), 40.0);
+    float caustic = smoothstep(0.35, 0.0, length(c - vec2(0.32, -0.38))) * 0.25;
+    vec3 tint = mix(vec3(0.85, 0.95, 1.0), uAccent, 0.25);
+    float a = (rim * 0.75 * edge + key * 1.2 + caustic + 0.04) * vFade;
+    gl_FragColor = vec4(tint * a, a);
   }
 `;
 
@@ -117,7 +126,7 @@ export class InsideCan implements SceneMoment {
     bubbleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     bubbleGeometry.setAttribute('seed', new THREE.BufferAttribute(seeds, 4));
     this.bubbleMaterial = new THREE.ShaderMaterial({
-      uniforms: { uTime: time, uScale: { value: 1 } },
+      uniforms: { uTime: time, uScale: { value: 1 }, uAccent: accent },
       vertexShader: BUBBLE_VERTEX,
       fragmentShader: BUBBLE_FRAGMENT,
       transparent: true,

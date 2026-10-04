@@ -16,7 +16,7 @@ const FinishShader = {
     uTime: { value: 0 },
     uGrain: { value: 0.035 },
     uVignette: { value: 0.55 },
-    uAberration: { value: 0.0006 },
+    uAberration: { value: 0.0 }, // off: it softened label edges toward the frame corners
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -74,7 +74,8 @@ export class PostFx {
     this.composer.addPass(new RenderPass(scene, camera));
     // Highlight-only bloom: the threshold sits above the lit label and lacquer, so only
     // specular glints, the rim light and the glow blocks bleed.
-    this.bloom = tier === 'HIGH' ? new UnrealBloomPass(new THREE.Vector2(width, height), 0.42, 0.55, 1.1) : null;
+    // threshold well above the lit lid and label: only true specular glints bloom, so no halo round the can
+    this.bloom = tier === 'HIGH' ? new UnrealBloomPass(new THREE.Vector2(width, height), 0.24, 0.35, 1.7) : null;
     if (this.bloom) this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
     this.finish = new ShaderPass(FinishShader);

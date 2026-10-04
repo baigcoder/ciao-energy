@@ -68,6 +68,7 @@ const BACKDROP_FRAGMENT = /* glsl */ `
   uniform float uWipe;        // 0..1 colour wave radius
   uniform vec2 uWipeOrigin;   // uv of the wave centre
   uniform float uMoon;        // moon glow strength
+  uniform float uField;       // 0 night stage, 1 full-bleed flavor colour field (flavor chapters)
   uniform float uMoonPhase;   // real phase today: 0 new, 0.5 full
   uniform vec2 uTwilight;     // x dawn, y dusk (visitor's local time), 0..1
   uniform float uMountains;   // 0 hides the ridges (close-up chapters), 1 full
@@ -315,6 +316,26 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     col += accent * (0.035 * exp(-gd * 2.6) + 0.1 * exp(-gd * 8.0)) * uGlow;
     col += accent * 0.003 * (1.0 - smoothstep(0.0, 1.0, (uv.y - uHorizon) / (1.0 - uHorizon + 0.001)));
 
+    // Flavor colour field: the flavor chapters leave the night for a saturated studio of the
+    // flavor's own colour: deep at the edges, a luminous core behind the can, slow soft haze.
+    if (uField > 0.001) {
+      vec2 fq = (uv - uGlowPos) * vec2(asp, 1.0);
+      float core = exp(-dot(fq, fq) * 1.6);
+      float band = 1.0 - smoothstep(0.0, 0.75, abs(uv.y - 0.5) * 1.5);
+      vec3 deep = accent * 0.035 + vec3(0.002, 0.002, 0.004);
+      vec3 body = accent * 0.3;
+      vec3 bright = mix(accent, vec3(1.0), 0.18) * 0.72;
+      vec3 field = mix(deep, body, band);
+      field = mix(field, bright, core * 0.7);
+      // only a breath of slow haze: a clean studio gradient, never blotchy
+      float haze = vnoise(vec2(uv.x * asp * 0.9 + t * 0.01, uv.y * 1.3 - t * 0.006));
+      field *= 0.96 + 0.08 * haze;
+      // a whisper of the range, in a darker shade of the field, so it is still the wild
+      float ridge = 0.32 + 0.05 * sin(uv.x * asp * 3.1 + 1.3) + 0.03 * sin(uv.x * asp * 7.7);
+      field *= mix(1.0, 0.82, smoothstep(ridge + 0.006, ridge - 0.006, uv.y) * 0.6);
+      col = mix(col, field, uField);
+      skyVis *= 1.0 - uField;
+    }
     col += vec3(0.8, 0.9, 1.0) * uFlash * (0.25 + 0.5 * exp(-md * 2.0));
     // alpha carries how much open sky is left for the display pass's stars
     gl_FragColor = vec4(col, skyVis);
@@ -378,7 +399,8 @@ const MIST_FRAGMENT = /* glsl */ `
     if (uWater > 0.001) {
       float shaft = pow(fbm(vec2(vUv.x * 5.0 + uTime * 0.04, uTime * 0.025)), 3.0);
       float top = smoothstep(0.1, 1.0, vUv.y);
-      vec3 water = mix(vec3(0.003, 0.02, 0.035), uAccent * 0.12 + vec3(0.02, 0.07, 0.11), top);
+      // the drink's own colour (amber for peach, deep blue for blue raspberry), not a fixed blue
+      vec3 water = mix(uAccent * 0.02 + vec3(0.002, 0.004, 0.006), uAccent * 0.2 + vec3(0.02, 0.03, 0.04), top);
       water += vec3(0.35, 0.55, 0.65) * shaft * top * 0.3;
       col = mix(col, water, uWater);
       a = max(a, uWater * 0.6);
@@ -412,6 +434,8 @@ export interface StageParams {
   glow: number;
   glowPos: THREE.Vector2;
   stars: number;
+  /** 0 night stage, 1 full-bleed flavor colour field. */
+  field: number;
   /** Live sky: today's real moon phase (0..1) and local dawn / dusk strength (0..1). */
   moonPhase: number;
   dawn: number;
@@ -474,6 +498,7 @@ export class Stage {
         uMountains: { value: 1 },
         uMist: { value: 1 },
         uFlash: { value: 0 },
+        uField: { value: 0 },
         uGlow: { value: 1 },
         uGlowPos: { value: new THREE.Vector2(0.5, 0.4) },
       },
@@ -564,6 +589,7 @@ export class Stage {
     u.uWipe.value = p.wipe;
     u.uWipeOrigin.value.copy(p.wipeOrigin);
     u.uMoon.value = p.moon;
+    u.uField.value = p.field;
     u.uMoonPhase.value = p.moonPhase;
     u.uTwilight.value.set(p.dawn, p.dusk);
     u.uMountains.value = p.mountains;

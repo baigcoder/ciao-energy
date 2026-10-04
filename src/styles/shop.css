@@ -342,7 +342,9 @@
   padding: var(--space-xs);
   border: var(--border-hairline) solid var(--color-line);
   border-radius: var(--radius-sm);
-  background: var(--color-surface-overlay);
+  /* frosted glass that takes the flavor tint from the colour field behind it */
+  background: color-mix(in oklab, var(--color-accent-deep) 45%, transparent);
+  backdrop-filter: blur(var(--blur-glass));
   cursor: pointer;
   transition: border-color var(--motion-instant) var(--ease-out), background-color var(--motion-instant) var(--ease-out), transform var(--motion-instant) var(--ease-out);
 }
@@ -367,9 +369,9 @@
 }
 
 .pack-option.is-selected {
-  border-color: var(--color-accent);
-  background: color-mix(in oklab, var(--color-accent) 20%, var(--color-surface-overlay));
-  box-shadow: inset 0 0 0 var(--border-hairline) var(--color-accent);
+  border-color: var(--color-text-primary);
+  background: color-mix(in oklab, var(--color-accent) 28%, var(--color-accent-deep));
+  box-shadow: inset 0 0 0 var(--border-hairline) var(--color-text-primary), 0 0 var(--space-lg) 0 color-mix(in oklab, var(--color-accent) 45%, transparent);
 }
 
 .pack-option.is-disabled {
@@ -389,7 +391,8 @@
 .pack-option__badge {
   font-size: var(--font-size-xs);
   text-transform: uppercase;
-  color: var(--color-accent);
+  /* readable on every flavor field: light text, not the accent on its own colour */
+  color: var(--color-text-muted);
 }
 
 .pdp-buy {
@@ -958,4 +961,10 @@ html[data-pdp-end] .pdp-buybar {
   .pdp-buybar {
     translate: none;
   }
+}
+
+/* On the selected tile's brighter flavor fill, secondary text goes full white (AA on every flavor). */
+.pack-option.is-selected .pack-option__price,
+.pack-option.is-selected .pack-option__badge {
+  color: var(--color-text-primary);
 }

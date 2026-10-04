@@ -84,6 +84,7 @@ export class SceneManager {
     wipe: 1,
     wipeOrigin: new THREE.Vector2(0.5, 0.5),
     moon: 1,
+    field: 0,
     moonPhase: 0.5,
     dawn: 0,
     dusk: 0,
@@ -201,7 +202,7 @@ export class SceneManager {
     camPosX: 0, camPosY: 0, camPosZ: 29, camRotX: 0, camRotY: 0, camRotZ: 0, fov: 20,
     canScale: 1.2, canPosX: 0, canPosY: 0, canPosZ: 0, canRotX: 0, canRotY: 0, canRotZ: 0, canSpin: 0,
     spacing: 1, wave: 1, swirl: 0, pointerInfluence: 0.15, labelDim: 0,
-    floorY: -3.6, reflect: 1, mountains: 1, moon: 1, mistFg: 0.6, glow: 1, stars: 1,
+    floorY: -3.6, reflect: 1, mountains: 1, moon: 1, mistFg: 0.6, glow: 1, stars: 1, field: 0,
   };
 
   public routeMode: 'HOME' | 'PRODUCT' | 'PAGE' = 'HOME';
@@ -401,7 +402,8 @@ export class SceneManager {
       void this.labels.ensureAlbedo(neighbour, 1);
       void this.labels.ensureSurface(neighbour);
     });
-    if (closeUp && this.labels.maxLod >= 2) void this.labels.ensureAlbedo(focusFlavor, 2);
+    // the featured can always gets the sharpest label on capable GPUs (hero included, not only close-ups)
+    if ((closeUp || this.quality === 'HIGH') && this.labels.maxLod >= 2) void this.labels.ensureAlbedo(focusFlavor, 2);
     // Everything else loads when the browser is idle.
     const idle = () => FLAVORS.forEach((_, index) => void this.labels.ensureAlbedo(index, 1));
     const idleWindow = window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number };
@@ -882,7 +884,8 @@ export class SceneManager {
       this.scrollVelocity += (target - this.scrollVelocity) * (1 - Math.exp(-5 * delta));
     }
 
-    const timelineBlend = 1 - Math.exp(-14 * delta);
+    // the camera trails the scroll a little (cinematic follow), never snapping to it
+    const timelineBlend = 1 - Math.exp(-9 * delta);
     this.currentTimelineProgress += (this.targetTimelineProgress - this.currentTimelineProgress) * timelineBlend;
     if (Math.abs(this.targetTimelineProgress - this.currentTimelineProgress) > 0.0001) {
       this.masterTimeline.seek(this.currentTimelineProgress * this.masterTimeline.duration());
@@ -996,9 +999,12 @@ export class SceneManager {
     p.camY = this.camera.position.y;
     p.scroll = this.sectionPosition;
     p.moon = d.moon;
+    p.field = d.field;
     p.mountains = d.mountains;
-    p.mist = 0.6 + 0.4 * d.mistFg;
-    p.mistFg = d.mistFg * (this.quality === 'HIGH' ? 1 : 0.7);
+    // the colour field is a clean studio gradient: no night mist drawn over it
+    const clear = 1 - THREE.MathUtils.clamp(d.field, 0, 1);
+    p.mist = (0.6 + 0.4 * d.mistFg) * clear;
+    p.mistFg = d.mistFg * (this.quality === 'HIGH' ? 1 : 0.7) * clear;
     p.glow = d.glow;
     p.stars = d.stars;
     p.flash = this.fx.flash;
@@ -1027,7 +1033,7 @@ export class SceneManager {
     if (this.pageFrame % 2 === 1) return;
     this.cans.forEach((can) => (can.visible = false));
     this.reflections?.hideAll();
-    Object.assign(this.data, { camPosX: 0, camPosY: 0, camPosZ: 29, camRotX: 0.04, camRotY: 0, camRotZ: 0, mountains: 0.55, moon: 0.7, mistFg: 0.5, glow: 0, stars: 0.8 });
+    Object.assign(this.data, { camPosX: 0, camPosY: 0, camPosZ: 29, camRotX: 0.04, camRotY: 0, camRotZ: 0, mountains: 0.55, moon: 0.7, mistFg: 0.5, glow: 0, stars: 0.8, field: 0 });
     this.applyCamera(false, time);
     this.updateAccent(this.carousel.getIndex(), time);
     this.updateStage(time, null);
@@ -1326,7 +1332,8 @@ export class SceneManager {
     const eased = smooth(this.routeBlend);
 
     // Same lens as the home scene so the can keeps its scale while travelling.
-    Object.assign(this.data, { camRotX: 0.04, camRotY: 0, camRotZ: 0, floorY: -3.4, reflect: 1, mountains: 0.8, moon: 0.9, mistFg: 0.7, glow: 1, stars: 1, wave: 0, swirl: 0, labelDim: 0 });
+    // product page: the flavor's own colour field, like a studio packshot (the can on its colour)
+    Object.assign(this.data, { camRotX: 0.04, camRotY: 0, camRotZ: 0, floorY: -3.4, reflect: 0.6, mountains: 0.8, moon: 0.9, mistFg: 0.25, glow: 1, stars: 0, wave: 0, swirl: 0, labelDim: 0, field: 0.75 });
     this.camera.fov = PRODUCT_CAMERA.fov;
     this.camera.updateProjectionMatrix();
     this.tmpVector.set(PRODUCT_CAMERA.x, PRODUCT_CAMERA.y, PRODUCT_CAMERA.z);

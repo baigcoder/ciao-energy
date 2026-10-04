@@ -20,6 +20,8 @@ export interface SceneStateConfig {
     mistFg: number;
     glow: number;
     stars: number;
+    /** 0 night stage, 1 full-bleed flavor colour field. */
+    field: number;
   };
   spacing: number;
   /** 1 = hero ring, 0 = single featured can. */
@@ -39,9 +41,10 @@ const cam = (posX: number, posY: number, posZ: number, rotX = 0, rotY = 0, rotZ 
 
 const LIGHT = { pointerInfluence: 0.15 };
 
-const STAGE = { floorY: -3.6, reflect: 1, mountains: 1, moon: 1, mistFg: 0.7, glow: 1, stars: 1 };
+const STAGE = { floorY: -3.6, reflect: 1, mountains: 1, moon: 1, mistFg: 0.7, glow: 1, stars: 1, field: 0 };
 /** Close-ups fill the frame with label: the night recedes to a faint glow. */
-const STAGE_CLOSE = { floorY: -9, reflect: 0, mountains: 0.35, moon: 0.45, mistFg: 0.25, glow: 1.15, stars: 0.5 };
+/** Close-ups leave the night for the flavor's own colour field (the can is the only object). */
+const STAGE_CLOSE = { floorY: -9, reflect: 0, mountains: 0.35, moon: 0.45, mistFg: 0.15, glow: 1.15, stars: 0, field: 0.85 };
 
 /**
  * Benefit poses come from the label layout: the can turns so the right panel's centre faces the
@@ -94,7 +97,7 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
     camera: cam(-1.4, 0.2, 27, 0.03, 0.05, 0),
     product: { scale: 1.35, posX: -0.9, posY: 0.1, posZ: 0, rotX: 6 * DEG, rotY: 0.34, rotZ: 12 * DEG, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0.12 },
-    stage: { ...STAGE, floorY: -4.4, reflect: 0.7, mistFg: 0.55 },
+    stage: { ...STAGE, floorY: -4.4, reflect: 0.5, mistFg: 0.2, stars: 0, field: 1 },
     spacing: CAROUSEL_CONFIG.spacing,
     wave: 0,
     swirl: 0,
@@ -111,7 +114,7 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
     camera: cam(0, 0.4, 28, -0.02),
     product: { scale: 1.45, posX: 0, posY: 0.1, posZ: 0, rotX: 5 * DEG, rotY: 0.26, rotZ: 5 * DEG, spin: 0 },
     lighting: LIGHT,
-    stage: { ...STAGE, floorY: -3.4, mistFg: 0.9 },
+    stage: { ...STAGE, floorY: -3.4, mistFg: 0.35, stars: 0, field: 1 },
     spacing: CAROUSEL_CONFIG.spacing,
     wave: 0,
     swirl: 0,

@@ -81,4 +81,6 @@ export interface Scene3DData {
   mistFg: number;
   glow: number;
   stars: number;
+  /** 0 night stage, 1 full-bleed flavor colour field (the flavor chapters). */
+  field: number;
 }

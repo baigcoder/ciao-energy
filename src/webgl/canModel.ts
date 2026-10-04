@@ -370,8 +370,8 @@ export function createCanMaterials(
         anisotropy: 0.3,
         anisotropyRotation: 0,
         // printed cans are varnished: a crisp clear coat gives the long vertical studio highlight
-        clearcoat: 0.85,
-        clearcoatRoughness: 0.22, // a broad, soft softbox band rather than a hairline streak
+        clearcoat: 0.55,
+        clearcoatRoughness: 0.32, // a broad, soft varnish sheen rather than a hard stripe
         envMapIntensity: 1,
       });
   applyCanSurfaceShader(bodyMat);
@@ -385,9 +385,9 @@ export function createCanMaterials(
     : new THREE.MeshPhysicalMaterial({
         color: 0xb4b8c1,
         metalness: 1,
-        roughness: 0.3, // machined lid: crisp rings, soft hotspot
+        roughness: 0.34, // machined lid: crisp rings, a hotspot that never clips to white
         anisotropy: 0.35,
-        envMapIntensity: 0.8,
+        envMapIntensity: 0.6,
       });
   return { bodyMat, aluminumMat };
 }
@@ -418,9 +418,10 @@ export function setCanFocus(can: THREE.Object3D, focus: number) {
     if (surface) {
       surface.uFocus.value = focus;
       material.envMapIntensity = 0.45 + 0.55 * focus;
-      surface.uRimStrength.value = 0.9 - 0.55 * focus + boost;
+      // a faint coloured rim separates side cans from the night; the featured can gets almost none (no outline glow)
+      surface.uRimStrength.value = 0.45 - 0.37 * focus + boost;
       const physical = material as THREE.MeshPhysicalMaterial;
-      if (physical.isMeshPhysicalMaterial) physical.clearcoat = Math.max(0.001, 0.85 * focus); // never 0: avoids a shader recompile
+      if (physical.isMeshPhysicalMaterial) physical.clearcoat = Math.max(0.001, 0.55 * focus); // never 0: avoids a shader recompile
     } else if (material.color) {
       // machined aluminium: dim it with the label, relative to its authored colour and reflectance
       const base = (material.userData.base ??= { color: material.color.clone(), env: material.envMapIntensity }) as { color: THREE.Color; env: number };
