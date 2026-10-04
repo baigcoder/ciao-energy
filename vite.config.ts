@@ -23,6 +23,21 @@ const servePrerenderedRoutes = (): Plugin => ({
 
 export default defineConfig({
   plugins: [react(), servePrerenderedRoutes()],
+  build: {
+    rollupOptions: {
+      output: {
+        // Vendor code changes far less often than the app: separate, stable file names keep it cached
+        // across deploys, and the 3D engine stays out of the first-paint bundle (it loads with the scene).
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'vendor-react';
+          if (/node_modules\/three\//.test(id)) return 'vendor-three';
+          if (/node_modules\/(gsap|lenis)\//.test(id)) return 'vendor-motion';
+          return undefined;
+        },
+      },
+    },
+  },
   test: {
     include: ['src/**/*.test.ts'],
   },

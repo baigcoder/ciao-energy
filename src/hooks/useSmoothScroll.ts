@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import Lenis from 'lenis';
-import Snap from 'lenis/snap';
+import type Lenis from 'lenis';
+import type Snap from 'lenis/snap';
 
 export function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -18,31 +18,42 @@ export function useSmoothScroll(enabled: boolean, snapSelector?: string) {
 
   useEffect(() => {
     if (!enabled || prefersReducedMotion()) return;
-    const lenis = new Lenis({ lerp: 0.075, wheelMultiplier: 0.9, touchMultiplier: 1.3, smoothWheel: true });
-    lenisRef.current = lenis;
-    let frame = 0;
-    const loop = (time: number) => {
-      lenis.raf(time);
+    // Lenis is only for the home story: it loads (as its own chunk) when the home page needs it, never on shop,
+    // bag or checkout.
+    let cancelled = false;
+    let cleanup: () => void = () => {};
+    void Promise.all([import('lenis'), import('lenis/snap')]).then(([{ default: LenisCtor }, { default: SnapCtor }]) => {
+      if (cancelled) return;
+      const lenis = new LenisCtor({ lerp: 0.075, wheelMultiplier: 0.9, touchMultiplier: 1.3, smoothWheel: true });
+      lenisRef.current = lenis;
+      let frame = 0;
+      const loop = (time: number) => {
+        lenis.raf(time);
+        frame = requestAnimationFrame(loop);
+      };
       frame = requestAnimationFrame(loop);
-    };
-    frame = requestAnimationFrame(loop);
 
-    let snap: Snap | null = null;
-    if (snapSelector) {
-      snap = new Snap(lenis, {
-        type: 'proximity',
-        distanceThreshold: '14%',
-        duration: 1.2,
-        easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2),
-        debounce: 320,
-      });
-      snap.addElements(Array.from(document.querySelectorAll<HTMLElement>(snapSelector)), { align: 'start' });
-    }
+      let snap: Snap | null = null;
+      if (snapSelector) {
+        snap = new SnapCtor(lenis, {
+          type: 'proximity',
+          distanceThreshold: '14%',
+          duration: 1.2,
+          easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2),
+          debounce: 320,
+        });
+        snap.addElements(Array.from(document.querySelectorAll<HTMLElement>(snapSelector)), { align: 'start' });
+      }
+      cleanup = () => {
+        cancelAnimationFrame(frame);
+        snap?.destroy();
+        lenis.destroy();
+        lenisRef.current = null;
+      };
+    });
     return () => {
-      cancelAnimationFrame(frame);
-      snap?.destroy();
-      lenis.destroy();
-      lenisRef.current = null;
+      cancelled = true;
+      cleanup();
     };
   }, [enabled, snapSelector]);
 

@@ -28,6 +28,8 @@ export class LabelTextures {
   public onChange: ((flavorIndex: number) => void) | null = null;
   /** Highest level this device may use (mobile stays at 2k). */
   public maxLod = 2;
+  /** Low-power cans have no normal map, so their emboss maps are never downloaded. */
+  public loadNormals = true;
 
   constructor(renderer: THREE.WebGLRenderer) {
     this.loader = new KTX2Loader().setTranscoderPath('/basis/').detectSupport(renderer);
@@ -81,19 +83,21 @@ export class LabelTextures {
     const slug = FLAVORS[index].id;
     const promise = Promise.all([
       this.loadTexture(`${BASE}/ktx2/${slug}-surface.ktx2`, `${BASE}/${slug}-surface.png`, false),
-      this.loadTexture(`${BASE}/ktx2/${slug}-normal.ktx2`, `${BASE}/${slug}-normal.png`, false),
+      this.loadNormals ? this.loadTexture(`${BASE}/ktx2/${slug}-normal.ktx2`, `${BASE}/${slug}-normal.png`, false) : Promise.resolve(null),
     ])
       .then(([surface, normal]) => {
         if (this.disposed) {
           surface.dispose();
-          normal.dispose();
+          normal?.dispose();
           return;
         }
         const maps = this.maps[index];
         maps.surface.dispose();
-        maps.normal.dispose();
         maps.surface = surface;
-        maps.normal = normal;
+        if (normal) {
+          maps.normal.dispose();
+          maps.normal = normal;
+        }
         maps.surfaceReady = true;
         this.onChange?.(index);
       })

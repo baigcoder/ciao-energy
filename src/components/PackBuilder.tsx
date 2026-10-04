@@ -67,7 +67,7 @@ export const PackBuilder: React.FC<PackBuilderProps> = ({ onNavigate }) => {
     }
     setState('added');
     audioManager.play('open');
-    flyToBag(`/products/thumbs/${mix[0].slug}.png`, event.currentTarget);
+    flyToBag(`/products/thumbs/${mix[0].slug}.webp`, event.currentTarget);
     setSlots(Array(pack.count).fill(null));
   };
 

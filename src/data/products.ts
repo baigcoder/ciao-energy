@@ -84,7 +84,7 @@ export function getProductBySlug(slug: string): Product | undefined {
 
 /** Small transparent packshot for the bag and related flavors. */
 export function getProductThumbUrl(product: Pick<Product, 'slug'>): string {
-  return `/products/thumbs/${product.slug}.png`;
+  return `/products/thumbs/${product.slug}.webp`;
 }
 
 /** PKR, no decimals ("Rs 1,400"); Urdu digits stay Latin for price legibility. */

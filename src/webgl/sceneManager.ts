@@ -228,6 +228,8 @@ export class SceneManager {
   private productCanIndex = 0;
   private routeBlend = 1;
   private hasRenderedHome = false;
+  /** The constructor renders one frame in the default HOME mode: label streaming waits for the app's real route. */
+  private routeSet = false;
   private readonly routeFrom = Array.from({ length: CAN_COUNT }, () => ({
     position: new THREE.Vector3(),
     quaternion: new THREE.Quaternion(),
@@ -350,7 +352,8 @@ export class SceneManager {
 
   private setupSceneObjects() {
     this.labels = new LabelTextures(this.renderer);
-    this.labels.maxLod = this.isLowPower ? 1 : 2;
+    this.labels.maxLod = this.isLowPower || this.dataSaver ? 1 : 2;
+    this.labels.loadNormals = !this.isLowPower;
     this.labels.onChange = (flavorIndex) => this.applyLabelMaps(flavorIndex);
 
     for (let i = 0; i < CAN_COUNT; i += 1) {
@@ -361,8 +364,9 @@ export class SceneManager {
       this.cans.push(can);
       this.scene.add(can);
     }
-    // First frame: the 1k level of every flavor (≈120 KB each); sharper levels stream in by need.
-    FLAVORS.forEach((_, index) => void this.labels.ensureAlbedo(index, 0));
+    // No label is downloaded here: a plain page never shows a can, and a product page only needs its own flavor.
+    // The home story loads the 1k level of every flavor (≈120 KB each) from setRoute('HOME'); sharper levels
+    // stream in by need (streamLabels).
 
     this.canHoverInfluence = new Float32Array(CAN_COUNT);
     this.canIdlePhase = new Float32Array(CAN_COUNT);
@@ -393,7 +397,15 @@ export class SceneManager {
     this.reflections?.setAlbedo(flavorIndex, maps.albedo);
   }
 
-  /** Streams the sharper label levels for the flavors that matter right now. */
+  /**
+   * Streams label detail by need, not by default (it used to pull 2k for all six flavors and a 4k for the
+   * hero, ≈14 MB before the first scroll):
+   *   1k  every can, first frame (≈120 KB each)
+   *   2k  the focused can (phones: only in close-ups); neighbours get their surface maps (they carry the
+   *       brushed-metal look)
+   *   4k  only a close-up on a capable, high-density screen, never on phones or with data saver on
+   * The next flavor's 2k is prefetched when idle, but only on capable, unmetered-looking devices.
+   */
   private lastStreamKey = '';
   private streamLabels(focusFlavor: number, closeUp: boolean) {
     const key = `${focusFlavor}:${closeUp}`;
@@ -401,19 +413,43 @@ export class SceneManager {
     this.lastStreamKey = key;
     const count = FLAVORS.length;
     void this.labels.ensureSurface(focusFlavor);
-    void this.labels.ensureAlbedo(focusFlavor, 1);
-    [1, count - 1].forEach((step) => {
-      const neighbour = (focusFlavor + step) % count;
-      void this.labels.ensureAlbedo(neighbour, 1);
-      void this.labels.ensureSurface(neighbour);
+    // Phones show the hero can small: their 1k level is enough there, and 2k comes with the close-ups.
+    if (closeUp || !this.isLowPower) void this.labels.ensureAlbedo(focusFlavor, 1);
+    [1, count - 1].forEach((step) => void this.labels.ensureSurface((focusFlavor + step) % count));
+    if (closeUp && this.wantsDetail4k()) void this.labels.ensureAlbedo(focusFlavor, 2);
+    if (this.isLowPower || this.dataSaver) return;
+    // Prefetch the next flavor's 2k only once the visitor has engaged (a bounce never pays for it), and only
+    // when the browser is idle.
+    void this.engaged.then(() => {
+      const idle = () => void this.labels.ensureAlbedo((this.carousel.getIndex() + 1) % count, 1);
+      const idleWindow = window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number };
+      if (idleWindow.requestIdleCallback) idleWindow.requestIdleCallback(idle, { timeout: 4000 });
+      else window.setTimeout(idle, 1500);
     });
-    // the featured can always gets the sharpest label on capable GPUs (hero included, not only close-ups)
-    if ((closeUp || this.quality === 'HIGH') && this.labels.maxLod >= 2) void this.labels.ensureAlbedo(focusFlavor, 2);
-    // Everything else loads when the browser is idle.
-    const idle = () => FLAVORS.forEach((_, index) => void this.labels.ensureAlbedo(index, 1));
-    const idleWindow = window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number };
-    if (idleWindow.requestIdleCallback) idleWindow.requestIdleCallback(idle, { timeout: 4000 });
-    else window.setTimeout(idle, 2500);
+  }
+
+  /** Resolves on the visitor's first pointer, key, touch, wheel or scroll input. */
+  private removeEngagedListeners: () => void = () => {};
+  private readonly engaged: Promise<void> = new Promise((resolve) => {
+    const events = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'] as const;
+    const remove = () => events.forEach((name) => window.removeEventListener(name, done));
+    const done = () => {
+      remove();
+      resolve();
+    };
+    this.removeEngagedListeners = remove;
+    events.forEach((name) => window.addEventListener(name, done, { passive: true }));
+  });
+
+  /** Data saver or a 2g connection: stay on the small levels. */
+  private readonly dataSaver = (() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    return Boolean(connection && (connection.saveData || /(^|-)2g$/.test(connection.effectiveType ?? '')));
+  })();
+
+  /** 4k only pays off where the label is shown at 1.5+ texels per pixel: capable GPUs on dense screens. */
+  private wantsDetail4k() {
+    return !this.isLowPower && !this.dataSaver && this.labels.maxLod >= 2 && window.devicePixelRatio >= 1.5;
   }
 
   // ───────────────────────── intro ─────────────────────────
@@ -738,6 +774,8 @@ export class SceneManager {
   public setRoute(mode: 'HOME' | 'PRODUCT' | 'PAGE', productSlug?: string) {
     const previous = this.routeMode;
     this.routeMode = mode;
+    this.routeSet = true;
+    if (mode === 'HOME') FLAVORS.forEach((_, index) => void this.labels.ensureAlbedo(index, 0));
     if (mode !== 'HOME') this.fruit.clear();
     if (mode !== 'PRODUCT') return;
 
@@ -746,7 +784,7 @@ export class SceneManager {
     this.productViewerRotation = { x: 0, y: 0, targetX: 0, targetY: 0 };
     void this.labels.ensureSurface(this.activeProductIndex);
     void this.labels.ensureAlbedo(this.activeProductIndex, 1);
-    if (this.labels.maxLod >= 2) void this.labels.ensureAlbedo(this.activeProductIndex, 2);
+    if (this.wantsDetail4k()) void this.labels.ensureAlbedo(this.activeProductIndex, 2);
 
     // Prefer the can already in focus on the home scene; otherwise the nearest of that flavor.
     const count = this.cans.length;
@@ -1071,7 +1109,7 @@ export class SceneManager {
     this.applyCamera(isMobile, time);
 
     const closeUp = this.data.wave < 0.3 && this.data.swirl < 0.5;
-    this.streamLabels(this.carousel.getIndex(), closeUp);
+    if (this.routeSet) this.streamLabels(this.carousel.getIndex(), closeUp);
     this.updateAccent(this.carousel.getIndex(), time);
 
     // Benefit label glow: flavor-coloured, one block at a time, damped.
@@ -1427,6 +1465,7 @@ export class SceneManager {
 
   public dispose() {
     if (this.reqId) cancelAnimationFrame(this.reqId);
+    this.removeEngagedListeners();
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('mousemove', this.onMouseMove);
     window.removeEventListener('wheel', this.onWheel);

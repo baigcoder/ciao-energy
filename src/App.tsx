@@ -37,6 +37,7 @@ import { useSmoothScroll, prefersReducedMotion } from './hooks/useSmoothScroll';
 import { useHomeScroll } from './hooks/useHomeScroll';
 import { useCanKeys } from './hooks/useCanKeys';
 import { OPENING_MIN_SECONDS, openingShouldPlay } from './webgl/moments/openingConfig';
+import { isLowPowerDevice } from './webgl/devicePower';
 
 const MIN_LOADER_MS = 900;
 /** A product page only waits for the scene's first frame (its can), not for a cinematic. */
@@ -82,6 +83,13 @@ function parseCurrentRoute(): AppRoute {
   return { type: 'NOT_FOUND' };
 }
 
+/**
+ * Does this route need the 3D scene? The home story and product pages are the scene. The plain pages (shop, bag,
+ * checkout, mix, halal, stores, privacy, 404) only use it as a backdrop, so phones skip it there: the buying funnel
+ * loads no WebGL. If the visitor then opens the home page or a product, the scene is created on demand.
+ */
+const wantsScene = (route: AppRoute) => route.type === 'HOME' || route.type === 'PRODUCT' || !isLowPowerDevice();
+
 /** Scene mode per route: the home story, a single product can, or nothing (plain pages). */
 const sceneRoute = (route: AppRoute) => (route.type === 'PRODUCT' ? 'PRODUCT' : route.type === 'HOME' ? 'HOME' : 'PAGE');
 
@@ -111,6 +119,9 @@ export const App: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFinderOpen, setIsFinderOpen] = useState(false);
   const [webGlAvailable, setWebGlAvailable] = useState(true);
+  // Once the scene has been wanted it stays (it is never torn down on navigation).
+  const [sceneWanted, setSceneWanted] = useState(() => typeof window !== 'undefined' && wantsScene(parseCurrentRoute()));
+  const [sceneUp, setSceneUp] = useState(false);
 
   const { isOpen: isCartOpen, toggleCart } = useCart();
   const isHome = route.type === 'HOME';
@@ -132,6 +143,7 @@ export const App: React.FC = () => {
       }
     }
     setRoute(next);
+    if (wantsScene(next)) setSceneWanted(true);
     sm?.setRoute(sceneRoute(next), next.type === 'PRODUCT' ? next.slug : undefined);
     window.scrollTo({ top: 0, behavior: 'instant' });
     const hash = new URL(targetUrl, window.location.origin).hash.slice(1);
@@ -147,6 +159,7 @@ export const App: React.FC = () => {
     const onPopState = () => {
       const next = parseCurrentRoute();
       setRoute(next);
+      if (wantsScene(next)) setSceneWanted(true);
       sceneManagerRef.current?.setRoute(sceneRoute(next), next.type === 'PRODUCT' ? next.slug : undefined);
     };
     window.addEventListener('popstate', onPopState);
@@ -156,6 +169,11 @@ export const App: React.FC = () => {
   // WebGL scene (client only), loaded as its own chunk so the page's text and UI paint first.
   // Falls back to the static stage when WebGL is unavailable or the chunk fails.
   useEffect(() => {
+    if (!sceneWanted) {
+      // Plain page on a phone: no scene, nothing to wait for.
+      setIsReady(true);
+      return;
+    }
     const canvas = canvasRef.current;
     const probe = document.createElement('canvas');
     const gl = probe.getContext('webgl2') || probe.getContext('webgl');
@@ -168,10 +186,13 @@ export const App: React.FC = () => {
     let cancelled = false;
     let readyFrame = 0;
     let teardown: () => void = () => {};
+    performance.mark('grizzly:scene-import-start');
     import('./webgl/sceneManager')
       .then(({ SceneManager }) => {
         if (cancelled) return;
+        performance.mark('grizzly:scene-import-end');
         const sm = new SceneManager(canvas);
+        performance.mark('grizzly:scene-created');
         sceneManagerRef.current = sm;
         const isMobile = window.innerWidth < 768;
         const cores = navigator.hardwareConcurrency || 4;
@@ -186,10 +207,15 @@ export const App: React.FC = () => {
         const initial = parseCurrentRoute();
         sm.setRoute(sceneRoute(initial), initial.type === 'PRODUCT' ? initial.slug : undefined);
         sm.setInitialFlavor(initialFlavorIndexRef.current);
-        if (initial.type === 'HOME') sm.armIntro(playOpening);
+        // The cans are only held back for the loader's cinematic; a scene created later has no loader to release them.
+        if (initial.type === 'HOME' && loaderMode === 'cinematic') sm.armIntro(playOpening);
         const unsubscribe = sm.carousel.onChanged(({ index }) => setActiveIndex(index));
         readyFrame = requestAnimationFrame(() => {
-          readyFrame = requestAnimationFrame(() => setIsReady(true));
+          readyFrame = requestAnimationFrame(() => {
+            performance.mark('grizzly:scene-first-frames');
+            setSceneUp(true);
+            setIsReady(true);
+          });
         });
         teardown = () => {
           unsubscribe();
@@ -207,7 +233,7 @@ export const App: React.FC = () => {
       cancelAnimationFrame(readyFrame);
       teardown();
     };
-  }, [playOpening]);
+  }, [playOpening, sceneWanted, loaderMode]);
 
   // Flavor drives the colour tokens ([data-flavor]) and a shareable hash.
   useEffect(() => {
@@ -283,7 +309,7 @@ export const App: React.FC = () => {
       window.removeEventListener('resize', measure);
       sceneManagerRef.current?.setProductStage(null);
     };
-  }, [route, isReady]);
+  }, [route, sceneUp]);
 
   // Keep the focused hero can between the header logo and the flavor title at every viewport size.
   useEffect(() => {
@@ -388,7 +414,7 @@ export const App: React.FC = () => {
         />
       )}
 
-      {!webGlAvailable && (
+      {(!webGlAvailable || !sceneWanted) && (
         <>
           <StageBackdrop scene={isHome ? scene : route.type === 'PRODUCT' ? 'flavor' : 'faq'} flavorLines={isHome ? [FLAVORS[activeIndex % FLAVORS.length].line1, FLAVORS[activeIndex % FLAVORS.length].line2] : []} />
           <Atmosphere
@@ -399,7 +425,7 @@ export const App: React.FC = () => {
         </>
       )}
 
-      {webGlAvailable ? (
+      {webGlAvailable && sceneWanted ? (
         <canvas
           ref={canvasRef}
           className="webgl-canvas"
@@ -407,7 +433,7 @@ export const App: React.FC = () => {
           aria-label="Grizzly Energy cans in a cold mountain night: Blue Raspberry, Mango Fuego, Watermelon, Strawberry Kiwi, Peach and Blackout Berry. Everything shown here is also written on the page."
         />
       ) : (
-        <FallbackStage activeIndex={activeIndex} />
+        <FallbackStage activeIndex={activeIndex} showCan={!sceneWanted ? false : true} />
       )}
 
       <SiteFrame scene={isHome ? scene : 'page'} chapter={isHome ? sectionIndex : undefined} chapters={SCENE_SEQUENCE.length} />
