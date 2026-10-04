@@ -160,14 +160,18 @@ export class InsideCan implements SceneMoment {
     this.fruit.length = 0;
     const recipe = RECIPES[FLAVORS[flavorIndex].id] ?? [];
     recipe.forEach((item) => {
-      const count = Math.min(7, item.count);
+      const count = Math.min(5, item.count);
       const { mesh, dispose } = buildFruitMesh(item.kind as Kind, count);
       const seeds = new Float32Array(count * 5);
       const colour = new THREE.Color(item.color);
       for (let i = 0; i < count; i += 1) {
+        // Near the walls and away from the lens height: fruit drifts past at a distance instead of
+        // filling the lens (the camera sits on the can's axis, a little above the middle).
         const angle = Math.random() * Math.PI * 2;
-        const radius = Math.sqrt(Math.random()) * CAN.radius * 0.5;
-        seeds.set([Math.cos(angle) * radius, (Math.random() - 0.5) * CAN.shellHeight * 0.7, Math.sin(angle) * radius, Math.random() * 6.28, 0.5 + Math.random() * 0.8], i * 5);
+        const radius = CAN.radius * (0.6 + 0.28 * Math.random());
+        const side = Math.random() < 0.5 ? -1 : 1;
+        const y = side * (0.18 + 0.32 * Math.random()) * CAN.shellHeight;
+        seeds.set([Math.cos(angle) * radius, y, Math.sin(angle) * radius, Math.random() * 6.28, 0.5 + Math.random() * 0.8], i * 5);
         mesh.setColorAt(i, colour);
       }
       mesh.count = count;
@@ -234,7 +238,7 @@ export class InsideCan implements SceneMoment {
         const phase = seeds[o + 3] + seconds * 0.35 * seeds[o + 4];
         this.dummy.position.set(seeds[o] + Math.sin(phase) * 0.12, seeds[o + 1] + Math.sin(phase * 0.7) * 0.2, seeds[o + 2] + Math.cos(phase) * 0.12);
         this.dummy.rotation.set(phase * 0.6, phase * 0.4, phase * 0.3);
-        this.dummy.scale.setScalar(0.38 * (0.8 + 0.4 * seeds[o + 4]) * push);
+        this.dummy.scale.setScalar(0.22 * (0.8 + 0.4 * seeds[o + 4]) * push);
         this.dummy.updateMatrix();
         mesh.setMatrixAt(i, this.dummy.matrix);
       }

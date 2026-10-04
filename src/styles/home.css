@@ -1009,3 +1009,14 @@
     display: none;
   }
 }
+
+/* Benefit chapters: a soft dark falloff behind the copy, so bubbles, fruit or the lit label never
+   cut through the text (the effect stays visible around it). */
+.benefit .section-copy::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--space-3xl) * -1) calc(var(--space-4xl) * -1);
+  z-index: -1;
+  background: radial-gradient(closest-side, var(--color-surface-overlay), transparent);
+  pointer-events: none;
+}

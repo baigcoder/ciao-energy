@@ -20,6 +20,8 @@ import { GhostText } from './moments/ghostText';
 import { FruitField } from './moments/fruitField';
 import { InsideCan } from './moments/insideCan';
 import { ZamzamPool } from './moments/zamzamPool';
+import { IceDust } from './moments/iceDust';
+import { moonPhase, twilight } from './liveSky';
 import { FinaleGlow } from './moments/finaleGlow';
 
 export { CAROUSEL_CONFIG };
@@ -82,6 +84,9 @@ export class SceneManager {
     wipe: 1,
     wipeOrigin: new THREE.Vector2(0.5, 0.5),
     moon: 1,
+    moonPhase: 0.5,
+    dawn: 0,
+    dusk: 0,
     mountains: 1,
     mist: 1,
     mistFg: 0.6,
@@ -179,6 +184,13 @@ export class SceneManager {
   };
 
   public pointer = { x: 0, y: 0, smoothX: 0, smoothY: 0 };
+  private readonly windVector = new THREE.Vector2();
+
+  /** Pointer offset from the screen centre as a gentle wind (world units); zero for reduced motion. */
+  public pointerWind(): THREE.Vector2 {
+    if (this.reducedMotion) return this.windVector.set(0, 0);
+    return this.windVector.set(this.pointer.smoothX / Math.max(window.innerWidth, 1), -this.pointer.smoothY / Math.max(window.innerHeight, 1));
+  }
 
   /**
    * The master timeline tweens `timelineData`; every frame it is copied into `data`, which moments
@@ -242,6 +254,11 @@ export class SceneManager {
   private currentTimelineProgress = 0;
   /** Section position 0..9 (continuous), for the stage's slow drift. */
   public sectionPosition = 0;
+  /** Smoothed scroll speed in sections per second (signed): drives can inertia and the ice dust. */
+  public scrollVelocity = 0;
+  private iceDust: IceDust | null = null;
+  private skyCheckedAt = -1e9;
+  private lastSectionPosition = 0;
 
   /** When set, shaders and animation phases use this clock instead of real time (deterministic captures). */
   public timeOverride: number | null = null;
@@ -288,6 +305,7 @@ export class SceneManager {
     this.openingMoment = new OpeningMoment(this);
     this.fruit = new FruitField(this);
     this.moments.push(this.openingMoment, this.roarMoment, new GhostText(this), this.fruit, new InsideCan(this), new ZamzamPool(this), new FinaleGlow(this));
+    this.iceDust = new IceDust(this);
     this.bindEvents();
     (window as unknown as { __GRIZZLY_SCENE__: SceneManager }).__GRIZZLY_SCENE__ = this;
     this.animate(0);
@@ -855,6 +873,12 @@ export class SceneManager {
     this.pointer.smoothX += (this.pointer.x - this.pointer.smoothX) * pointerBlend;
     this.pointer.smoothY += (this.pointer.y - this.pointer.smoothY) * pointerBlend;
     this.updateUserTurn(delta, now);
+    {
+      const raw = delta > 0 ? (this.sectionPosition - this.lastSectionPosition) / delta : 0;
+      this.lastSectionPosition = this.sectionPosition;
+      const target = this.reducedMotion ? 0 : THREE.MathUtils.clamp(raw, -6, 6);
+      this.scrollVelocity += (target - this.scrollVelocity) * (1 - Math.exp(-5 * delta));
+    }
 
     const timelineBlend = 1 - Math.exp(-14 * delta);
     this.currentTimelineProgress += (this.targetTimelineProgress - this.currentTimelineProgress) * timelineBlend;
@@ -874,8 +898,20 @@ export class SceneManager {
     this.cameraRollOffset = 0;
     this.stepCarousel(delta, now);
     if (this.routeMode === 'HOME') this.moments.forEach((moment) => moment.update(time * 0.001, this));
+    // the air is the same on every 3D route: the dust keeps drifting on the product page too
+    this.iceDust?.update(time * 0.001, this);
+    // live sky: refreshed once a minute (the moon and the hour change slowly)
+    if (now - this.skyCheckedAt > 60_000) {
+      this.skyCheckedAt = now;
+      const date = new Date();
+      const tw = twilight(date);
+      this.stageParams.moonPhase = moonPhase(date);
+      this.stageParams.dawn = tw.dawn;
+      this.stageParams.dusk = tw.dusk;
+    }
     const dropTarget = this.routeMode === 'PRODUCT' ? 1 : 0.4 + 0.6 * this.data.wave;
     condensation.uDropStrength.value += (dropTarget - condensation.uDropStrength.value) * (1 - Math.exp(-4 * delta));
+    if (!this.reducedMotion) condensation.uDropTime.value += delta;
 
     if (this.routeMode === 'PRODUCT') this.renderProduct(delta, time);
     else if (this.routeMode === 'HOME') this.renderHome(delta, time, now);
@@ -1011,7 +1047,7 @@ export class SceneManager {
 
     this.baseFill.intensity = 0.2 + 0.7 * this.data.wave;
     // Benefit chapters: a stronger front light so the active label block reads sharp and bright.
-    this.keyLight.intensity = 0.6 + 0.9 * this.data.labelDim;
+    this.keyLight.intensity = 0.85 + 0.7 * this.data.labelDim; // a real key on the featured can in every scene
     this.fillLight.intensity = 0.18 + 0.5 * this.data.labelDim;
     // Back light picks up the flavor colour, like a coloured gel behind a product shot.
     this.rimTint.copy(this.rimBase).lerp(this.glowColor, 0.55);
@@ -1127,6 +1163,9 @@ export class SceneManager {
         featRotY += (this.pointer.smoothX / 1280) * this.tilt() + this.spinOffset;
         featRotY += this.userTurn.yaw;
         featRotX = featRotX + this.userTurn.pitch;
+        // inertia: the can leans back against a fast scroll and trails it slightly, then settles
+        featRotX -= this.scrollVelocity * 0.07;
+        featY += this.scrollVelocity * 0.12;
         featRotX += (this.pointer.smoothY / 1280) * this.tilt();
         setCanFocus(can, 1);
         this.applyLabelState(can, true);
@@ -1189,6 +1228,7 @@ export class SceneManager {
       canRotY += this.data.canSpin * p;
       canRotY += this.userTurn.yaw * p;
       canRotX += this.userTurn.pitch * p;
+      canRotX -= this.scrollVelocity * 0.05 * p;
       // The focused can tilts toward the pointer.
       canRotY += (this.pointer.smoothX / 1280) * this.tilt() * p + this.spinOffset * p;
       canRotX += (this.pointer.smoothY / 1280) * this.tilt() * p;
@@ -1357,6 +1397,7 @@ export class SceneManager {
     this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
     this.masterTimeline.kill();
     this.moments.forEach((moment) => moment.dispose());
+    this.iceDust?.dispose();
     this.reflections?.dispose();
     this.stage.dispose();
     this.post?.dispose();

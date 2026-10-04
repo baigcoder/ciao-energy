@@ -68,6 +68,8 @@ const BACKDROP_FRAGMENT = /* glsl */ `
   uniform float uWipe;        // 0..1 colour wave radius
   uniform vec2 uWipeOrigin;   // uv of the wave centre
   uniform float uMoon;        // moon glow strength
+  uniform float uMoonPhase;   // real phase today: 0 new, 0.5 full
+  uniform vec2 uTwilight;     // x dawn, y dusk (visitor's local time), 0..1
   uniform float uMountains;   // 0 hides the ridges (close-up chapters), 1 full
   uniform float uMist;
   uniform float uFlash;       // roar flash
@@ -103,7 +105,26 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     vec2 moonPos = vec2(0.70 + uCam.x * 0.004, 0.72 - uCam.y * 0.004);
     float md = length((uv - moonPos) * vec2(asp, 1.0));
     vec3 moonCol = mix(vec3(0.42, 0.58, 0.9), uAccent, 0.25);
-    col += moonCol * (0.016 * exp(-md * 3.2) + 0.22 * exp(-md * 38.0)) * uMoon;
+    // the glow follows how much of the moon is lit tonight
+    float illum = 0.5 - 0.5 * cos(uMoonPhase * 6.2831853);
+    col += moonCol * (0.016 * exp(-md * 3.2) + 0.22 * exp(-md * 38.0)) * uMoon * (0.35 + 0.65 * illum);
+    // the moon itself, at today's real phase: a small sphere lit from the sun's side, faint earthshine
+    {
+      vec2 q = (uv - moonPos) * vec2(asp, 1.0) / 0.014;
+      float q2 = dot(q, q);
+      if (q2 < 1.2) {
+        float z = sqrt(max(0.0, 1.0 - q2));
+        float a = uMoonPhase * 6.2831853;
+        vec3 sunDir = vec3(sin(a), 0.0, -cos(a));
+        float lit = smoothstep(-0.06, 0.08, dot(vec3(q, z), sunDir));
+        float disc = smoothstep(1.0, 0.86, sqrt(q2));
+        float maria = 0.85 + 0.15 * fbm(q * 2.5 + 3.0);
+        col += (vec3(0.78, 0.84, 0.95) * lit * maria * 0.55 + vec3(0.02, 0.026, 0.04)) * disc * uMoon;
+      }
+    }
+    // twilight at the edges of the night: a faint cold-warm dawn or a violet dusk along the horizon
+    float twBand = exp(-abs(uv.y - uHorizon - 0.05) * 7.0);
+    col += (vec3(0.05, 0.03, 0.022) * uTwilight.x + vec3(0.03, 0.016, 0.045) * uTwilight.y) * twBand;
     float cl = fbm(vec2(uv.x * asp * 1.6 + t * 0.008, uv.y * 7.0 + uScroll * 0.1));
     col += vec3(0.006, 0.011, 0.02) * smoothstep(0.5, 0.9, cl) * smoothstep(uHorizon, 1.0, uv.y) * uMoon;
     // one broad, cold horizon light: the range stands as silhouettes against it
@@ -254,6 +275,10 @@ export interface StageParams {
   glow: number;
   glowPos: THREE.Vector2;
   stars: number;
+  /** Live sky: today's real moon phase (0..1) and local dawn / dusk strength (0..1). */
+  moonPhase: number;
+  dawn: number;
+  dusk: number;
 }
 
 export class Stage {
@@ -307,6 +332,8 @@ export class Stage {
         uWipe: { value: 0 },
         uWipeOrigin: { value: new THREE.Vector2(0.5, 0.5) },
         uMoon: { value: 1 },
+        uMoonPhase: { value: 0.5 },
+        uTwilight: { value: new THREE.Vector2() },
         uMountains: { value: 1 },
         uMist: { value: 1 },
         uFlash: { value: 0 },
@@ -380,6 +407,8 @@ export class Stage {
     u.uWipe.value = p.wipe;
     u.uWipeOrigin.value.copy(p.wipeOrigin);
     u.uMoon.value = p.moon;
+    u.uMoonPhase.value = p.moonPhase;
+    u.uTwilight.value.set(p.dawn, p.dusk);
     u.uMountains.value = p.mountains;
     u.uMist.value = p.mist;
     u.uFlash.value = p.flash;

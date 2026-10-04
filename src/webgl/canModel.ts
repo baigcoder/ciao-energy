@@ -39,7 +39,11 @@ export const createNeutralSurfaceTexture = (): THREE.Texture => createSolidTextu
  * A unused. Round beads plus a few running drops with trails.
  */
 let cachedDropTexture: THREE.Texture | null = null;
-export const condensation = { uDropStrength: { value: 0.6 } };
+/**
+ * Condensation shared by every can: bead strength, and a clock for the drops that gather and run
+ * down the label (real time; frozen for reduced motion by not advancing uDropTime).
+ */
+export const condensation = { uDropStrength: { value: 0.6 }, uDropTime: { value: 0 } };
 
 function getDropTexture(): THREE.Texture {
   if (cachedDropTexture) return cachedDropTexture;
@@ -166,6 +170,7 @@ export interface CanSurfaceUniforms {
   uRimStrength: { value: number };
   uDropMap: { value: THREE.Texture };
   uDropStrength: { value: number };
+  uDropTime: { value: number };
   /** 0..1: the label dissolves away in an organic noise pattern (the push into the can). */
   uDissolve: { value: number };
 }
@@ -188,6 +193,7 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
     uRimStrength: { value: 0 },
     uDropMap: { value: getDropTexture() },
     uDropStrength: condensation.uDropStrength,
+    uDropTime: condensation.uDropTime,
     uDissolve: { value: 0 },
   };
   material.userData.surface = uniforms;
@@ -208,6 +214,7 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
         uniform float uRimStrength;
         uniform sampler2D uDropMap;
         uniform float uDropStrength;
+        uniform float uDropTime;
         uniform float uDissolve;
         float gzDissolveN = 1.0;
         float gzH(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -239,6 +246,27 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
           #endif
           gzBrush = texture2D(uBrushMap, vMapUv * vec2(3.0, 2.4)).r;
           gzDrop = texture2D(uDropMap, vMapUv * vec2(5.0, 4.0)).rgb;
+          {
+            // Running drops: in a few of 28 lanes round the can a bead slides down, wobbling, and
+            // leaves a thinning wet trail (smoother, clearer) behind it. Then the lane rests.
+            float gzLanes = 28.0;
+            float gzLx = vMapUv.x * gzLanes;
+            float gzLane = floor(gzLx);
+            float gzSeed = gzH(vec2(gzLane, 3.7));
+            float gzSpeed = 0.035 + 0.05 * gzSeed;
+            float gzCycle = uDropTime * gzSpeed + gzSeed * 9.0;
+            float gzRunOn = step(0.62, gzH(vec2(gzLane, floor(gzCycle))));
+            float gzHead = 1.05 - fract(gzCycle) * 1.25;       // v of the bead, top to bottom
+            float gzWobble = sin(vMapUv.y * 38.0 + gzSeed * 20.0) * 0.08 + sin(vMapUv.y * 91.0 + gzSeed * 5.0) * 0.03;
+            float gzDx = fract(gzLx) - 0.5 - gzWobble;
+            float gzD = vMapUv.y - gzHead;                       // > 0: above the bead (the trail)
+            float gzTrail = smoothstep(0.32, 0.0, gzD) * step(0.0, gzD) * smoothstep(0.07, 0.0, abs(gzDx) * (1.2 + gzD * 3.0));
+            float gzBead = exp(-(gzDx * gzDx * 180.0 + gzD * gzD * 9000.0));
+            float gzRun = gzRunOn * max(gzTrail * 0.85, gzBead);
+            // the running water clears the beads it passes through, and bends the normal sideways
+            gzDrop.b = max(gzDrop.b * (1.0 - gzTrail * gzRunOn), gzRun);
+            gzDrop.rg = mix(gzDrop.rg, vec2(0.5 - gzDx * 3.0, 0.5 + gzD * 2.0 * gzBead), gzRun);
+          }
           // small, dim background cans get fewer beads: at that size they only read as grain
           gzDropK = uDropStrength * mix(0.15, 1.0, uFocus * uFocus);
           // droplets lift the colour a touch (light bending through water)
@@ -255,7 +283,11 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
           float gzSpot = gzRect(vMapUv, uGlowRect, 0.008) * step(0.001, uGlowStrength);
           diffuseColor.rgb *= mix(1.0, 0.1, uLabelDim * (1.0 - gzSpot)) * (1.0 + 0.7 * uLabelDim * gzSpot);
         #endif
-        diffuseColor.rgb *= mix(0.18, 1.0, uFocus);`
+        diffuseColor.rgb *= mix(0.18, 1.0, uFocus);
+        #ifdef USE_MAP
+          // studio falloff down the body: lit under the lid, a touch darker at the base (packshot light)
+          diffuseColor.rgb *= mix(0.8, 1.04, smoothstep(0.03, 0.97, vMapUv.y));
+        #endif`
       )
       .replace(
         '#include <roughnessmap_fragment>',
