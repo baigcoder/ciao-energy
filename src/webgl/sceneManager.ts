@@ -286,7 +286,7 @@ export class SceneManager {
     this.renderer.setClearColor(0x02040a, 1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.toneMappingExposure = 1.08;
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(20, width / height, 0.1, 1000);
@@ -327,7 +327,8 @@ export class SceneManager {
     this.keyLight.position.set(-1.6, 6.5, 4.2);
     this.scene.add(this.keyLight, this.keyLight.target);
 
-    this.rimLight = new THREE.DirectionalLight(0xdfe6ff, 1.5);
+    // a strong back light draws a bright chrome edge round every silhouette (product-film look)
+    this.rimLight = new THREE.DirectionalLight(0xdfe6ff, 2.6);
     this.rimLight.position.set(3.2, 3.5, -5);
     this.scene.add(this.rimLight);
 
@@ -676,10 +677,9 @@ export class SceneManager {
   }
 
   private handleLineupClick = (clientX: number, clientY: number) => {
-    const pool = this.cans.slice(0, FLAVORS.length);
-    const clicked = this.pickCan(clientX, clientY, pool);
+    const clicked = this.pickCan(clientX, clientY, this.cans);
     if (!clicked) return;
-    const canIndex = pool.indexOf(clicked);
+    const canIndex = this.cans.indexOf(clicked) % FLAVORS.length;
     this.carousel.goTo(canIndex);
     audioManager.playCanHover([330, 370, 415, 494, 554, 659][canIndex % 6], 0.28);
   };
@@ -1057,7 +1057,7 @@ export class SceneManager {
 
     this.baseFill.intensity = 0.2 + 0.7 * this.data.wave;
     // Benefit chapters: a stronger front light so the active label block reads sharp and bright.
-    this.keyLight.intensity = 0.85 + 0.7 * this.data.labelDim; // a real key on the featured can in every scene
+    this.keyLight.intensity = 1.05 + 0.6 * this.data.labelDim; // a real key on the featured can in every scene
     this.fillLight.intensity = 0.18 + 0.5 * this.data.labelDim;
     // Back light picks up the flavor colour, like a coloured gel behind a product shot.
     this.rimTint.copy(this.rimBase).lerp(this.glowColor, 0.55);
@@ -1107,7 +1107,8 @@ export class SceneManager {
     const maxX = this.cans.length * 0.5 * this.carousel.spacing;
     let maxHoverInfluence = 0;
     let bestHoverCanIndex = -1;
-    const lineupCount = FLAVORS.length;
+    // The finale row uses every can (two of each flavor), like a full shelf.
+    const lineupCount = this.cans.length;
 
     this.cans.forEach((can, i) => {
       const target = i * this.carousel.spacing - this.carousel.position;
@@ -1119,11 +1120,11 @@ export class SceneManager {
       // Finale: every flavor once, on a mountain-shaped lineup. Blends from the featured pose as swirl goes 0 → 1.
       if (this.data.swirl > 0.01) {
         const s = this.data.swirl;
-        const isDuplicate = i >= lineupCount;
-        const slot = LINEUP_SLOTS[(((i % lineupCount) - this.carousel.getIndex()) % lineupCount + lineupCount) % lineupCount];
+        // the active flavor lands near the middle of the row
+        const slot = LINEUP_SLOTS[(((i - this.carousel.getIndex() + 5) % lineupCount) + lineupCount) % lineupCount];
         const isFeatured = p > 0.4;
         const fromScale = isFeatured ? this.data.canScale : 0;
-        can.visible = isDuplicate ? isFeatured && s < 0.25 : isFeatured || s > 0.25;
+        can.visible = isFeatured || s > 0.25;
         const mobileK = isMobile ? 0.3 : 1; // phones: the whole ridge fits the narrow frame, with a margin
         // Each can drops in on its own beat (back row first), with a small settle.
         const local = THREE.MathUtils.clamp((s - slot.delay * 0.7) / (1 - slot.delay * 0.7), 0, 1);
@@ -1196,21 +1197,22 @@ export class SceneManager {
       const ringX = Math.sin(theta) * ringRadius;
       const ringZ = (Math.cos(theta) - 1) * ringRadius;
       const visibleSlots = isMobile ? CAROUSEL_CONFIG.visibleSlotsMobile : CAROUSEL_CONFIG.visibleSlots;
-      // Desktop shows every flavor exactly once: centre, two to the left, three to the right (with six
-      // flavors a symmetric ±3 ring would repeat one). Phones keep the tighter symmetric ring.
-      const sideSlots = !isMobile && x > 0 ? visibleSlots + 1 : visibleSlots;
-      const edge = Math.min(1, Math.max(0, (sideSlots + 0.45 - stepDist) / 0.9));
+      const edge = Math.min(1, Math.max(0, (visibleSlots + 0.45 - stepDist) / 0.9));
       const edgeFade = smooth(edge);
       const ringArc = CAROUSEL_CONFIG.ringArc * Math.min(stepDist, 3) ** 2;
-      let canScale = heroScale * (0.78 + 0.22 * heroWeightSmooth) * (0.6 + 0.4 * edgeFade);
+      let canScale = heroScale * (0.7 + 0.3 * heroWeightSmooth) * (0.6 + 0.4 * edgeFade);
+      // a product wall, not a parade: each neighbour hangs at its own height and lean (stable per can)
+      const scatter = (1 - heroWeightSmooth) * (isMobile ? 0.4 : 1);
+      const scatterY = Math.sin(i * 2.37 + 0.8) * 0.75 * scatter;
+      const scatterRoll = Math.sin(i * 1.71 + 2.1) * 0.22 * scatter;
       let canPosX = ringX * this.data.wave;
-      let canPosY = (CAROUSEL_CONFIG.yBase + (isMobile ? 0.7 : 0) + this.heroLift + ringArc) * this.data.wave;
+      let canPosY = (CAROUSEL_CONFIG.yBase + (isMobile ? 0.7 : 0) + this.heroLift + ringArc + scatterY) * this.data.wave;
       let canPosZ = (ringZ + CAROUSEL_CONFIG.heroLift * heroWeightSmooth - (1 - edgeFade) * 3) * this.data.wave;
 
       const pitch = CAROUSEL_CONFIG.pitchNeighbour + (CAROUSEL_CONFIG.pitchX - CAROUSEL_CONFIG.pitchNeighbour) * heroWeightSmooth;
       let canRotX = pitch * this.data.wave;
       let canRotY = (CAROUSEL_CONFIG.yawHeroY + theta * CAROUSEL_CONFIG.labelTurn * (1 - heroWeightSmooth)) * this.data.wave;
-      let canRotZ = (CAROUSEL_CONFIG.rollZ * heroWeightSmooth + Math.sin(theta) * CAROUSEL_CONFIG.neighbourLean) * this.data.wave;
+      let canRotZ = (CAROUSEL_CONFIG.rollZ * heroWeightSmooth + Math.sin(theta) * CAROUSEL_CONFIG.neighbourLean + scatterRoll) * this.data.wave;
 
       let targetSectionScale = this.data.canScale;
       let targetSectionPosY = this.data.canPosY;
@@ -1230,7 +1232,8 @@ export class SceneManager {
       canPosX += (targetSectionPosX - canPosX) * collapseBlend;
 
       // Depth falloff: the focused can is fully lit, neighbours step into the dark.
-      const ringFocus = (0.14 + 0.24 * Math.max(0, 1 - stepDist / 3)) * edgeFade + 0.62 * heroWeightSmooth;
+      // neighbours fall to dark silhouettes (chrome edges and a hint of label); only the centre can is lit
+      const ringFocus = (0.07 + 0.13 * Math.max(0, 1 - stepDist / 3)) * edgeFade + 0.8 * heroWeightSmooth;
       const focus = Math.max(ringFocus, p * collapseBlend);
       setCanFocus(can, Math.round(focus * 100) / 100);
       this.applyLabelState(can, p > 0.4);
@@ -1440,15 +1443,20 @@ function landing(t: number) {
  * Slot 0 is the flavor in focus (it takes the peak); the rest follow catalogue order.
  */
 /**
- * Finale row: the six cans stand on one rising diagonal, leaning like dominoes, nearest and
- * lowest at the left, stepping up and away to the right. Each flavor appears once (catalog
- * order follows the active flavor); the row stays clear of the header and the call to action.
+ * Finale row: every can (two of each flavor) on one long rising diagonal, leaning like
+ * dominoes, nearest and lowest at the left, stepping up and away to the right; the ends run
+ * out of frame like a full shelf. The active flavor sits near the middle.
  */
-const LINEUP_SLOTS = [
-  { x: -6.2, y: -1.25, z: 1.6, rotX: 0.06, rotY: 0.42, rotZ: 0.2, delay: 0 },
-  { x: -3.8, y: -0.6, z: 0.6, rotX: 0.06, rotY: 0.36, rotZ: 0.2, delay: 0.1 },
-  { x: -1.5, y: 0.0, z: -0.4, rotX: 0.06, rotY: 0.3, rotZ: 0.2, delay: 0.2 },
-  { x: 0.75, y: 0.55, z: -1.4, rotX: 0.06, rotY: 0.24, rotZ: 0.2, delay: 0.3 },
-  { x: 2.95, y: 1.05, z: -2.4, rotX: 0.06, rotY: 0.18, rotZ: 0.2, delay: 0.4 },
-  { x: 5.1, y: 1.5, z: -3.4, rotX: 0.06, rotY: 0.12, rotZ: 0.2, delay: 0.5 },
-];
+const LINEUP_SLOTS = Array.from({ length: 12 }, (_, k) => {
+  const t = k - 5.5;
+  return {
+    // seen from a little above: one long row crossing the frame from lower left to upper right
+    x: t * 1.42,
+    y: 0.15 + t * 0.32,
+    z: -t * 0.12,
+    rotX: 0.38,
+    rotY: 0.3,
+    rotZ: 0.26,
+    delay: (k / 11) * 0.6,
+  };
+});

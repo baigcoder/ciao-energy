@@ -1,16 +1,15 @@
 /**
- * Hero carousel ring at 1920×920: the focused can is ~50% of the viewport height
- * and stands over the pedestal. Two neighbours per side sit on a shallow,
- * symmetric arc, stepping back into the dark; cans beyond that fade out, so
- * nothing overlaps and no flavor shows twice.
+ * Hero carousel ring at 1920×920: the focused can is ~50% of the viewport height.
+ * Like a product wall, the ring runs edge to edge: four neighbours per side on a
+ * symmetric arc, stepping back into the dark (flavors repeat, as on the shelf).
  */
 export const CAROUSEL_CONFIG = {
-  spacing: 2.1,          // arc length between cans: neighbours tuck slightly behind the centre can
+  spacing: 2.5,          // arc length between cans: air between neighbours across the full width
   spacingMobile: 2.6,
   ringRadius: 11,        // tighter ring: neighbours step back in depth
   ringRadiusMobile: 10,
   ringArc: 0.09,         // outer cans rise slightly (squared with the slot distance)
-  visibleSlots: 2.5,     // left side: two neighbours; the right side shows one more, so desktop shows all six flavors once
+  visibleSlots: 3.8,     // nine cans across the frame on desktop; the outermost fade into the frame edge
   visibleSlotsMobile: 1.35,
   heroScale: 1.45,       // ≈55% of the viewport height when the space allows
   heroScaleMobile: 1.6,

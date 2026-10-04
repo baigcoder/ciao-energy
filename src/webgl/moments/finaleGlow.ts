@@ -56,15 +56,18 @@ export class FinaleGlow implements SceneMoment {
   update(seconds: number, scene: SceneManager) {
     const swirl = scene.data.swirl;
     const lit = THREE.MathUtils.smoothstep(swirl, 0.7, 1);
+    // every can in the row gets its flavor-coloured rim; the soft colour pools sit behind one of each
+    scene.cans.forEach((can) => {
+      can.userData.rimBoost = lit * 1.1;
+    });
     this.sprites.forEach((sprite, i) => {
       const can = scene.cans[i];
       const material = sprite.material as THREE.SpriteMaterial;
       const show = lit > 0.01 && scene.quality !== 'LOW' && can.visible;
       sprite.visible = show;
-      can.userData.rimBoost = lit * 1.1;
       if (!show) return;
       const breathe = scene.reducedMotion ? 1 : 0.9 + 0.1 * Math.sin(seconds * 0.7 + i * 1.3);
-      material.opacity = 0.36 * lit * breathe;
+      material.opacity = 0.22 * lit * breathe;
       const size = 5.2 * can.scale.x;
       sprite.scale.set(size, size * 1.15, 1);
       sprite.position.set(can.position.x, can.position.y + 0.1, can.position.z - 1.4);

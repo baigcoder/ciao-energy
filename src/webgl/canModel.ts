@@ -387,7 +387,7 @@ export function createCanMaterials(
         metalness: 1,
         roughness: 0.34, // machined lid: crisp rings, a hotspot that never clips to white
         anisotropy: 0.35,
-        envMapIntensity: 0.6,
+        envMapIntensity: 0.85,
       });
   return { bodyMat, aluminumMat };
 }

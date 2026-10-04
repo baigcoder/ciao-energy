@@ -32,7 +32,7 @@ export function createStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Te
     materials.push(material);
   };
 
-  addPanel(8, 2.4, 0xeaf3ff, 5.2, [0, 7, 2.5]); // overhead softbox: the key
+  addPanel(8, 2.4, 0xeaf3ff, 6.5, [0, 7, 2.5]); // overhead softbox: the key (bright chrome lids)
   addPanel(2.6, 10, 0xcfe2ff, 2.2, [-6.5, 0.8, 2.5]); // cold left strip: the long edge highlight
   addPanel(1.4, 10, 0xb9cfff, 1.3, [6.5, 0.8, -1.5]); // right strip: the second, thinner edge highlight
   addPanel(24, 24, 0x2c4260, 0.2, [0, -6, 0]); // moon-blue floor bounce
