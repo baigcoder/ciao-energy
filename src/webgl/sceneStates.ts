@@ -22,6 +22,8 @@ export interface SceneStateConfig {
     stars: number;
     /** 0 night stage, 1 full-bleed flavor colour field. */
     field: number;
+    /** 0 night stage, 1 neutral grey product studio. */
+    studio: number;
   };
   spacing: number;
   /** 1 = hero ring, 0 = single featured can. */
@@ -41,10 +43,10 @@ const cam = (posX: number, posY: number, posZ: number, rotX = 0, rotY = 0, rotZ 
 
 const LIGHT = { pointerInfluence: 0.15 };
 
-const STAGE = { floorY: -3.6, reflect: 1, mountains: 1, moon: 1, mistFg: 0.7, glow: 1, stars: 1, field: 0 };
+const STAGE = { floorY: -3.6, reflect: 1, mountains: 1, moon: 1, mistFg: 0.7, glow: 1, stars: 1, field: 0, studio: 0 };
 /** Close-ups fill the frame with label: the night recedes to a faint glow. */
 /** Close-ups leave the night for the flavor's own colour field (the can is the only object). */
-const STAGE_CLOSE = { floorY: -9, reflect: 0, mountains: 0.35, moon: 0.45, mistFg: 0.15, glow: 1.15, stars: 0, field: 0.85 };
+const STAGE_CLOSE = { floorY: -9, reflect: 0, mountains: 0.35, moon: 0.45, mistFg: 0.15, glow: 1.15, stars: 0, field: 0.85, studio: 0 };
 
 /**
  * Benefit poses come from the label layout: the can turns so the right panel's centre faces the
@@ -86,7 +88,7 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
       spin: 0,
     },
     lighting: LIGHT,
-    stage: STAGE,
+    stage: { ...STAGE, studio: 1, mistFg: 0.2 },
     spacing: CAROUSEL_CONFIG.spacing,
     wave: 1,
     swirl: 0,
@@ -125,7 +127,7 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
     camera: cam(0, 0.3, 32, 0.02),
     product: { scale: 1.12, posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0 },
-    stage: { ...STAGE, floorY: -2.3, reflect: 1, mistFg: 1, glow: 0.4 },
+    stage: { ...STAGE, floorY: -2.3, reflect: 1, mistFg: 0.2, glow: 0.4, studio: 1 },
     spacing: CAROUSEL_CONFIG.spacing,
     wave: 0,
     swirl: 1,
@@ -136,7 +138,7 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
     camera: cam(0, -13, 32, 0.02),
     product: { scale: 1.12, posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0 },
-    stage: { ...STAGE, floorY: -2.3, reflect: 0, glow: 0.2, mistFg: 0.8, mountains: 0.35 },
+    stage: { ...STAGE, floorY: -2.3, reflect: 0, glow: 0.2, mistFg: 0.2, mountains: 0.35, studio: 1 },
     spacing: CAROUSEL_CONFIG.spacing,
     wave: 0,
     swirl: 1,

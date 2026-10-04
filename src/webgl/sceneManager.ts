@@ -85,6 +85,7 @@ export class SceneManager {
     wipeOrigin: new THREE.Vector2(0.5, 0.5),
     moon: 1,
     field: 0,
+    studio: 0,
     moonPhase: 0.5,
     dawn: 0,
     dusk: 0,
@@ -202,7 +203,7 @@ export class SceneManager {
     camPosX: 0, camPosY: 0, camPosZ: 29, camRotX: 0, camRotY: 0, camRotZ: 0, fov: 20,
     canScale: 1.2, canPosX: 0, canPosY: 0, canPosZ: 0, canRotX: 0, canRotY: 0, canRotZ: 0, canSpin: 0,
     spacing: 1, wave: 1, swirl: 0, pointerInfluence: 0.15, labelDim: 0,
-    floorY: -3.6, reflect: 1, mountains: 1, moon: 1, mistFg: 0.6, glow: 1, stars: 1, field: 0,
+    floorY: -3.6, reflect: 1, mountains: 1, moon: 1, mistFg: 0.6, glow: 1, stars: 1, field: 0, studio: 0,
   };
 
   public routeMode: 'HOME' | 'PRODUCT' | 'PAGE' = 'HOME';
@@ -1000,9 +1001,10 @@ export class SceneManager {
     p.scroll = this.sectionPosition;
     p.moon = d.moon;
     p.field = d.field;
+    p.studio = d.studio;
     p.mountains = d.mountains;
     // the colour field is a clean studio gradient: no night mist drawn over it
-    const clear = 1 - THREE.MathUtils.clamp(d.field, 0, 1);
+    const clear = 1 - THREE.MathUtils.clamp(d.field + d.studio, 0, 1);
     p.mist = (0.6 + 0.4 * d.mistFg) * clear;
     p.mistFg = d.mistFg * (this.quality === 'HIGH' ? 1 : 0.7) * clear;
     p.glow = d.glow;
@@ -1033,7 +1035,7 @@ export class SceneManager {
     if (this.pageFrame % 2 === 1) return;
     this.cans.forEach((can) => (can.visible = false));
     this.reflections?.hideAll();
-    Object.assign(this.data, { camPosX: 0, camPosY: 0, camPosZ: 29, camRotX: 0.04, camRotY: 0, camRotZ: 0, mountains: 0.55, moon: 0.7, mistFg: 0.5, glow: 0, stars: 0.8, field: 0 });
+    Object.assign(this.data, { camPosX: 0, camPosY: 0, camPosZ: 29, camRotX: 0.04, camRotY: 0, camRotZ: 0, mountains: 0.55, moon: 0.7, mistFg: 0.5, glow: 0, stars: 0.8, field: 0, studio: 0 });
     this.applyCamera(false, time);
     this.updateAccent(this.carousel.getIndex(), time);
     this.updateStage(time, null);
@@ -1194,7 +1196,10 @@ export class SceneManager {
       const ringX = Math.sin(theta) * ringRadius;
       const ringZ = (Math.cos(theta) - 1) * ringRadius;
       const visibleSlots = isMobile ? CAROUSEL_CONFIG.visibleSlotsMobile : CAROUSEL_CONFIG.visibleSlots;
-      const edge = Math.min(1, Math.max(0, (visibleSlots + 0.45 - stepDist) / 0.9));
+      // Desktop shows every flavor exactly once: centre, two to the left, three to the right (with six
+      // flavors a symmetric ±3 ring would repeat one). Phones keep the tighter symmetric ring.
+      const sideSlots = !isMobile && x > 0 ? visibleSlots + 1 : visibleSlots;
+      const edge = Math.min(1, Math.max(0, (sideSlots + 0.45 - stepDist) / 0.9));
       const edgeFade = smooth(edge);
       const ringArc = CAROUSEL_CONFIG.ringArc * Math.min(stepDist, 3) ** 2;
       let canScale = heroScale * (0.78 + 0.22 * heroWeightSmooth) * (0.6 + 0.4 * edgeFade);
@@ -1333,7 +1338,7 @@ export class SceneManager {
 
     // Same lens as the home scene so the can keeps its scale while travelling.
     // product page: the flavor's own colour field, like a studio packshot (the can on its colour)
-    Object.assign(this.data, { camRotX: 0.04, camRotY: 0, camRotZ: 0, floorY: -3.4, reflect: 0.6, mountains: 0.8, moon: 0.9, mistFg: 0.25, glow: 1, stars: 0, wave: 0, swirl: 0, labelDim: 0, field: 0.75 });
+    Object.assign(this.data, { camRotX: 0.04, camRotY: 0, camRotZ: 0, floorY: -3.4, reflect: 0.6, mountains: 0.8, moon: 0.9, mistFg: 0.25, glow: 1, stars: 0, wave: 0, swirl: 0, labelDim: 0, field: 0.75, studio: 0 });
     this.camera.fov = PRODUCT_CAMERA.fov;
     this.camera.updateProjectionMatrix();
     this.tmpVector.set(PRODUCT_CAMERA.x, PRODUCT_CAMERA.y, PRODUCT_CAMERA.z);
@@ -1435,15 +1440,15 @@ function landing(t: number) {
  * Slot 0 is the flavor in focus (it takes the peak); the rest follow catalogue order.
  */
 /**
- * Finale ridge: six cans, six distinct columns, so none hides another. The active
- * flavor takes the higher of the twin summits; shoulders step down and toward the
- * camera. Tops stay under the header and bases above the tagline and the button.
+ * Finale row: the six cans stand on one rising diagonal, leaning like dominoes, nearest and
+ * lowest at the left, stepping up and away to the right. Each flavor appears once (catalog
+ * order follows the active flavor); the row stays clear of the header and the call to action.
  */
 const LINEUP_SLOTS = [
-  { x: -1.25, y: 1.45, z: -1.8, rotX: 0.02, rotY: 0.06, rotZ: 0.02, delay: 0 }, // summit (active flavor)
-  { x: 1.25, y: 1.15, z: -1.6, rotX: 0.02, rotY: -0.06, rotZ: -0.02, delay: 0.1 },
-  { x: -3.7, y: 0.35, z: -0.6, rotX: 0.03, rotY: 0.18, rotZ: 0.04, delay: 0.22 },
-  { x: 3.7, y: 0.2, z: -0.5, rotX: 0.03, rotY: -0.18, rotZ: -0.04, delay: 0.32 },
-  { x: -6.1, y: -0.6, z: 0.6, rotX: 0.03, rotY: 0.3, rotZ: 0.06, delay: 0.44 },
-  { x: 6.1, y: -0.7, z: 0.6, rotX: 0.03, rotY: -0.3, rotZ: -0.06, delay: 0.54 },
+  { x: -6.2, y: -1.25, z: 1.6, rotX: 0.06, rotY: 0.42, rotZ: 0.2, delay: 0 },
+  { x: -3.8, y: -0.6, z: 0.6, rotX: 0.06, rotY: 0.36, rotZ: 0.2, delay: 0.1 },
+  { x: -1.5, y: 0.0, z: -0.4, rotX: 0.06, rotY: 0.3, rotZ: 0.2, delay: 0.2 },
+  { x: 0.75, y: 0.55, z: -1.4, rotX: 0.06, rotY: 0.24, rotZ: 0.2, delay: 0.3 },
+  { x: 2.95, y: 1.05, z: -2.4, rotX: 0.06, rotY: 0.18, rotZ: 0.2, delay: 0.4 },
+  { x: 5.1, y: 1.5, z: -3.4, rotX: 0.06, rotY: 0.12, rotZ: 0.2, delay: 0.5 },
 ];

@@ -68,6 +68,7 @@ const BACKDROP_FRAGMENT = /* glsl */ `
   uniform float uWipe;        // 0..1 colour wave radius
   uniform vec2 uWipeOrigin;   // uv of the wave centre
   uniform float uMoon;        // moon glow strength
+  uniform float uStudio;      // 0 night stage, 1 neutral grey product studio (hero, finale)
   uniform float uField;       // 0 night stage, 1 full-bleed flavor colour field (flavor chapters)
   uniform float uMoonPhase;   // real phase today: 0 new, 0.5 full
   uniform vec2 uTwilight;     // x dawn, y dusk (visitor's local time), 0..1
@@ -316,6 +317,22 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     col += accent * (0.035 * exp(-gd * 2.6) + 0.1 * exp(-gd * 8.0)) * uGlow;
     col += accent * 0.003 * (1.0 - smoothstep(0.0, 1.0, (uv.y - uHorizon) / (1.0 - uHorizon + 0.001)));
 
+    // Grey product studio: black above, a lit grey floor that is brightest toward the lower left,
+    // a soft horizon where floor meets the dark, and only a trace of the flavor colour in the light
+    // pooled under the featured can. Clean, neutral, product-first.
+    if (uStudio > 0.001) {
+      float fy = clamp((uHorizon + 0.12 - uv.y) / (uHorizon + 0.12), 0.0, 1.0);   // 0 at horizon, 1 at bottom
+      vec3 sCol = mix(vec3(0.0), vec3(0.006, 0.0065, 0.0075), smoothstep(1.0, uHorizon, uv.y));
+      vec3 floorLit = vec3(0.055, 0.057, 0.062) * pow(fy, 0.7);
+      float keyPool = exp(-length((uv - vec2(0.18, -0.05)) * vec2(asp * 0.55, 1.0)) * 1.8);
+      floorLit += vec3(0.09, 0.092, 0.098) * keyPool;
+      sCol += floorLit;
+      sCol += vec3(0.012, 0.013, 0.015) * exp(-abs(uv.y - uHorizon) * 18.0);     // soft horizon line
+      vec2 sq = (uv - uGlowPos) * vec2(asp, 1.0);
+      sCol += accent * 0.03 * exp(-dot(sq, sq) * 6.0) * uGlow;                    // a breath of flavor light
+      col = mix(col, sCol, uStudio);
+      skyVis *= 1.0 - uStudio;
+    }
     // Flavor colour field: the flavor chapters leave the night for a saturated studio of the
     // flavor's own colour: deep at the edges, a luminous core behind the can, slow soft haze.
     if (uField > 0.001) {
@@ -436,6 +453,8 @@ export interface StageParams {
   stars: number;
   /** 0 night stage, 1 full-bleed flavor colour field. */
   field: number;
+  /** 0 night stage, 1 neutral grey product studio. */
+  studio: number;
   /** Live sky: today's real moon phase (0..1) and local dawn / dusk strength (0..1). */
   moonPhase: number;
   dawn: number;
@@ -499,6 +518,7 @@ export class Stage {
         uMist: { value: 1 },
         uFlash: { value: 0 },
         uField: { value: 0 },
+        uStudio: { value: 0 },
         uGlow: { value: 1 },
         uGlowPos: { value: new THREE.Vector2(0.5, 0.4) },
       },
@@ -590,6 +610,7 @@ export class Stage {
     u.uWipeOrigin.value.copy(p.wipeOrigin);
     u.uMoon.value = p.moon;
     u.uField.value = p.field;
+    u.uStudio.value = p.studio;
     u.uMoonPhase.value = p.moonPhase;
     u.uTwilight.value.set(p.dawn, p.dusk);
     u.uMountains.value = p.mountains;

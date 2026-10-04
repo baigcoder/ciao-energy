@@ -10,7 +10,7 @@ export const CAROUSEL_CONFIG = {
   ringRadius: 11,        // tighter ring: neighbours step back in depth
   ringRadiusMobile: 10,
   ringArc: 0.09,         // outer cans rise slightly (squared with the slot distance)
-  visibleSlots: 2.5,     // five cans on desktop (centre ± 2): with six flavors, slot ±3 would show one flavor twice
+  visibleSlots: 2.5,     // left side: two neighbours; the right side shows one more, so desktop shows all six flavors once
   visibleSlotsMobile: 1.35,
   heroScale: 1.45,       // ≈55% of the viewport height when the space allows
   heroScaleMobile: 1.6,

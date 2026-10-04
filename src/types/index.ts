@@ -83,4 +83,6 @@ export interface Scene3DData {
   stars: number;
   /** 0 night stage, 1 full-bleed flavor colour field (the flavor chapters). */
   field: number;
+  /** 0 night stage, 1 neutral grey product studio (hero, finale). */
+  studio: number;
 }
