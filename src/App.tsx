@@ -22,6 +22,7 @@ import { CartDrawer } from './components/CartDrawer';
 import { CartPage } from './components/CartPage';
 import { CheckoutPage } from './components/CheckoutPage';
 import { PackBuilder } from './components/PackBuilder';
+import { ShopPage } from './components/ShopPage';
 import { HalalPage } from './components/HalalPage';
 import { NotFoundPage } from './components/NotFoundPage';
 import { FlavorFinder } from './components/FlavorFinder';
@@ -32,11 +33,15 @@ import type { MenuItem } from './components/MenuDrawer';
 import { useCart } from './store/cart';
 import { useSmoothScroll, prefersReducedMotion } from './hooks/useSmoothScroll';
 import { useHomeScroll } from './hooks/useHomeScroll';
+import { OPENING_MIN_SECONDS, openingShouldPlay } from './webgl/moments/opening';
+
+const MIN_LOADER_MS = 900;
 
 export type AppRoute =
   | { type: 'HOME' }
   | { type: 'CART' }
   | { type: 'CHECKOUT' }
+  | { type: 'SHOP' }
   | { type: 'MIX' }
   | { type: 'HALAL' }
   | { type: 'STORES' }
@@ -47,6 +52,7 @@ const STATIC_ROUTES: Record<string, AppRoute> = {
   '/': { type: 'HOME' },
   '/cart': { type: 'CART' },
   '/checkout': { type: 'CHECKOUT' },
+  '/shop': { type: 'SHOP' },
   '/mix': { type: 'MIX' },
   '/halal-zamzam': { type: 'HALAL' },
   '/stores': { type: 'STORES' },
@@ -58,11 +64,6 @@ function parseCurrentRoute(): AppRoute {
   if (STATIC_ROUTES[path]) return STATIC_ROUTES[path];
   const product = path.match(/^\/products?\/([^/]+)$/);
   if (product) return { type: 'PRODUCT', slug: product[1] };
-  if (path === '/shop') {
-    // Retired shop page: send old links to the range on the home page.
-    window.history.replaceState(null, '', '/#gamme');
-    return { type: 'HOME' };
-  }
   return { type: 'NOT_FOUND' };
 }
 
@@ -82,6 +83,8 @@ export const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneManagerRef = useRef<SceneManager | null>(null);
 
+  // The opening (a can cracking open under the loader) plays once per session, on the home route only.
+  const [playOpening] = useState(() => typeof window !== 'undefined' && parseCurrentRoute().type === 'HOME' && !prefersReducedMotion() && openingShouldPlay());
   const [isReady, setIsReady] = useState(false);
   const [route, setRoute] = useState<AppRoute>(parseCurrentRoute);
   const [activeIndex, setActiveIndex] = useState<number>(getInitialFlavorIndex);
@@ -158,7 +161,7 @@ export const App: React.FC = () => {
       const initial = parseCurrentRoute();
       sm.setRoute(sceneRoute(initial), initial.type === 'PRODUCT' ? initial.slug : undefined);
       sm.setInitialFlavor(initialFlavorIndexRef.current);
-      if (initial.type === 'HOME') sm.armIntro();
+      if (initial.type === 'HOME') sm.armIntro(playOpening);
       sm.onRoar = () => {
         audioManager.play('growl');
         document.documentElement.dispatchEvent(new CustomEvent('grizzly:roar'));
@@ -177,7 +180,7 @@ export const App: React.FC = () => {
       setWebGlAvailable(false);
       setIsReady(true);
     }
-  }, []);
+  }, [playOpening]);
 
   // Flavor drives the colour tokens ([data-flavor]) and a shareable hash.
   useEffect(() => {
@@ -199,6 +202,7 @@ export const App: React.FC = () => {
         : ({
             CART: 'Your bag – Grizzly Energy',
             CHECKOUT: 'Checkout – Grizzly Energy',
+            SHOP: 'Shop – Grizzly Energy',
             MIX: 'Mix your pack – Grizzly Energy',
             HALAL: 'Halal and Zamzam – Grizzly Energy',
             STORES: 'Find a store – Grizzly Energy',
@@ -259,6 +263,18 @@ export const App: React.FC = () => {
     };
   }, [isHome, isReady]);
 
+  // The roar: once per visit, the first scroll away from the top.
+  useEffect(() => {
+    if (!isHome || !isReady) return;
+    const onScroll = () => {
+      if (window.scrollY < 24) return;
+      window.removeEventListener('scroll', onScroll);
+      sceneManagerRef.current?.roar();
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isHome, isReady]);
+
   // Benefit chapters light one block of the can label in the flavor colour.
   useEffect(() => {
     sceneManagerRef.current?.setBenefitGlow(chapter);
@@ -293,7 +309,7 @@ export const App: React.FC = () => {
   );
 
   const menuItems: MenuItem[] = [
-    { key: 'range', href: '/#gamme', onSelect: () => goToSection('gamme') },
+    { key: 'range', href: '/shop', onSelect: () => navigate('/shop') },
     { key: 'benefits', href: '/#benefits-1', onSelect: () => goToSection('benefits-1') },
     { key: 'mix', href: '/mix', onSelect: () => navigate('/mix') },
     { key: 'finder', href: '/#gamme', onSelect: () => setIsFinderOpen(true) },
@@ -320,7 +336,7 @@ export const App: React.FC = () => {
   return (
     <>
       <a className="skip-link" href="#main">Skip to content</a>
-      <Preloader isReady={isReady} onDone={handlePreloaderDone} onLeave={handlePreloaderLeave} />
+      <Preloader isReady={isReady} onDone={handlePreloaderDone} onLeave={handlePreloaderLeave} minDurationMs={playOpening && webGlAvailable ? OPENING_MIN_SECONDS * 1000 : MIN_LOADER_MS} showStage={playOpening && webGlAvailable} />
 
       {!webGlAvailable && (
         <>
@@ -359,6 +375,10 @@ export const App: React.FC = () => {
       ) : route.type === 'CHECKOUT' ? (
         <main id="main" className="page">
           <CheckoutPage onNavigate={navigate} />
+        </main>
+      ) : route.type === 'SHOP' ? (
+        <main id="main" className="page">
+          <ShopPage onNavigate={navigate} />
         </main>
       ) : route.type === 'MIX' ? (
         <main id="main" className="page">
@@ -404,7 +424,7 @@ export const App: React.FC = () => {
             onNavigateChapter={(index) => scrollToSection(`benefits-${index + 1}`)}
           />
           <ArgumentSection isActive={scene === 'argument'} />
-          <FullGammeSection isActive={scene === 'lineup'} />
+          <FullGammeSection isActive={scene === 'lineup'} onShop={() => navigate('/shop')} />
           <FaqSection isActive={sectionIndex >= 8} />
           <NewsletterFooter />
         </main>

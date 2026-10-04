@@ -14,6 +14,13 @@ import { Scene3DData } from '../types';
 import { CAROUSEL_CONFIG } from './sceneManagerConfig';
 import { SCENE_SEQUENCE, SCENE_STATES, SceneMode, SceneStateConfig } from './sceneStates';
 import type { SceneMoment } from './moments/types';
+import { RoarMoment } from './moments/roar';
+import { OpeningMoment } from './moments/opening';
+import { GhostText } from './moments/ghostText';
+import { FruitField } from './moments/fruitField';
+import { InsideCan } from './moments/insideCan';
+import { ZamzamPool } from './moments/zamzamPool';
+import { FinaleGlow } from './moments/finaleGlow';
 
 export { CAROUSEL_CONFIG };
 export type { SceneMode, SceneStateConfig };
@@ -57,6 +64,9 @@ export class SceneManager {
   private post: PostFx | null = null;
   private reflections: FloorReflections | null = null;
   public moments: SceneMoment[] = [];
+  private roarMoment!: RoarMoment;
+  private openingMoment!: OpeningMoment;
+  private fruit!: FruitField;
 
   /** Stage parameters, rewritten every frame; moments may add to them before rendering. */
   public readonly stageParams: StageParams = {
@@ -76,6 +86,7 @@ export class SceneManager {
     mistFg: 0.6,
     burst: 0,
     burstPos: new THREE.Vector2(0.5, 0.5),
+    water: 0,
     flash: 0,
     glow: 1,
     glowPos: new THREE.Vector2(0.5, 0.4),
@@ -84,6 +95,14 @@ export class SceneManager {
   /** Camera offsets added by moments (shake, push) after the timeline pose. */
   public readonly cameraOffset = new THREE.Vector3();
   public cameraRollOffset = 0;
+  /** Per-frame effects set by moments (reset to zero at the start of every frame). */
+  public readonly fx = { flash: 0, burst: 0, water: 0, burstPos: new THREE.Vector2(0.5, 0.5) };
+  /**
+   * A moment may take over one can's pose: `blend` mixes the layout pose toward this pose
+   * (position, Euler rotation, uniform scale). Used by the opening to hold the can close to the camera.
+   */
+  public readonly canOverride = { index: -1, blend: 0, position: new THREE.Vector3(), rotation: new THREE.Euler(), scale: 1 };
+  private readonly overrideEuler = new THREE.Euler();
 
   // Pointer position projected to world space at z=0 (hover proximity)
   private pointerLightTarget = { x: 0, y: 0, z: 4 };
@@ -160,7 +179,11 @@ export class SceneManager {
 
   public pointer = { x: 0, y: 0, smoothX: 0, smoothY: 0 };
 
-  /** Master timeline state data (tweened between section states). */
+  /**
+   * The master timeline tweens `timelineData`; every frame it is copied into `data`, which moments
+   * may adjust for that frame only (so a moment never leaves residue in the timeline).
+   */
+  private timelineData!: Scene3DData;
   public data: Scene3DData = {
     camPosX: 0, camPosY: 0, camPosZ: 29, camRotX: 0, camRotY: 0, camRotZ: 0, fov: 20,
     canScale: 1.2, canPosX: 0, canPosY: 0, canPosZ: 0, canRotX: 0, canRotY: 0, canRotZ: 0, canSpin: 0,
@@ -212,7 +235,7 @@ export class SceneManager {
   private targetTimelineProgress = 0;
   private currentTimelineProgress = 0;
   /** Section position 0..9 (continuous), for the stage's slow drift. */
-  private sectionPosition = 0;
+  public sectionPosition = 0;
 
   /** When set, shaders and animation phases use this clock instead of real time (deterministic captures). */
   public timeOverride: number | null = null;
@@ -254,6 +277,10 @@ export class SceneManager {
     this.reflections = this.isLowPower ? null : new FloorReflections(this.scene, this.cans, this.labels);
 
     this.buildMasterTimeline();
+    this.roarMoment = new RoarMoment(this);
+    this.openingMoment = new OpeningMoment(this);
+    this.fruit = new FruitField(this);
+    this.moments.push(this.openingMoment, this.roarMoment, new GhostText(this), this.fruit, new InsideCan(this), new ZamzamPool(this), new FinaleGlow(this));
     this.bindEvents();
     (window as unknown as { __GRIZZLY_SCENE__: SceneManager }).__GRIZZLY_SCENE__ = this;
     this.animate(0);
@@ -360,16 +387,23 @@ export class SceneManager {
   // ───────────────────────── intro ─────────────────────────
 
   /** Holds the hero cans below frame until playIntro() (called when the loader leaves). */
-  public armIntro() {
+  public armIntro(playOpening = true) {
     if (this.reducedMotion) return;
     this.introArmedAt = performance.now();
     this.introStart = Number.POSITIVE_INFINITY;
+    if (playOpening) this.openingMoment.arm();
   }
 
   public playIntro() {
     if (this.introArmedAt < 0) return;
     this.introArmedAt = -1;
     this.introStart = performance.now();
+    this.openingMoment.release();
+  }
+
+  /** The roar (first scroll of a visit): the bear behind the can, a small camera shake. */
+  public roar() {
+    this.roarMoment.trigger();
   }
 
   /** 0 = held below frame, 1 = settled; staggered outward from the centre can. */
@@ -522,12 +556,13 @@ export class SceneManager {
       ...state.stage,
     });
 
-    Object.assign(this.data, stateToData(SCENE_STATES[SCENE_SEQUENCE[0].state]));
+    this.timelineData = { ...this.data, ...stateToData(SCENE_STATES[SCENE_SEQUENCE[0].state]) };
+    Object.assign(this.data, this.timelineData);
     for (let k = 1; k < SCENE_SEQUENCE.length; k += 1) {
-      this.masterTimeline.to(this.data, { ...stateToData(SCENE_STATES[SCENE_SEQUENCE[k].state]), duration: 0.7 }, k - 0.85);
+      this.masterTimeline.to(this.timelineData, { ...stateToData(SCENE_STATES[SCENE_SEQUENCE[k].state]), duration: 0.7 }, k - 0.85);
     }
     // Pad the end so the last waypoint lands exactly on progress 1.
-    this.masterTimeline.to(this.data, { duration: 0.15 }, SCENE_SEQUENCE.length - 1.15);
+    this.masterTimeline.to(this.timelineData, { duration: 0.15 }, SCENE_SEQUENCE.length - 1.15);
   }
 
   public seekProgress(progress: number) {
@@ -659,6 +694,7 @@ export class SceneManager {
   public setRoute(mode: 'HOME' | 'PRODUCT' | 'PAGE', productSlug?: string) {
     const previous = this.routeMode;
     this.routeMode = mode;
+    if (mode !== 'HOME') this.fruit.clear();
     if (mode !== 'PRODUCT') return;
 
     const index = FLAVORS.findIndex((flavor) => flavor.id === productSlug);
@@ -780,7 +816,15 @@ export class SceneManager {
       this.masterTimeline.seek(this.currentTimelineProgress * this.masterTimeline.duration());
     }
 
+    Object.assign(this.data, this.timelineData);
+    this.fx.flash = 0;
+    this.fx.burst = 0;
+    this.fx.water = 0;
+    this.canOverride.blend = 0;
+    this.cameraOffset.set(0, 0, 0);
+    this.cameraRollOffset = 0;
     this.stepCarousel(delta, now);
+    if (this.routeMode === 'HOME') this.moments.forEach((moment) => moment.update(time * 0.001, this));
     const dropTarget = this.routeMode === 'PRODUCT' ? 1 : 0.4 + 0.6 * this.data.wave;
     condensation.uDropStrength.value += (dropTarget - condensation.uDropStrength.value) * (1 - Math.exp(-4 * delta));
 
@@ -806,6 +850,7 @@ export class SceneManager {
       this.carousel.listeners.forEach((cb) => cb({ index: currentIdx, previous: this.carousel.lastIndex }));
       this.carousel.lastIndex = currentIdx;
       if (!this.reducedMotion) this.spinStart = now;
+      this.fruit.burst(currentIdx);
     }
     // One full turn of the focused can when the flavor changes.
     const spinT = (now - this.spinStart) / 900;
@@ -868,6 +913,10 @@ export class SceneManager {
     p.mistFg = d.mistFg * (this.quality === 'HIGH' ? 1 : 0.7);
     p.glow = d.glow;
     p.stars = d.stars;
+    p.flash = this.fx.flash;
+    p.burst = this.fx.burst;
+    p.water = this.fx.water;
+    p.burstPos.copy(this.fx.burstPos);
     if (focus) {
       this.camera.updateMatrixWorld();
       this.tmpVector.setFromMatrixPosition(focus.matrixWorld).project(this.camera);
@@ -879,7 +928,6 @@ export class SceneManager {
   }
 
   private renderScene(time: number) {
-    this.moments.forEach((moment) => moment.update(time * 0.001, this));
     if (this.post) this.post.render(time * 0.001);
     else this.renderer.render(this.scene, this.camera);
   }
@@ -1000,6 +1048,7 @@ export class SceneManager {
         can.scale.setScalar(canScale);
         setCanFocus(can, Math.round(Math.max(0.02, (isFeatured ? 1 - s : 0) + s * 0.95) * 100) / 100);
         this.applyLabelState(can, false);
+        this.applyCanOverride(can, i);
         return;
       }
 
@@ -1028,6 +1077,7 @@ export class SceneManager {
         can.position.set(featX, featY, this.data.canPosZ);
         can.rotation.set(featRotX, featRotY, this.data.canRotZ);
         can.scale.setScalar(featScale);
+        this.applyCanOverride(can, i);
         return;
       }
 
@@ -1119,6 +1169,8 @@ export class SceneManager {
 
       if (this.introStart > -1e8) {
         const rise = this.introProgress(time, stepDist);
+        // Held for the opening: the rest of the ring waits out of frame (and out of the reflections).
+        if (this.introStart === Number.POSITIVE_INFINITY && this.canOverride.index !== i) can.visible = false;
         canPosY -= (1 - rise) * 7.5;
         canRotY += (1 - rise) * 2.2;
       }
@@ -1126,6 +1178,7 @@ export class SceneManager {
       can.position.set(canPosX, canPosY, canPosZ);
       can.rotation.set(canRotX, canRotY, canRotZ);
       can.scale.setScalar(canScale);
+      this.applyCanOverride(can, i);
     });
 
     // Resonant chime when the pointer crosses onto another can.
@@ -1141,6 +1194,21 @@ export class SceneManager {
       }
     }
     this.cans.forEach((can) => can.updateMatrixWorld(true));
+  }
+
+  private applyCanOverride(can: THREE.Group, index: number) {
+    const o = this.canOverride;
+    if (o.index !== index || o.blend <= 0.001) return;
+    can.visible = true;
+    can.position.lerp(o.position, o.blend);
+    this.overrideEuler.set(
+      THREE.MathUtils.lerp(can.rotation.x, o.rotation.x, o.blend),
+      THREE.MathUtils.lerp(can.rotation.y, o.rotation.y, o.blend),
+      THREE.MathUtils.lerp(can.rotation.z, o.rotation.z, o.blend)
+    );
+    can.rotation.copy(this.overrideEuler);
+    can.scale.setScalar(THREE.MathUtils.lerp(can.scale.x, o.scale, o.blend));
+    setCanFocus(can, 1);
   }
 
   /**
@@ -1259,10 +1327,10 @@ function landing(t: number) {
  * Slot 0 is the flavor in focus (it takes the peak); the rest follow catalogue order.
  */
 const LINEUP_SLOTS = [
-  { x: 0, y: 2.1, z: -2.8, rotX: 0.02, rotY: 0, rotZ: 0, delay: 0 }, // peak
+  { x: 0, y: 2.6, z: -3.2, rotX: 0.02, rotY: 0, rotZ: 0, delay: 0 }, // peak
   { x: -2.7, y: 0.2, z: -1.0, rotX: 0.03, rotY: 0.16, rotZ: 0.04, delay: 0.18 },
   { x: 2.7, y: 0.2, z: -1.0, rotX: 0.03, rotY: -0.16, rotZ: -0.04, delay: 0.26 },
   { x: -5.2, y: -0.8, z: 0.6, rotX: 0.03, rotY: 0.3, rotZ: 0.06, delay: 0.4 },
-  { x: 0, y: -1.0, z: 1.2, rotX: 0.04, rotY: 0, rotZ: 0, delay: 0.5 },
+  { x: 0, y: -1.25, z: 1.2, rotX: 0.04, rotY: 0, rotZ: 0, delay: 0.5 },
   { x: 5.2, y: -0.8, z: 0.6, rotX: 0.03, rotY: -0.3, rotZ: -0.06, delay: 0.6 },
 ];

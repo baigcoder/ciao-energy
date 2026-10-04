@@ -119,7 +119,7 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
 
   // Finale: all six cans on a mountain-shaped lineup, each lit in its own colour.
   range: {
-    camera: cam(0, 0.8, 32, 0.02),
+    camera: cam(0, 0.3, 32, 0.02),
     product: { scale: 1.12, posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0 },
     stage: { ...STAGE, floorY: -2.3, reflect: 1, mistFg: 1, glow: 0.4 },

@@ -6,17 +6,18 @@ interface PreloaderProps {
   onDone: () => void;
   /** Fires when the loader starts to fade: the moment the scene's intro begins. */
   onLeave?: () => void;
+  /** Shortest time the loader stays (the opening needs about three seconds). */
+  minDurationMs: number;
+  /** True when the 3D opening plays behind the loader: the overlay is then see-through. */
+  showStage: boolean;
 }
 
-const MIN_DURATION_MS = 1400;
-
 /**
- * Black screen with the wordmark filling with liquid light from the bottom (a
- * glowing level line rides the fill edge), "ENERGY" in the flavor accent, a
- * hairline progress bar and a zero-padded percentage. On exit two black panels
- * part to reveal the scene. Fill is a CSS variable (clip-path, no layout work).
+ * Black screen. While the scene's opening plays behind it (a can cracking open, mist rolling out),
+ * the wordmark forms in brushed silver as progress completes, with a hairline bar and a zero-padded
+ * percentage. On exit the wordmark lifts away and the scene carries on. Fill is a CSS variable.
  */
-export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave }) => {
+export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, minDurationMs, showStage }) => {
   const [percent, setPercent] = useState(0);
   const [phase, setPhase] = useState<'loading' | 'leaving' | 'done'>('loading');
   const startedAt = useRef(performance.now());
@@ -28,8 +29,8 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave }
     let value = 0;
     const tick = (now: number) => {
       const elapsed = now - startedAt.current;
-      const canFinish = readyRef.current && elapsed > MIN_DURATION_MS;
-      const target = canFinish ? 100 : Math.min(90, (elapsed / MIN_DURATION_MS) * 90);
+      const canFinish = readyRef.current && elapsed > minDurationMs;
+      const target = canFinish ? 100 : Math.min(90, (elapsed / minDurationMs) * 90);
       value += (target - value) * (canFinish ? 0.12 : 0.08);
       const rounded = Math.min(100, Math.round(value + (canFinish && value > 99.4 ? 1 : 0)));
       setPercent((previous) => (previous === rounded ? previous : rounded));
@@ -42,7 +43,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave }
     frame = requestAnimationFrame(tick);
     // Background tabs throttle animation frames: never let the loader outlive its job.
     const fallback = window.setInterval(() => {
-      if (readyRef.current && performance.now() - startedAt.current > MIN_DURATION_MS * 2) {
+      if (readyRef.current && performance.now() - startedAt.current > minDurationMs * 2) {
         setPercent(100);
         setPhase((current) => (current === 'loading' ? 'leaving' : current));
       }
@@ -51,7 +52,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave }
       cancelAnimationFrame(frame);
       window.clearInterval(fallback);
     };
-  }, []);
+  }, [minDurationMs]);
 
   useEffect(() => {
     if (phase !== 'leaving') return;
@@ -63,12 +64,20 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave }
     return () => window.clearTimeout(timer);
   }, [phase, onDone, onLeave]);
 
+  // Tell the page a loader is up so the hero chrome stays hidden behind the see-through opening.
+  useEffect(() => {
+    document.documentElement.dataset.loading = 'true';
+    return () => {
+      delete document.documentElement.dataset.loading;
+    };
+  }, []);
+
   if (phase === 'done') return null;
 
   const fill = percent / 100;
   return (
     <div
-      className={`loader ${phase === 'leaving' ? 'is-leaving' : ''}`}
+      className={`loader ${phase === 'leaving' ? 'is-leaving' : ''} ${showStage ? 'loader--stage' : ''}`}
       style={{ '--loader-fill': fill } as React.CSSProperties}
       role="progressbar"
       aria-label={`Loading ${BRAND.name}`}
@@ -76,8 +85,6 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave }
       aria-valuemax={100}
       aria-valuenow={percent}
     >
-      <span className="loader__panel loader__panel--top" aria-hidden="true" />
-      <span className="loader__panel loader__panel--bottom" aria-hidden="true" />
       <span className="loader__glow" aria-hidden="true" />
       <div className="loader__stage" aria-hidden="true">
         <span className="loader__word">

@@ -149,7 +149,8 @@
 .home a,
 .home button,
 .home input,
-.home [role='slider'] {
+.home [role='slider'],
+.home .lineup.is-active .lineup__cta a {
   pointer-events: auto;
 }
 
@@ -846,4 +847,127 @@
     justify-content: center;
     gap: var(--space-sm) var(--space-lg);
   }
+}
+
+/* ---------- Zamzam and halal: the seal, drawn line by line over the ripple ---------- */
+.halal-seal {
+  position: absolute;
+  left: var(--seal-x);
+  top: var(--seal-y);
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+  width: var(--size-seal);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.halal-seal__art {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.halal-seal__line {
+  fill: none;
+  stroke: var(--color-text-primary);
+  stroke-width: var(--stroke-seal);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0.85;
+}
+
+.halal-seal__line--fine {
+  stroke: var(--color-text-muted);
+}
+
+.halal-seal__word {
+  stroke-width: calc(var(--stroke-seal) * 1.6);
+  stroke-dasharray: 1;
+}
+
+.halal-seal__latin,
+.halal-seal__caption {
+  opacity: 0;
+  transition: opacity var(--motion-slow) var(--ease-out);
+}
+
+.halal-seal__latin {
+  fill: var(--color-text-muted);
+  font-family: var(--font-family-mono);
+  font-size: var(--size-seal-latin);
+  letter-spacing: var(--letter-spacing-label);
+}
+
+.halal-seal__caption {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+.is-active .halal-seal__line {
+  animation: seal-draw var(--motion-draw) var(--ease-in-out) forwards;
+  animation-delay: calc(var(--n) * var(--stagger-draw) + var(--delay-reveal-body));
+}
+
+.is-active .halal-seal__latin,
+.is-active .halal-seal__caption {
+  opacity: 1;
+  transition-delay: calc(4 * var(--stagger-draw) + var(--delay-reveal-body));
+}
+
+@keyframes seal-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@media (max-width: 767px) {
+  .halal-seal {
+    left: var(--seal-x-narrow);
+    top: var(--seal-y-narrow);
+    width: min(var(--size-seal), 58vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halal-seal__line { stroke-dashoffset: 0; animation: none; }
+  .halal-seal__latin,
+  .halal-seal__caption { opacity: 1; transition: none; }
+}
+
+/* ---------- Finale: one clear way to shop ---------- */
+.lineup__cta {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-lg);
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+  transform: translate(-50%, var(--space-md));
+  opacity: 0;
+  transition:
+    opacity var(--motion-slow) var(--ease-out),
+    transform var(--motion-slow) var(--ease-out);
+  transition-delay: var(--delay-finale-cta);
+}
+
+.lineup.is-active .lineup__cta {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.lineup:not(.is-active) .lineup__cta {
+  pointer-events: none;
+}
+
+.lineup__claims {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  text-align: center;
 }

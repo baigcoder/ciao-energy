@@ -70,6 +70,22 @@
   --color-fruit-ice-edge: var(--color-ice-white-a60);
   --color-vignette: var(--color-black-a70);
 
+  /* Brushed silver: the wordmark metal (long highlights across fine horizontal grain) */
+  --gradient-brushed-silver: linear-gradient(105deg, var(--color-silver-500) 0%, var(--color-silver-100) 22%, var(--color-silver-300) 40%, var(--color-silver-100) 58%, var(--color-silver-500) 78%, var(--color-silver-300) 100%);
+  --texture-brushed: repeating-linear-gradient(0deg, var(--color-black-a10) 0 1px, transparent 1px 3px);
+  --blur-forming: 0.9rem;
+
+  /* Quiet chapter (Zamzam and halal): slow, single strokes */
+  --motion-draw: 2.6s;
+  --stagger-draw: 0.8s;
+  --size-seal: min(34vh, 21.5rem);
+  --stroke-seal: 0.5;
+  --size-shop-card: 26rem;
+  --size-shop-can: 9rem;
+  --size-shop-can-narrow: 6.5rem;
+  --size-seal-latin: 4.2px; /* in seal viewBox units */
+  --letter-spacing-label: 0.3em;
+
   /* Typography */
   --font-family-body: var(--font-geist);
   --font-family-mono: var(--font-geist-mono);
@@ -171,6 +187,7 @@
   --stagger-char: 22ms;
   --stagger-item: 50ms;
   --delay-reveal-body: 160ms;
+  --delay-finale-cta: 1400ms; /* after the cans have landed */
   --delay-reveal-line: 120ms;
   --motion-pulse: 1600ms;
   --motion-bars: 900ms;

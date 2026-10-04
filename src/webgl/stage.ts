@@ -190,6 +190,7 @@ const MIST_FRAGMENT = /* glsl */ `
   uniform float uAmount;
   uniform float uBurst;       // 0..1 pressurised burst of mist (opening, roar)
   uniform vec2 uBurstPos;
+  uniform float uWater;       // 0..1 underwater tint (inside the can)
   uniform vec3 uAccent;
   ${NOISE}
   void main() {
@@ -198,10 +199,23 @@ const MIST_FRAGMENT = /* glsl */ `
     float n2 = fbm(vec2(p.x * 2.8 - uTime * 0.045, p.y * 5.0 + 3.0));
     float low = smoothstep(uHorizon + 0.1, -0.1, vUv.y);
     float density = low * (0.25 + 0.9 * n1) * (0.6 + 0.8 * n2);
+    // pressurised mist: a billowing cloud that grows out of the opening as the burst strength rises
     float bd = length((vUv - uBurstPos) * vec2(uAspect, 1.0));
-    float burst = uBurst * smoothstep(1.3, 0.0, bd) * (0.45 + 0.9 * n2);
-    float a = clamp(density * uAmount + burst, 0.0, 0.85);
+    float radius = 0.1 + uBurst * 0.95;
+    float billow = smoothstep(0.3, 0.85, n1 * 0.8 + n2 * 0.5);
+    float burst = smoothstep(radius, radius * 0.15, bd) * (0.25 + 0.75 * billow) * min(1.0, uBurst * 1.3);
+    float a = clamp(density * uAmount + burst * 0.75, 0.0, 0.8);
     vec3 col = mix(vec3(0.012, 0.02, 0.034), vec3(0.04, 0.055, 0.08), n2) + uAccent * 0.006;
+    // the burst is lit by the lid: cold light near the opening, falling off into the dark
+    float lit = exp(-bd * 2.4);
+    col = mix(col, vec3(0.16, 0.21, 0.3) * (0.35 + 0.65 * lit) * (0.7 + 0.5 * n2), clamp(burst * 1.6, 0.0, 1.0));
+    // inside the can: deep liquid, lit from above, with slow light shafts
+    float shaft = pow(fbm(vec2(vUv.x * 5.0 + uTime * 0.04, uTime * 0.025)), 3.0);
+    float top = smoothstep(0.1, 1.0, vUv.y);
+    vec3 water = mix(vec3(0.003, 0.02, 0.035), uAccent * 0.12 + vec3(0.02, 0.07, 0.11), top);
+    water += vec3(0.35, 0.55, 0.65) * shaft * top * 0.3;
+    col = mix(col, water, uWater);
+    a = max(a, uWater * 0.6);
     gl_FragColor = vec4(col, a);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -226,6 +240,7 @@ export interface StageParams {
   mistFg: number;
   burst: number;
   burstPos: THREE.Vector2;
+  water: number;
   flash: number;
   glow: number;
   glowPos: THREE.Vector2;
@@ -326,6 +341,7 @@ export class Stage {
         uAmount: { value: 0.6 },
         uBurst: { value: 0 },
         uBurstPos: { value: new THREE.Vector2(0.5, 0.5) },
+        uWater: { value: 0 },
         uAccent: { value: new THREE.Color() },
       },
     });
@@ -372,8 +388,9 @@ export class Stage {
     m.uAmount.value = p.mistFg;
     m.uBurst.value = p.burst;
     m.uBurstPos.value.copy(p.burstPos);
+    m.uWater.value = p.water;
     m.uAccent.value.copy(p.accent);
-    this.foreground.visible = p.mistFg > 0.01 || p.burst > 0.01;
+    this.foreground.visible = p.mistFg > 0.01 || p.burst > 0.01 || p.water > 0.01;
   }
 
   /** Renders the half-resolution backdrop (call before the main render each frame). */

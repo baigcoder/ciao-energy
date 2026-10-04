@@ -166,6 +166,8 @@ export interface CanSurfaceUniforms {
   uRimStrength: { value: number };
   uDropMap: { value: THREE.Texture };
   uDropStrength: { value: number };
+  /** 0..1: the label dissolves away in an organic noise pattern (the push into the can). */
+  uDissolve: { value: number };
 }
 
 /**
@@ -186,6 +188,7 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
     uRimStrength: { value: 0 },
     uDropMap: { value: getDropTexture() },
     uDropStrength: condensation.uDropStrength,
+    uDissolve: { value: 0 },
   };
   material.userData.surface = uniforms;
   material.customProgramCacheKey = () => 'gz-can-surface';
@@ -205,6 +208,10 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
         uniform float uRimStrength;
         uniform sampler2D uDropMap;
         uniform float uDropStrength;
+        uniform float uDissolve;
+        float gzDissolveN = 1.0;
+        float gzH(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float gzN(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(gzH(i), gzH(i + vec2(1.0, 0.0)), f.x), mix(gzH(i + vec2(0.0, 1.0)), gzH(i + vec2(1.0, 1.0)), f.x), f.y); }
         vec3 gzDrop = vec3(0.5, 0.5, 0.0);
         float gzDropK = 0.0;
         float gzMetal = 0.0;
@@ -219,6 +226,11 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
         '#include <map_fragment>',
         `#include <map_fragment>
         #ifdef USE_MAP
+          if (uDissolve > 0.001) {
+            vec2 dp = vMapUv * vec2(14.0, 10.0);
+            gzDissolveN = 0.55 * gzN(dp) + 0.3 * gzN(dp * 2.3 + 5.0) + 0.15 * gzN(dp * 5.1 + 9.0);
+            if (gzDissolveN < uDissolve * 1.2 - 0.1) discard;
+          }
           vec3 gzInk = diffuseColor.rgb;
           #ifdef USE_METALNESSMAP
             gzMetal = smoothstep(0.6, 0.95, texture2D(metalnessMap, vMapUv).b);
@@ -276,6 +288,10 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
         {
           float rimFacing = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
           totalEmissiveRadiance += uRimColor * uRimStrength * pow(rimFacing, 4.0);
+        }
+        if (uDissolve > 0.001) {
+          float band = 1.0 - smoothstep(0.0, 0.05, gzDissolveN - (uDissolve * 1.2 - 0.1));
+          totalEmissiveRadiance += uRimColor * band * 2.2;
         }
         #ifdef USE_MAP
           if (uGlowStrength > 0.001) {
@@ -357,8 +373,10 @@ function getBaseMaterial(aluminum: THREE.Material): THREE.Material {
 
 /** Dims the aluminium ends together with the label so out-of-focus cans go dark. */
 export function setCanFocus(can: THREE.Object3D, focus: number) {
-  if (can.userData.focus === focus) return;
+  const boost = (can.userData.rimBoost as number | undefined) ?? 0;
+  if (can.userData.focus === focus && can.userData.appliedBoost === boost) return;
   can.userData.focus = focus;
+  can.userData.appliedBoost = boost;
   can.traverse((child) => {
     const mesh = child as THREE.Mesh;
     if (!mesh.isMesh) return;
@@ -367,13 +385,25 @@ export function setCanFocus(can: THREE.Object3D, focus: number) {
     if (surface) {
       surface.uFocus.value = focus;
       material.envMapIntensity = 0.3 + 0.7 * focus;
-      surface.uRimStrength.value = 0.9 - 0.55 * focus;
+      surface.uRimStrength.value = 0.9 - 0.55 * focus + boost;
       const physical = material as THREE.MeshPhysicalMaterial;
       if (physical.isMeshPhysicalMaterial) physical.clearcoat = Math.max(0.001, 0.35 * focus * focus); // never 0: avoids a shader recompile
     } else if (material.color) {
-      material.color.setScalar(0.06 + 0.79 * focus);
-      material.envMapIntensity = 0.3 + 0.7 * focus;
+      // machined aluminium: dim it with the label, relative to its authored colour and reflectance
+      const base = (material.userData.base ??= { color: material.color.clone(), env: material.envMapIntensity }) as { color: THREE.Color; env: number };
+      material.color.copy(base.color).multiplyScalar(0.07 + 0.93 * focus);
+      material.envMapIntensity = base.env * (0.3 + 0.7 * focus);
     }
+  });
+}
+
+/** Scales the reflectance of the can's metal ends (the opening holds the lid in a dark, cold light). */
+export function setCanLidExposure(can: THREE.Object3D, exposure: number) {
+  ['Top', 'Tab'].forEach((name) => {
+    const material = (can.getObjectByName(name) as THREE.Mesh | undefined)?.material as THREE.MeshStandardMaterial | undefined;
+    if (!material) return;
+    const base = (material.userData.base ??= { color: material.color.clone(), env: material.envMapIntensity }) as { color: THREE.Color; env: number };
+    material.envMapIntensity = base.env * exposure;
   });
 }
 

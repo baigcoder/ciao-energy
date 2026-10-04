@@ -20,6 +20,7 @@ import './styles/shop.css';
 import './styles/shop-extras.css';
 // Pointer layer, countdown, saved items, notices, stores.
 import './styles/fx.css';
+import './styles/shop-page.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
