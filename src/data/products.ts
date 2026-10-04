@@ -17,12 +17,6 @@ export interface PackOption {
   inStock: boolean;
 }
 
-export interface TastingProfile {
-  /** Taste notes from the label artwork; sensory scores are optional. */
-  notes: string[];
-  scores?: { sweetness: number; tartness: number; aroma: number; fizz: number; energyLift: number };
-}
-
 export interface Product {
   id: string;
   slug: string;
@@ -47,7 +41,6 @@ export interface Product {
   features: string[];
   textureUrl: string;
   relatedSlugs: string[];
-  tasting: TastingProfile;
 }
 
 export const PACK_OPTIONS: PackOption[] = COMMERCE.packs.map((pack) => ({
@@ -83,7 +76,6 @@ export const PRODUCTS: Product[] = GRIZZLY_FLAVORS.map((flavor, index, all) => (
   features: GRIZZLY_BENEFITS.map((benefit) => benefit.title),
   textureUrl: `/textures/grizzly/${flavor.slug}.webp`,
   relatedSlugs: [1, 2, 3].map((step) => all[(index + step) % all.length].slug),
-  tasting: { notes: [flavor.taste] },
 }));
 
 export function getProductBySlug(slug: string): Product | undefined {

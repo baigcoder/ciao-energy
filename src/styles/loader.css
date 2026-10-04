@@ -241,3 +241,16 @@ html[data-loading='true'] .site-frame {
 .loader--stage.is-leaving .loader__stage {
   transform: translateY(-17vh) scale(1.06);
 }
+
+.loader__skip {
+  position: absolute;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--color-text-muted);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}

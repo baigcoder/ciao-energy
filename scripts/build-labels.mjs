@@ -17,11 +17,13 @@
  * Side panels are always drawn in code from the data file.
  */
 import { chromium } from 'playwright';
+import { localFontCss } from './local-fonts.mjs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const fontCss = await localFontCss();
 const data = JSON.parse(await readFile(resolve(root, 'src/data/grizzly.json'), 'utf8'));
 const only = process.argv[2];
 const outDir = resolve(root, 'public/textures/grizzly');
@@ -58,7 +60,7 @@ await writeFile(resolve(root, 'src/styles/flavor-tokens.css'), tokenLines.join('
 const browser = await chromium.launch();
 const page = await browser.newPage();
 await page.setContent(`<!doctype html><html><head>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;700&family=Libre+Franklin:ital,wght@1,700;1,900&display=block" rel="stylesheet">
+${fontCss}
 </head><body></body></html>`);
 await page.evaluate(async () => {
   await Promise.all([

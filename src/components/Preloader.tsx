@@ -24,13 +24,26 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, 
   const startedAt = useRef(performance.now());
   const readyRef = useRef(isReady);
   readyRef.current = isReady;
+  // Any key press or tap skips the wait (the opening is a moment, never a gate).
+  const skipRef = useRef(false);
+  useEffect(() => {
+    const skip = () => {
+      skipRef.current = true;
+    };
+    window.addEventListener('keydown', skip);
+    window.addEventListener('pointerdown', skip);
+    return () => {
+      window.removeEventListener('keydown', skip);
+      window.removeEventListener('pointerdown', skip);
+    };
+  }, []);
 
   useEffect(() => {
     let frame = 0;
     let value = 0;
     const tick = (now: number) => {
       const elapsed = now - startedAt.current;
-      const canFinish = readyRef.current && elapsed > minDurationMs;
+      const canFinish = readyRef.current && (elapsed > minDurationMs || skipRef.current);
       const target = canFinish ? 100 : Math.min(90, (elapsed / minDurationMs) * 90);
       value += (target - value) * (canFinish ? 0.12 : 0.08);
       const rounded = Math.min(100, Math.round(value + (canFinish && value > 99.4 ? 1 : 0)));
@@ -92,6 +105,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, 
         <img src={getProductThumbUrl({ slug: 'blue-raspberry' })} alt="" width={187} height={491} />
       </span>
       <span className="loader__glow" aria-hidden="true" />
+      {showStage && <span className="loader__skip">Press any key or tap to skip</span>}
       <div className="loader__stage" aria-hidden="true">
         <span className="loader__word">
           <span className="loader__word-base">{BRAND.wordmark[0]}</span>
