@@ -23,6 +23,7 @@ import { ZamzamPool } from './moments/zamzamPool';
 import { IceDust } from './moments/iceDust';
 import { moonPhase, twilight } from './liveSky';
 import { FinaleGlow } from './moments/finaleGlow';
+import { CAN } from './canDimensions';
 
 export { CAROUSEL_CONFIG };
 export type { SceneMode, SceneStateConfig };
@@ -209,6 +210,8 @@ export class SceneManager {
   public routeMode: 'HOME' | 'PRODUCT' | 'PAGE' = 'HOME';
   public activeProductIndex = 0;
   private productScroll = 0;
+  /** Narrow product pose fitted to the measured DOM stage (null until measured, and on wide screens). */
+  private narrowPose: typeof PRODUCT_POSE_NARROW | null = null;
   /** 0..1 as the product page reaches its end: the pinned can lifts away clear of the footer. */
   private productExit = 0;
   private heroLift = 0;
@@ -778,6 +781,24 @@ export class SceneManager {
     this.carouselVelocity = 0;
     this.carousel.lastIndex = normalized;
     this.lastAccentIndex = -1;
+  }
+
+  /**
+   * Narrow product pages: fit the can inside the DOM stage (top and height in CSS px at scroll 0).
+   * Pass null on wide screens, where the can sits left of the panel instead.
+   */
+  public setProductStage(stage: { top: number; height: number } | null) {
+    if (!stage || window.innerWidth >= 1024) {
+      this.narrowPose = null;
+      return;
+    }
+    const unitsPerPx = (2 * Math.tan(THREE.MathUtils.degToRad(PRODUCT_CAMERA.fov / 2)) * PRODUCT_CAMERA.z) / window.innerHeight;
+    // The product camera tilts up by camRotX, which drops everything a little: lift the can to compensate.
+    const tiltLift = Math.tan(0.04) * PRODUCT_CAMERA.z;
+    const centerPx = stage.top + stage.height / 2;
+    const canHeight = CAN.shellHeight + CAN.topHeight + CAN.bottomHeight;
+    const scale = THREE.MathUtils.clamp((0.86 * stage.height * unitsPerPx) / canHeight, 0.6, PRODUCT_POSE_NARROW.scale * 1.3);
+    this.narrowPose = { ...PRODUCT_POSE_NARROW, y: (window.innerHeight / 2 - centerPx) * unitsPerPx + tiltLift, scale };
   }
 
   /** Product page scroll (in viewport heights); on narrow screens the can scrolls away with the hero. */
@@ -1352,7 +1373,7 @@ export class SceneManager {
     this.camera.position.lerpVectors(this.routeCameraFrom, this.tmpVector, eased);
     this.camera.rotation.set(this.data.camRotX, 0, 0);
 
-    const pose = isNarrow ? PRODUCT_POSE_NARROW : PRODUCT_POSE;
+    const pose = isNarrow ? this.narrowPose ?? PRODUCT_POSE_NARROW : PRODUCT_POSE;
     const sway = this.reducedMotion ? 0 : Math.sin(time * 0.0006) * 0.03;
     const scrollLift = isNarrow ? this.productScroll * 7 : smooth(this.productExit) * 11;
     this.tmpEuler.set(pose.rotX + rotation.x, pose.rotY + rotation.y + sway, pose.rotZ);

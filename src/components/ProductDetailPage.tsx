@@ -58,7 +58,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ slug, onNa
   useEffect(() => {
     const button = addButtonRef.current;
     if (!button || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(([entry]) => setShowBuyBar(!entry.isIntersecting && entry.boundingClientRect.top < 0));
+    // Wide screens: the bar appears once Add to bag has scrolled up out of view. Phones: Add to bag sits
+    // below the first screen, so the bar is there from the start until the main button scrolls into view.
+    const phone = window.matchMedia('(max-width: 767px)');
+    const observer = new IntersectionObserver(([entry]) => setShowBuyBar(!entry.isIntersecting && (phone.matches || entry.boundingClientRect.top < 0)));
     observer.observe(button);
     return () => observer.disconnect();
   }, [slug]);
@@ -385,8 +388,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ slug, onNa
       <div className={`pdp-buybar ${showBuyBar ? 'is-visible' : ''}`} aria-hidden={!showBuyBar}>
         <div className="pdp-buybar__info">
           <span className="pdp-buybar__name">{product.name}</span>
-          <span className="pdp-buybar__meta">
-            {pack.label} × {quantity} · {formatPrice(lineTotal)}
+          <span className={`pdp-buybar__meta ${addState === 'error' ? 'is-error' : ''}`}>
+            {addState === 'error' && message ? message : `${pack.label} × ${quantity} · ${formatPrice(lineTotal)}`}
           </span>
         </div>
         <button

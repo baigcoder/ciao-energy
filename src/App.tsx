@@ -237,6 +237,40 @@ export const App: React.FC = () => {
     };
   }, [route]);
 
+  // Narrow product pages: the can is framed inside the measured DOM stage, whatever its height is.
+  useEffect(() => {
+    if (route.type !== 'PRODUCT') return;
+    let frame = 0;
+    let observer: ResizeObserver | undefined;
+    const measure = () => {
+      const stage = document.querySelector<HTMLElement>('.pdp-stage');
+      const sm = sceneManagerRef.current;
+      if (!stage || !sm) return;
+      const rect = stage.getBoundingClientRect();
+      sm.setProductStage(window.innerWidth < 1024 ? { top: rect.top + window.scrollY, height: rect.height } : null);
+    };
+    // The stage mounts with the page and the scene may still be loading: retry for a few frames.
+    let tries = 0;
+    const attach = () => {
+      const stage = document.querySelector<HTMLElement>('.pdp-stage');
+      if (stage && sceneManagerRef.current) {
+        measure();
+        observer = new ResizeObserver(measure);
+        observer.observe(stage);
+        return;
+      }
+      if (tries++ < 120) frame = requestAnimationFrame(attach);
+    };
+    attach();
+    window.addEventListener('resize', measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+      sceneManagerRef.current?.setProductStage(null);
+    };
+  }, [route, isReady]);
+
   // Keep the focused hero can between the header logo and the flavor title at every viewport size.
   useEffect(() => {
     if (!isHome) return;

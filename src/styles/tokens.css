@@ -137,6 +137,7 @@
   --layout-faq-max: 48rem;
   --layout-form-max: 35rem;
   --layout-header-height: 9.5rem;
+  --layout-header-phone: 5rem;   /* header bar height on phones and tablets: the product stage starts below it */
   --control-size: max(44px, 2.75rem); /* ≥44px touch target at every root size */
   --control-size-icon: 3.875rem;  /* benefit icon buttons */
 

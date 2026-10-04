@@ -759,13 +759,9 @@ html.is-locked {
     position: relative;
     inset: auto;
     height: 62svh;
+    margin-top: var(--layout-header-phone);
     opacity: 1;
     translate: none;
-  }
-
-  .pdp-buybar {
-    left: var(--space-sm);
-    right: var(--space-sm);
   }
 
   .pdp-stage__controls {
@@ -791,6 +787,38 @@ html.is-locked {
   .pack-picker__options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* ---------- Phones: the buying decision fits the first screen ----------
+   Shorter stage (the WebGL can is fitted to it, see SceneManager.setProductStage), then price, trust
+   and the pack picker close beneath the name, and the buy bar is there from the start. Only
+   non-interactive blocks change visual order, so keyboard order (back, flavors, pack, quantity, add)
+   still matches what you see. */
+@media (max-width: 767px) {
+  .pdp-stage {
+    height: clamp(17rem, 38svh, 26rem);
+  }
+
+  .pdp-panel {
+    display: flex;
+    flex-direction: column;
+    padding-top: var(--space-sm);
+  }
+
+  .pdp-panel > .back-link { order: 0; }
+  .pdp-panel > .pdp-panel__title { order: 1; margin-bottom: var(--space-xs); }
+  .pdp-panel > .pdp-panel__edition,
+  .pdp-panel > .countdown { order: 2; }
+  .pdp-panel > .pdp-price { order: 3; margin-bottom: var(--space-sm); }
+  .pdp-panel > .trust-badges { order: 4; margin-bottom: var(--space-sm); }
+  .pdp-panel > .flavor-swatches { order: 5; }
+  .pdp-panel > .pack-picker { order: 6; }
+  .pdp-panel > .pdp-buy { order: 7; }
+  .pdp-panel > .pdp-status { order: 8; }
+  .pdp-panel > .pdp-panel__tagline { order: 9; }
+  .pdp-panel > .info-toggle { order: 10; }
+  .pdp-panel > .pdp-share { order: 11; }
+  .pdp-panel > .pdp-facts { order: 12; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -961,6 +989,29 @@ html[data-pdp-end] .pdp-buybar {
 .pdp-buybar__meta {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+.pdp-buybar__meta.is-error {
+  color: var(--color-error);
+}
+
+/* Scrolled-to and focused controls stop above the bar instead of landing under it (WCAG 2.4.11). */
+html:has(.pdp-buybar) {
+  scroll-padding-bottom: calc(var(--control-size) + var(--space-3xl) + var(--notice-h, 0px));
+}
+
+/* Narrow screens: full-width bar (this must follow the base rule above or the base left/right win). */
+@media (max-width: 1023px) {
+  .pdp-buybar {
+    right: var(--space-sm);
+    left: var(--space-sm);
+  }
+}
+
+@media (max-width: 767px) {
+  .pdp-buybar {
+    bottom: calc(max(var(--space-sm), env(safe-area-inset-bottom)) + var(--notice-h, 0px));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
