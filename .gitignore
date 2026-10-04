@@ -39,3 +39,4 @@ Thumbs.db
 # Temporary test screenshots
 test_*.png
 ciao-local-test.png
+.review/
