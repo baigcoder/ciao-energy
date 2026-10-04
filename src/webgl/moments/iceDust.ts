@@ -46,6 +46,8 @@ const VERTEX = /* glsl */ `
     vAlpha = smoothstep(3.0, 9.0, depth) * (1.0 - smoothstep(34.0, 52.0, depth));
     vAlpha *= 0.55 + 0.45 * min(1.0, abs(uScroll) * 0.6);
     vTwinkle = 0.55 + 0.45 * sin(uTime * (1.5 + 3.0 * r) + r * 60.0);
+    // invisible crystals (too near / too far) skip rasterisation entirely
+    if (vAlpha <= 0.0) gl_PointSize = 0.0;
     vNearCan = exp(-length(world.xy - uCanPos.xy) * 0.35);
   }
 `;

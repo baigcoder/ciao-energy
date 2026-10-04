@@ -503,6 +503,7 @@ export class SceneManager {
     this.quality = level;
     this.buildPost(window.innerWidth, window.innerHeight, this.renderer.getPixelRatio());
     this.reflections?.setEnabled(level !== 'LOW');
+    this.stage.setQuality(level, window.innerWidth, window.innerHeight);
     this.onQualityChange?.(level);
   }
 
@@ -514,7 +515,8 @@ export class SceneManager {
     }
     this.isRunning = true;
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-    const cap = level === 'LOW' ? 1 : level === 'MEDIUM' ? 1.25 : 1.5;
+    // HIGH renders up to 2x for crisp labels; the frame-rate governor steps down on slow GPUs
+    const cap = level === 'LOW' ? 1 : level === 'MEDIUM' ? 1.25 : 2;
     this.setPixelRatio(Math.min(dpr, cap));
     this.applyQuality(level);
   }

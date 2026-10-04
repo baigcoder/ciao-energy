@@ -92,7 +92,8 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     float x = uv.x * uAspect + uCam.x * par * 0.05 + uScroll * par * 0.03;
     float shape = fbm(vec2(x * freq, seed));
     // a little ridged detail on the nearest layer only, so crests read as rock, not as a wave
-    float detail = (ridged(vec2(x * freq * 3.2, seed + 5.0)) - 0.55) * 0.1 * near;
+    // (skipped entirely for the far layer: compilers do not reliably fold x * 0.0 away)
+    float detail = near > 0.0 ? (ridged(vec2(x * freq * 3.2, seed + 5.0)) - 0.55) * 0.1 * near : 0.0;
     // vertical parallax is clamped: a high camera (FAQ, footer) must not lift the range into the sky
     float h = uHorizon + level + amp * (shape - 0.35 + detail) - clamp(uCam.y, -3.0, 3.0) * par * 0.006;
     float soft = mix(5.0, 1.2, near) / 540.0;
@@ -232,7 +233,7 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     float fogAmt = 0.4 + 0.6 * m;
     col = ridgeLayer(col, uv, 0.05 * m, 0.95, 0.36 * m, 3.1, 0.5, 0.8, vec3(0.02, 0.036, 0.066), 0.0);
     // fog bank lying in the valleys between the far and mid ridges, drifting slowly to the left
-    {
+    if (uv.y < uHorizon + 0.14) {
       float f = fbm(vec2(X * 2.4 + uCam.x * 0.035 - t * 0.011, (uv.y - uHorizon) * 9.0 + t * 0.004));
       float top = uHorizon + 0.06 * m + 0.08 * (f - 0.5);
       float bank = smoothstep(top + 0.03, top - 0.035, uv.y) * smoothstep(uHorizon - 0.08, uHorizon, uv.y);
@@ -240,7 +241,7 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     }
     col = ridgeLayer(col, uv, 0.015 * m, 1.6, 0.2 * m, 7.9, 1.0, 0.5, vec3(0.009, 0.017, 0.032), 0.5);
     // a thinner, quicker bank between the mid and near ridges
-    {
+    if (uv.y < uHorizon + 0.06) {
       float f = fbm(vec2(X * 3.6 + uCam.x * 0.07 - t * 0.019, (uv.y - uHorizon) * 14.0 - t * 0.006 + 6.0));
       float top = uHorizon + 0.012 * m + 0.05 * (f - 0.5);
       float bank = smoothstep(top + 0.02, top - 0.03, uv.y) * smoothstep(uHorizon - 0.06, uHorizon - 0.01, uv.y);
@@ -293,9 +294,11 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     }
 
     // low mist rolling across the horizon
-    float mist = fbm(vec2(uv.x * asp * 1.7 + t * 0.02, uv.y * 6.0 - t * 0.004));
-    float mistMask = smoothstep(0.32, 0.0, abs(uv.y - uHorizon + 0.02)) * (0.35 + 0.9 * mist);
-    col += vec3(0.010, 0.018, 0.03) * mistMask * uMist;
+    if (abs(uv.y - uHorizon + 0.02) < 0.32) {
+      float mist = fbm(vec2(uv.x * asp * 1.7 + t * 0.02, uv.y * 6.0 - t * 0.004));
+      float mistMask = smoothstep(0.32, 0.0, abs(uv.y - uHorizon + 0.02)) * (0.35 + 0.9 * mist);
+      col += vec3(0.010, 0.018, 0.03) * mistMask * uMist;
+    }
 
     // flavor colour wave: the new accent floods outward from the wave origin
     vec2 wv = (uv - uWipeOrigin) * vec2(asp, 1.0);
@@ -303,7 +306,8 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     float radius = uWipe * 2.4;
     float inside = smoothstep(radius, radius - 0.35, wd);
     vec3 accent = mix(uAccentPrev, uAccent, inside);
-    float front = exp(-pow((wd - radius) * 3.2, 2.0)) * (1.0 - uWipe) * step(0.001, uWipe);
+    float waveEdge = (wd - radius) * 3.2; // squared by hand: pow() of a negative base is undefined (NaN on some GPUs)
+    float front = exp(-waveEdge * waveEdge) * (1.0 - uWipe) * step(0.001, uWipe);
     col += uAccent * front * 0.2;
 
     // accent glow pool (under / behind the focused can)
@@ -371,12 +375,14 @@ const MIST_FRAGMENT = /* glsl */ `
     float lit = exp(-bd * 2.4);
     col = mix(col, vec3(0.16, 0.21, 0.3) * (0.35 + 0.65 * lit) * (0.7 + 0.5 * n2), clamp(burst * 1.6, 0.0, 1.0));
     // inside the can: deep liquid, lit from above, with slow light shafts
-    float shaft = pow(fbm(vec2(vUv.x * 5.0 + uTime * 0.04, uTime * 0.025)), 3.0);
-    float top = smoothstep(0.1, 1.0, vUv.y);
-    vec3 water = mix(vec3(0.003, 0.02, 0.035), uAccent * 0.12 + vec3(0.02, 0.07, 0.11), top);
-    water += vec3(0.35, 0.55, 0.65) * shaft * top * 0.3;
-    col = mix(col, water, uWater);
-    a = max(a, uWater * 0.6);
+    if (uWater > 0.001) {
+      float shaft = pow(fbm(vec2(vUv.x * 5.0 + uTime * 0.04, uTime * 0.025)), 3.0);
+      float top = smoothstep(0.1, 1.0, vUv.y);
+      vec3 water = mix(vec3(0.003, 0.02, 0.035), uAccent * 0.12 + vec3(0.02, 0.07, 0.11), top);
+      water += vec3(0.35, 0.55, 0.65) * shaft * top * 0.3;
+      col = mix(col, water, uWater);
+      a = max(a, uWater * 0.6);
+    }
     gl_FragColor = vec4(col, a);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -515,6 +521,26 @@ export class Stage {
     this.foreground = new THREE.Mesh(this.geometry, this.mistMaterial);
     this.foreground.frustumCulled = false;
     this.foreground.renderOrder = 1000;
+  }
+
+  /**
+   * Follows the scene's quality tier at run time (the frame-rate governor can step a slow GPU down):
+   * fewer noise octaves and a smaller backdrop target on MEDIUM / LOW.
+   */
+  setQuality(quality: 'HIGH' | 'MEDIUM' | 'LOW', width: number, height: number) {
+    this.resolutionScale = quality === 'HIGH' ? 0.5 : 0.35;
+    const octaves = quality === 'HIGH' ? 5 : 3;
+    const ridgeOctaves = quality === 'HIGH' ? 4 : 3;
+    // the three stage materials share one defines object: change it once, recompile all three
+    const defines = this.rtMaterial.defines as { OCTAVES: number; RIDGE_OCTAVES: number };
+    if (defines.OCTAVES !== octaves || defines.RIDGE_OCTAVES !== ridgeOctaves) {
+      defines.OCTAVES = octaves;
+      defines.RIDGE_OCTAVES = ridgeOctaves;
+      [this.rtMaterial, this.displayMaterial, this.mistMaterial].forEach((material) => {
+        material.needsUpdate = true;
+      });
+    }
+    this.resize(width, height);
   }
 
   resize(width: number, height: number) {
