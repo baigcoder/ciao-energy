@@ -2,9 +2,15 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { LocaleProvider } from './i18n';
+import '@fontsource/geist/latin-300.css';
+import '@fontsource/geist/latin-400.css';
+import '@fontsource/geist/latin-500.css';
+import '@fontsource/geist/latin-700.css';
+import '@fontsource/geist-mono/latin-300.css';
+import '@fontsource/geist-mono/latin-400.css';
+import '@fontsource/libre-franklin/latin-700-italic.css';
+import '@fontsource/libre-franklin/latin-900-italic.css';
 import './styles/base.css';
-// Static first paint written into #root at build time (scripts/prerender.ts).
-import './styles/prerender.css';
 import './styles/chrome.css';
 import './styles/loader.css';
 import './styles/home.css';
@@ -14,6 +20,7 @@ import './styles/shop.css';
 import './styles/shop-extras.css';
 // Pointer layer, countdown, saved items, notices, stores.
 import './styles/fx.css';
+import './styles/shop-page.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

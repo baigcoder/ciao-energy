@@ -412,29 +412,13 @@
 }
 
 .pdp-facts {
-  display: grid;
-  grid-template-columns: max-content 1fr;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2xs) var(--space-lg);
   margin-top: var(--space-md);
   padding-top: var(--space-md);
   border-top: var(--border-hairline) solid var(--color-line-subtle);
-  font-size: var(--font-size-md);
-}
-
-.pdp-facts__row {
-  display: contents;
-}
-
-.pdp-facts dt {
-  color: var(--color-text-muted);
-}
-
-.pdp-facts dd {
-  color: var(--color-text-primary);
-}
-
-.pdp-facts__note {
-  margin-top: var(--space-xs);
   font-size: var(--font-size-md);
   color: var(--color-text-muted);
 }
@@ -457,68 +441,14 @@
 }
 
 /* Tasting notes */
-.tasting__scales {
-  list-style: none;
-  display: grid;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-xl);
-}
 
-.tasting__scale {
-  display: grid;
-  grid-template-columns: var(--size-label-column) 1fr var(--space-xl);
-  align-items: center;
-  gap: var(--space-sm);
-  font-size: var(--font-size-md);
-}
 
-.tasting__label {
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
 
-.tasting__meter {
-  position: relative;
-  height: var(--size-meter);
-  border-radius: var(--radius-round);
-  background: var(--color-line-subtle);
-  overflow: hidden;
-}
 
-.tasting__meter::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--color-accent-deep), var(--color-accent));
-  transform: scaleX(var(--meter));
-  transform-origin: left center;
-}
 
-.tasting__value {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
-}
 
-.tasting__notes {
-  display: grid;
-  gap: var(--space-sm);
-}
 
-.tasting__notes div {
-  display: grid;
-  grid-template-columns: var(--size-label-column) 1fr;
-  gap: var(--space-sm);
-  padding-bottom: var(--space-sm);
-  border-bottom: var(--border-hairline) solid var(--color-line-subtle);
-}
 
-.tasting__notes dt {
-  font-size: var(--font-size-md);
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
 
 /* What's inside */
 .pdp-inside {
@@ -867,7 +797,17 @@ html.is-locked {
   pointer-events: none;
 }
 
+.fallback-stage__night {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 50% 55%, color-mix(in oklab, var(--color-accent) 22%, transparent), transparent 70%),
+    var(--image-night-stage) center / cover no-repeat,
+    var(--color-surface-base);
+}
+
 .fallback-stage img {
+  position: relative;
   height: 52vh;
   width: auto;
   filter: drop-shadow(0 0 var(--space-3xl) color-mix(in oklab, var(--color-accent) 40%, transparent));
@@ -893,9 +833,3 @@ body:has(.page) .site-header::before {
   margin-bottom: var(--space-sm);
 }
 
-.tasting__lines {
-  list-style: none;
-  display: grid;
-  gap: var(--space-xs);
-  font-size: var(--font-size-2xl);
-}

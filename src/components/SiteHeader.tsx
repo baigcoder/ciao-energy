@@ -6,7 +6,7 @@ import { BrandMark } from './BrandMark';
 import { BRAND, isTodo } from '../data/brand';
 import { useLocale } from '../locale';
 
-interface CiaoHeaderProps {
+interface SiteHeaderProps {
   isMenuOpen: boolean;
   onToggleMenu: () => void;
   onNavigateHome: () => void;
@@ -18,7 +18,7 @@ interface CiaoHeaderProps {
  * plus the hairline scroll progress with a glowing head. Progress width is read
  * from the --scroll-progress custom property, so scrolling never re-renders this.
  */
-export const CiaoHeader: React.FC<CiaoHeaderProps> = ({ isMenuOpen, onToggleMenu, onNavigateHome, onOpenBag }) => {
+export const SiteHeader: React.FC<SiteHeaderProps> = ({ isMenuOpen, onToggleMenu, onNavigateHome, onOpenBag }) => {
   const [isMuted, setIsMuted] = useState<boolean>(audioManager.isMuted());
   const { totalCount, isOpen: isBagOpen } = useCart();
   const { t } = useLocale();

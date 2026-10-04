@@ -27,7 +27,10 @@
       "tiktok": "TODO: confirm TikTok URL",
       "instagram": "TODO: confirm Instagram URL",
       "facebook": "TODO: confirm Facebook URL"
-    }
+    },
+    "siteUrl": "https://www.grizzlyenergy.pk",
+    "siteUrlNote": "Taken from the label artwork (www.grizzlyenergy.pk). TODO: confirm the production domain; canonical URLs, the sitemap and structured data are built from it.",
+    "summary": "Grizzly Energy is a halal-certified energy drink made in Pakistan by Grizzly Energy Beverage Labs. Every 250 ml can is made with natural caffeine from green coffee beans, B vitamins, electrolytes from sea salt and added Zamzam water, with no artificial colors and no preservatives. It comes in six flavors: Blue Raspberry, Mango Fuego, Watermelon, Strawberry Kiwi, Peach and Blackout Berry (a limited edition). Its tagline is “Fuel your wild side”."
   },
   "unconfirmed": {
     "caffeine": "TODO: confirm caffeine per 250 ml can (artwork shows both 160 mg/100 ml and 40 mg/can)",
@@ -637,7 +640,31 @@
   "faq": [
     {
       "q": "What is Grizzly Energy?",
-      "a": "Grizzly Energy is a sparkling energy drink made in Pakistan with natural caffeine from green coffee beans, natural electrolytes from sea salt, B vitamins (B3, B6, B12, biotin and B5) and added Zamzam water. It is halal certified, comes in a 250 ml can and is available in six flavors: Blue Raspberry, Mango Fuego, Watermelon, Strawberry Kiwi, Peach and Blackout Berry."
+      "a": "Grizzly Energy is a halal-certified energy drink made in Pakistan by Grizzly Energy Beverage Labs. Every 250 ml can is made with natural caffeine from green coffee beans, B vitamins, electrolytes from sea salt and added Zamzam water, with no artificial colors and no preservatives. It comes in six flavors: Blue Raspberry, Mango Fuego, Watermelon, Strawberry Kiwi, Peach and Blackout Berry (a limited edition). Its tagline is “Fuel your wild side”."
+    },
+    {
+      "q": "Is Grizzly Energy halal?",
+      "a": "Yes, Grizzly Energy is halal certified."
+    },
+    {
+      "q": "Does Grizzly Energy contain Zamzam water?",
+      "a": "Yes. Every can is made with added Zamzam water."
+    },
+    {
+      "q": "Where is Grizzly Energy made?",
+      "a": "Grizzly Energy is made in Pakistan by Grizzly Energy Beverage Labs."
+    },
+    {
+      "q": "What flavors does Grizzly Energy come in?",
+      "a": "Six flavors: Blue Raspberry, Mango Fuego, Watermelon, Strawberry Kiwi, Peach and Blackout Berry (limited edition)."
+    },
+    {
+      "q": "How big is a can?",
+      "a": "Each can is 250 ml."
+    },
+    {
+      "q": "What gives Grizzly Energy its energy?",
+      "a": "Natural caffeine from green coffee beans, with B vitamins (B3, B6, B12, biotin and B5) and electrolytes from sea salt."
     },
     {
       "q": "How much caffeine is in a can?",
@@ -648,16 +675,8 @@
       "a": "TODO: confirm sugar per 250 ml can before publishing."
     },
     {
-      "q": "Is Grizzly Energy halal?",
-      "a": "Yes, Grizzly Energy is halal certified."
-    },
-    {
-      "q": "What is the Zamzam water in Grizzly Energy?",
-      "a": "Every can is made with added Zamzam water."
-    },
-    {
-      "q": "Where is Grizzly Energy made?",
-      "a": "Grizzly Energy is made in Pakistan by Grizzly Energy Beverage Labs."
+      "q": "How do I pay?",
+      "a": "Cash on delivery. Card payment is coming soon."
     },
     {
       "q": "Who should not drink Grizzly Energy?",
@@ -750,5 +769,11 @@
   "limitedEdition": {
     "slug": "blackout-berry",
     "endsAt": "TODO: limited edition end date (ISO 8601, e.g. 2026-12-31T23:59:00+05:00)"
+  },
+  "policies": {
+    "$comment": "TODO: delivery and returns wording is unconfirmed; the site shows a neutral 'details to follow' line until these are supplied.",
+    "delivery": "TODO: delivery areas, times and fees",
+    "returns": "TODO: returns and refunds policy",
+    "contact": "TODO: customer service email, phone and hours"
   }
 }

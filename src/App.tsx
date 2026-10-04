@@ -1,10 +1,10 @@
-import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FLAVORS } from './data/flavors';
 import { getProductBySlug } from './data/products';
-import { SceneManager } from './webgl/sceneManager';
+import { applyHead } from './seo/applyHead';
+import type { SceneManager } from './webgl/sceneManager';
 import { Preloader } from './components/Preloader';
-import { audioManager } from './audio/audioManager';
-import { CiaoHeader } from './components/CiaoHeader';
+import { SiteHeader } from './components/SiteHeader';
 import { MenuDrawer } from './components/MenuDrawer';
 import { SiteFrame } from './components/SiteFrame';
 import { StageBackdrop } from './components/StageBackdrop';
@@ -19,28 +19,29 @@ import { NewsletterFooter, SiteFooter } from './components/NewsletterFooter';
 import { FallbackStage } from './components/FallbackStage';
 import { ProductDetailPage } from './components/ProductDetailPage';
 import { CartDrawer } from './components/CartDrawer';
+import { CartPage } from './components/CartPage';
+import { CheckoutPage } from './components/CheckoutPage';
+import { PackBuilder } from './components/PackBuilder';
+import { ShopPage } from './components/ShopPage';
+import { HalalPage } from './components/HalalPage';
+import { NotFoundPage } from './components/NotFoundPage';
 import { FlavorFinder } from './components/FlavorFinder';
+import { StoreLocator } from './components/StoreLocator';
 import { PointerFX } from './components/PointerFX';
 import { CookieNotice } from './components/CookieNotice';
 import type { MenuItem } from './components/MenuDrawer';
 import { useCart } from './store/cart';
 import { useSmoothScroll, prefersReducedMotion } from './hooks/useSmoothScroll';
 import { useHomeScroll } from './hooks/useHomeScroll';
-import { getRouteMeta } from './seo/meta';
-import { SCENE_SEQUENCE } from './webgl/sceneStates';
+import { OPENING_MIN_SECONDS, openingShouldPlay } from './webgl/moments/openingConfig';
 
-// Secondary pages load on demand; the home story and product page stay in the main chunk.
-const CartPage = lazy(() => import('./components/CartPage').then((module) => ({ default: module.CartPage })));
-const CheckoutPage = lazy(() => import('./components/CheckoutPage').then((module) => ({ default: module.CheckoutPage })));
-const PackBuilder = lazy(() => import('./components/PackBuilder').then((module) => ({ default: module.PackBuilder })));
-const HalalPage = lazy(() => import('./components/HalalPage').then((module) => ({ default: module.HalalPage })));
-const NotFoundPage = lazy(() => import('./components/NotFoundPage').then((module) => ({ default: module.NotFoundPage })));
-const StoreLocator = lazy(() => import('./components/StoreLocator').then((module) => ({ default: module.StoreLocator })));
+const MIN_LOADER_MS = 900;
 
 export type AppRoute =
   | { type: 'HOME' }
   | { type: 'CART' }
   | { type: 'CHECKOUT' }
+  | { type: 'SHOP' }
   | { type: 'MIX' }
   | { type: 'HALAL' }
   | { type: 'STORES' }
@@ -51,6 +52,7 @@ const STATIC_ROUTES: Record<string, AppRoute> = {
   '/': { type: 'HOME' },
   '/cart': { type: 'CART' },
   '/checkout': { type: 'CHECKOUT' },
+  '/shop': { type: 'SHOP' },
   '/mix': { type: 'MIX' },
   '/halal-zamzam': { type: 'HALAL' },
   '/stores': { type: 'STORES' },
@@ -62,11 +64,6 @@ function parseCurrentRoute(): AppRoute {
   if (STATIC_ROUTES[path]) return STATIC_ROUTES[path];
   const product = path.match(/^\/products?\/([^/]+)$/);
   if (product) return { type: 'PRODUCT', slug: product[1] };
-  if (path === '/shop') {
-    // Retired shop page: send old links to the range on the home page.
-    window.history.replaceState(null, '', '/#gamme');
-    return { type: 'HOME' };
-  }
   return { type: 'NOT_FOUND' };
 }
 
@@ -86,6 +83,8 @@ export const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneManagerRef = useRef<SceneManager | null>(null);
 
+  // The opening (a can cracking open under the loader) plays once per session, on the home route only.
+  const [playOpening] = useState(() => typeof window !== 'undefined' && parseCurrentRoute().type === 'HOME' && !prefersReducedMotion() && openingShouldPlay());
   const [isReady, setIsReady] = useState(false);
   const [route, setRoute] = useState<AppRoute>(parseCurrentRoute);
   const [activeIndex, setActiveIndex] = useState<number>(getInitialFlavorIndex);
@@ -134,7 +133,8 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // WebGL scene (client only). Falls back to the static stage when unavailable.
+  // WebGL scene (client only), loaded as its own chunk so the page's text and UI paint first.
+  // Falls back to the static stage when WebGL is unavailable or the chunk fails.
   useEffect(() => {
     const canvas = canvasRef.current;
     const probe = document.createElement('canvas');
@@ -145,46 +145,49 @@ export const App: React.FC = () => {
       return;
     }
 
+    let cancelled = false;
     let readyFrame = 0;
-    try {
-      const packshotSlug = new URLSearchParams(window.location.search).get('packshot');
-      const sm = new SceneManager(canvas, Boolean(packshotSlug));
-      sceneManagerRef.current = sm;
-      if (!packshotSlug) {
+    let teardown: () => void = () => {};
+    import('./webgl/sceneManager')
+      .then(({ SceneManager }) => {
+        if (cancelled) return;
+        const sm = new SceneManager(canvas);
+        sceneManagerRef.current = sm;
         const isMobile = window.innerWidth < 768;
         const cores = navigator.hardwareConcurrency || 4;
-        const quality = prefersReducedMotion() ? 'LOW' : isMobile || cores <= 4 ? 'MEDIUM' : 'HIGH';
-        sm.setQuality(quality);
+        // Reduced motion keeps the 3D scene but drops to the light tier, with no intro, spin or tilt.
+        const quality = prefersReducedMotion() ? 'MEDIUM' : isMobile || cores <= 4 ? 'MEDIUM' : 'HIGH';
         sm.reducedMotion = prefersReducedMotion();
+        sm.setQuality(quality);
         document.documentElement.dataset.quality = quality;
         sm.onQualityChange = (level) => {
           document.documentElement.dataset.quality = level;
         };
-      }
-      const initial = parseCurrentRoute();
-      if (packshotSlug) sm.setRoute('PRODUCT', packshotSlug);
-      else sm.setRoute(sceneRoute(initial), initial.type === 'PRODUCT' ? initial.slug : undefined);
-      sm.setInitialFlavor(initialFlavorIndexRef.current);
-      if (!packshotSlug && initial.type === 'HOME') sm.armIntro();
-      sm.onRoar = () => {
-        audioManager.play('growl');
-        document.documentElement.dispatchEvent(new CustomEvent('grizzly:roar'));
-      };
-      const unsubscribe = sm.carousel.onChanged(({ index }) => setActiveIndex(index));
-      readyFrame = requestAnimationFrame(() => {
-        readyFrame = requestAnimationFrame(() => setIsReady(true));
+        const initial = parseCurrentRoute();
+        sm.setRoute(sceneRoute(initial), initial.type === 'PRODUCT' ? initial.slug : undefined);
+        sm.setInitialFlavor(initialFlavorIndexRef.current);
+        if (initial.type === 'HOME') sm.armIntro(playOpening);
+        const unsubscribe = sm.carousel.onChanged(({ index }) => setActiveIndex(index));
+        readyFrame = requestAnimationFrame(() => {
+          readyFrame = requestAnimationFrame(() => setIsReady(true));
+        });
+        teardown = () => {
+          unsubscribe();
+          if (sceneManagerRef.current === sm) sceneManagerRef.current = null;
+          sm.dispose();
+        };
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setWebGlAvailable(false);
+        setIsReady(true);
       });
-      return () => {
-        cancelAnimationFrame(readyFrame);
-        unsubscribe();
-        if (sceneManagerRef.current === sm) sceneManagerRef.current = null;
-        sm.dispose();
-      };
-    } catch {
-      setWebGlAvailable(false);
-      setIsReady(true);
-    }
-  }, []);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(readyFrame);
+      teardown();
+    };
+  }, [playOpening]);
 
   // Flavor drives the colour tokens ([data-flavor]) and a shareable hash.
   useEffect(() => {
@@ -196,44 +199,9 @@ export const App: React.FC = () => {
     }
   }, [activeIndex, route, isHome]);
 
-  // Title, description, canonical, Open Graph and JSON-LD per route: the same
-  // values scripts/prerender.ts writes into the static HTML (src/seo/meta.ts).
+  // Title, description, canonical, Open Graph and JSON-LD per route (src/seo/meta.ts).
   useEffect(() => {
-    const meta = getRouteMeta(window.location.pathname);
-    document.title = meta.title;
-    const upsert = <T extends HTMLElement>(selector: string, create: () => T) => {
-      let element = document.head.querySelector<T>(selector);
-      if (!element) {
-        element = create();
-        document.head.appendChild(element);
-      }
-      return element;
-    };
-    const setMeta = (attr: 'name' | 'property', key: string, content: string) => {
-      upsert<HTMLMetaElement>(`meta[${attr}="${key}"]`, () => {
-        const element = document.createElement('meta');
-        element.setAttribute(attr, key);
-        return element;
-      }).content = content;
-    };
-    setMeta('name', 'description', meta.description);
-    setMeta('property', 'og:title', meta.title);
-    setMeta('property', 'og:description', meta.description);
-    setMeta('property', 'og:url', meta.canonical);
-    setMeta('property', 'og:image', meta.image);
-    setMeta('name', 'robots', meta.noindex ? 'noindex, follow' : 'index, follow');
-    upsert<HTMLLinkElement>('link[rel="canonical"]', () => {
-      const element = document.createElement('link');
-      element.rel = 'canonical';
-      return element;
-    }).href = meta.canonical;
-    document.head.querySelectorAll('script[type="application/ld+json"]').forEach((element) => element.remove());
-    meta.jsonLd.forEach((data) => {
-      const script = document.createElement('script');
-      script.type = 'application/ld+json';
-      script.textContent = JSON.stringify(data);
-      document.head.appendChild(script);
-    });
+    applyHead(route);
   }, [route]);
 
   // Product page scroll moves the can away with the hero on narrow screens.
@@ -261,8 +229,6 @@ export const App: React.FC = () => {
       const top = title.getBoundingClientRect().top + window.scrollY;
       const logo = document.querySelector<HTMLElement>('.site-logo');
       sceneManagerRef.current?.setHeroSafeBottom(top, logo ? logo.getBoundingClientRect().bottom : 0);
-      const slider = document.querySelector<HTMLElement>('.flavor-slider');
-      if (slider) sceneManagerRef.current?.setPedestalBand(slider.getBoundingClientRect().bottom + window.scrollY + 8, window.innerHeight - 4);
     };
     update();
     const observer = new ResizeObserver(update);
@@ -272,6 +238,18 @@ export const App: React.FC = () => {
       observer.disconnect();
       window.removeEventListener('resize', update);
     };
+  }, [isHome, isReady]);
+
+  // The roar: once per visit, the first scroll away from the top.
+  useEffect(() => {
+    if (!isHome || !isReady) return;
+    const onScroll = () => {
+      if (window.scrollY < 24) return;
+      window.removeEventListener('scroll', onScroll);
+      sceneManagerRef.current?.roar();
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, [isHome, isReady]);
 
   // Benefit chapters light one block of the can label in the flavor colour.
@@ -308,7 +286,7 @@ export const App: React.FC = () => {
   );
 
   const menuItems: MenuItem[] = [
-    { key: 'range', href: '/#gamme', onSelect: () => goToSection('gamme') },
+    { key: 'range', href: '/shop', onSelect: () => navigate('/shop') },
     { key: 'benefits', href: '/#benefits-1', onSelect: () => goToSection('benefits-1') },
     { key: 'mix', href: '/mix', onSelect: () => navigate('/mix') },
     { key: 'finder', href: '/#gamme', onSelect: () => setIsFinderOpen(true) },
@@ -335,25 +313,33 @@ export const App: React.FC = () => {
   return (
     <>
       <a className="skip-link" href="#main">Skip to content</a>
-      <Preloader isReady={isReady} onDone={handlePreloaderDone} onLeave={handlePreloaderLeave} />
+      <Preloader isReady={isReady} onDone={handlePreloaderDone} onLeave={handlePreloaderLeave} minDurationMs={playOpening && webGlAvailable ? OPENING_MIN_SECONDS * 1000 : MIN_LOADER_MS} showStage={playOpening && webGlAvailable} />
 
-      <StageBackdrop scene={isHome ? scene : route.type === 'PRODUCT' ? 'flavor' : 'faq'} flavorLines={isHome ? [FLAVORS[activeIndex % FLAVORS.length].line1, FLAVORS[activeIndex % FLAVORS.length].line2] : []} />
-
-      <Atmosphere
-        scene={isHome ? scene : 'page'}
-        flavorSlug={FLAVORS[activeIndex % FLAVORS.length].id}
-        accentToken={FLAVORS[activeIndex % FLAVORS.length].accentToken}
-      />
+      {!webGlAvailable && (
+        <>
+          <StageBackdrop scene={isHome ? scene : route.type === 'PRODUCT' ? 'flavor' : 'faq'} flavorLines={isHome ? [FLAVORS[activeIndex % FLAVORS.length].line1, FLAVORS[activeIndex % FLAVORS.length].line2] : []} />
+          <Atmosphere
+            scene={isHome ? scene : 'page'}
+            flavorSlug={FLAVORS[activeIndex % FLAVORS.length].id}
+            accentToken={FLAVORS[activeIndex % FLAVORS.length].accentToken}
+          />
+        </>
+      )}
 
       {webGlAvailable ? (
-        <canvas ref={canvasRef} className="webgl-canvas" aria-hidden="true" />
+        <canvas
+          ref={canvasRef}
+          className="webgl-canvas"
+          role="img"
+          aria-label="Grizzly Energy cans in a cold mountain night: Blue Raspberry, Mango Fuego, Watermelon, Strawberry Kiwi, Peach and Blackout Berry. Everything shown here is also written on the page."
+        />
       ) : (
         <FallbackStage activeIndex={activeIndex} />
       )}
 
-      <SiteFrame scene={isHome ? scene : 'page'} chapter={isHome ? sectionIndex : undefined} chapters={SCENE_SEQUENCE.length} />
+      <SiteFrame scene={isHome ? scene : 'page'} />
 
-      <CiaoHeader
+      <SiteHeader
         isMenuOpen={isMenuOpen}
         onToggleMenu={() => setIsMenuOpen((open) => !open)}
         onNavigateHome={() => (isHome ? scrollToSection('gamme') : navigate('/'))}
@@ -364,7 +350,6 @@ export const App: React.FC = () => {
 
       <CartDrawer isOpen={isCartOpen} onClose={() => toggleCart(false)} onNavigate={navigate} />
 
-      <Suspense fallback={<main id="main" className="page" aria-busy="true" />}>
       {route.type === 'CART' ? (
         <main id="main" className="page">
           <CartPage onNavigate={navigate} />
@@ -372,6 +357,10 @@ export const App: React.FC = () => {
       ) : route.type === 'CHECKOUT' ? (
         <main id="main" className="page">
           <CheckoutPage onNavigate={navigate} />
+        </main>
+      ) : route.type === 'SHOP' ? (
+        <main id="main" className="page">
+          <ShopPage onNavigate={navigate} />
         </main>
       ) : route.type === 'MIX' ? (
         <main id="main" className="page">
@@ -417,12 +406,11 @@ export const App: React.FC = () => {
             onNavigateChapter={(index) => scrollToSection(`benefits-${index + 1}`)}
           />
           <ArgumentSection isActive={scene === 'argument'} />
-          <FullGammeSection isActive={scene === 'lineup'} />
+          <FullGammeSection isActive={scene === 'lineup'} onShop={() => navigate('/shop')} />
           <FaqSection isActive={sectionIndex >= 8} />
           <NewsletterFooter />
         </main>
       )}
-      </Suspense>
       <SiteFooter />
       <PointerFX onTilt={handleTilt} />
       <CookieNotice isReady={isReady} />

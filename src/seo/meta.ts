@@ -1,261 +1,206 @@
 /**
- * SEO and answer-engine metadata, one source for every route. Pure functions (no
- * DOM): the build script writes them into static HTML per route, and the app
- * applies the same values on client-side navigation. Only confirmed facts from
- * grizzly.json reach titles, text or structured data — TODO values never do.
+ * One source for everything search engines and AI assistants read: titles, descriptions,
+ * canonical URLs, Open Graph images and JSON-LD for every route. Used at build time (the
+ * prerender script writes it into static HTML) and at runtime (applyHead keeps it correct while
+ * the visitor navigates). Everything is derived from src/data/grizzly.json, and structured data
+ * only states what the visible page states: no prices (still placeholders), no caffeine or sugar
+ * figures, no reviews, no addresses until they are confirmed.
  */
-import { BRAND, GRIZZLY_BENEFITS, GRIZZLY_FAQ } from '../data/brand';
+import { BADGES, BRAND, GRIZZLY_FLAVORS, isTodo } from '../data/brand';
 import { FAQ_ITEMS } from '../data/faq';
-import { PRODUCTS, getProductBySlug, getProductFacts, type Product } from '../data/products';
+import { PRODUCTS, type Product } from '../data/products';
 
-/** Canonical origin. The label prints www.grizzlyenergy.pk; override with VITE_SITE_URL. */
-export const SITE_URL = (
-  import.meta.env?.VITE_SITE_URL ||
-  `https://${BRAND.company.website.replace(/^https?:\/\//, '')}`
-).replace(/\/+$/, '');
+export type SeoRoute =
+  | { type: 'HOME' }
+  | { type: 'SHOP' }
+  | { type: 'MIX' }
+  | { type: 'HALAL' }
+  | { type: 'STORES' }
+  | { type: 'CART' }
+  | { type: 'CHECKOUT' }
+  | { type: 'NOT_FOUND' }
+  | { type: 'PRODUCT'; slug: string };
 
-export const SITE_NAME = BRAND.name;
-
-/** The one-paragraph answer to "What is Grizzly Energy?": the visible FAQ answer, reused in schema and llms.txt. */
-export const BRAND_ANSWER = GRIZZLY_FAQ[0].a;
-
-export interface RouteMeta {
+export interface PageMeta {
   path: string;
   title: string;
   description: string;
-  canonical: string;
   image: string;
-  /** Static pages a crawler should not index (bag, checkout, 404). */
-  noindex?: boolean;
-  jsonLd: object[];
+  /** noindex pages (bag, checkout, 404). */
+  noindex: boolean;
+  jsonLd: Array<Record<string, unknown>>;
 }
 
+export const SITE_URL: string = BRAND.siteUrl.replace(/\/$/, '');
 const absolute = (path: string) => `${SITE_URL}${path}`;
-const productImage = (product: Pick<Product, 'slug'>) => absolute(`/social/${product.slug}.png`);
+const LABEL = `${BRAND.volume} ${BRAND.productType.toLowerCase()}`;
 
-const organization = {
-  '@type': 'Organization',
-  '@id': `${SITE_URL}/#organization`,
-  name: BRAND.name,
-  legalName: BRAND.company.name,
-  url: `${SITE_URL}/`,
-  logo: absolute('/brand/favicon.svg'),
-  slogan: BRAND.tagline,
-};
+const FLAVOR_NAMES = GRIZZLY_FLAVORS.map((flavor) => flavor.name);
 
-const website = {
-  '@type': 'WebSite',
-  '@id': `${SITE_URL}/#website`,
-  name: BRAND.name,
-  url: `${SITE_URL}/`,
-  publisher: { '@id': `${SITE_URL}/#organization` },
-};
+/** Key facts for a product, in the order they are shown and listed. Unconfirmed values read "To be confirmed". */
+export interface Fact {
+  label: string;
+  value: string;
+  confirmed: boolean;
+}
 
-function breadcrumb(items: Array<[string, string]>) {
+export function productFacts(product: Product): Fact[] {
+  const pending = 'To be confirmed';
+  const row = (label: string, value: string): Fact => ({ label, value: isTodo(value) ? pending : value, confirmed: !isTodo(value) });
+  return [
+    row('Size', product.volume),
+    row('Type', BRAND.productType),
+    row('Caffeine', 'TODO'),
+    row('Sugar', 'TODO'),
+    row('Ingredients', product.ingredients),
+    row('Halal status', 'Halal certified'),
+    row('Zamzam water', 'Made with added Zamzam water'),
+    row('Made in', product.origin.replace('Made in ', '')),
+  ];
+}
+
+const productUrl = (slug: string) => absolute(`/products/${slug}`);
+const imageFor = (slug?: string) => absolute(`/social/${slug ?? 'blue-raspberry'}.png`);
+
+function organization() {
   return {
-    '@type': 'BreadcrumbList',
-    itemListElement: items.map(([name, path], index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name,
-      item: absolute(path),
-    })),
+    '@type': 'Organization',
+    '@id': `${SITE_URL}/#organization`,
+    name: BRAND.name,
+    legalName: BRAND.company.name,
+    url: SITE_URL,
+    logo: absolute('/brand/favicon.svg'),
+    slogan: BRAND.tagline,
+    areaServed: 'PK',
   };
 }
 
-/**
- * Product schema without `offers`: prices are placeholders until confirmed, so no
- * price is published. Facts mirror the visible facts block exactly.
- */
+function website() {
+  return { '@type': 'WebSite', '@id': `${SITE_URL}/#website`, url: SITE_URL, name: BRAND.name, publisher: { '@id': `${SITE_URL}/#organization` }, inLanguage: 'en' };
+}
+
+function breadcrumb(items: Array<{ name: string; path: string }>) {
+  return {
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({ '@type': 'ListItem', position: index + 1, name: item.name, item: absolute(item.path) })),
+  };
+}
+
+/** Product schema: identity, size, origin and halal status only (no offer until prices are real). */
 function productSchema(product: Product) {
   return {
     '@type': 'Product',
-    '@id': `${absolute(`/products/${product.slug}`)}#product`,
-    name: `${BRAND.name} ${product.name}`,
+    '@id': `${productUrl(product.slug)}#product`,
+    name: `${product.name} ${BRAND.name}`,
     description: product.description,
-    image: productImage(product),
+    image: imageFor(product.slug),
+    url: productUrl(product.slug),
+    category: 'Energy drink',
     brand: { '@type': 'Brand', name: BRAND.name },
-    manufacturer: { '@id': `${SITE_URL}/#organization` },
-    category: BRAND.productType,
     countryOfOrigin: { '@type': 'Country', name: 'Pakistan' },
-    additionalProperty: getProductFacts(product)
-      .filter((fact) => fact.value !== 'To be confirmed')
-      .map((fact) => ({ '@type': 'PropertyValue', name: fact.label, value: fact.value })),
+    additionalProperty: [
+      { '@type': 'PropertyValue', name: 'Net volume', value: product.volume },
+      { '@type': 'PropertyValue', name: 'Halal status', value: 'Halal certified' },
+      { '@type': 'PropertyValue', name: 'Zamzam water', value: 'Made with added Zamzam water' },
+    ],
   };
 }
 
 function faqSchema() {
+  const answered = FAQ_ITEMS.filter((item) => !item.pending);
   return {
     '@type': 'FAQPage',
-    mainEntity: FAQ_ITEMS.map((item) => ({
-      '@type': 'Question',
-      name: item.question,
-      acceptedAnswer: { '@type': 'Answer', text: item.answer },
-    })),
+    mainEntity: answered.map((item) => ({ '@type': 'Question', name: item.question, acceptedAnswer: { '@type': 'Answer', text: item.answer } })),
   };
 }
 
-const graph = (...nodes: object[]) => [{ '@context': 'https://schema.org', '@graph': [organization, ...nodes] }];
-
-const DEFAULT_DESCRIPTION =
-  'Grizzly Energy: natural caffeine, natural electrolytes, B vitamins and added Zamzam water. Halal certified, made in Pakistan, six flavors.';
-
-const STATIC_PAGES: Record<string, { title: string; description: string; noindex?: boolean; crumb?: string }> = {
-  '/': { title: `${BRAND.name} – ${BRAND.tagline}`, description: DEFAULT_DESCRIPTION },
-  '/halal-zamzam': {
-    title: `Halal and Zamzam – ${BRAND.name}`,
-    description: 'Grizzly Energy is halal certified and made with added Zamzam water. Certificate details are being published.',
-    crumb: 'Halal and Zamzam',
-  },
-  '/mix': {
-    title: `Mix your pack – ${BRAND.name}`,
-    description: 'Build a mixed pack of Grizzly Energy flavors: Blue Raspberry, Mango Fuego, Watermelon, Strawberry Kiwi, Peach and Blackout Berry.',
-    crumb: 'Mix your pack',
-  },
-  '/stores': {
-    title: `Find a store – ${BRAND.name}`,
-    description: 'Where to buy Grizzly Energy. The stockist list is coming soon; order online with cash on delivery.',
-    crumb: 'Find a store',
-  },
-  '/cart': { title: `Your bag – ${BRAND.name}`, description: DEFAULT_DESCRIPTION, noindex: true },
-  '/checkout': { title: `Checkout – ${BRAND.name}`, description: DEFAULT_DESCRIPTION, noindex: true },
-};
-
-export const NOT_FOUND_META: RouteMeta = {
-  path: '/404',
-  title: `Page not found – ${BRAND.name}`,
-  description: DEFAULT_DESCRIPTION,
-  canonical: absolute('/'),
-  image: productImage(PRODUCTS[0]),
-  noindex: true,
-  jsonLd: [],
-};
-
-/** Metadata for a pathname, or the 404 metadata when the path is not a page. */
-export function getRouteMeta(pathname: string): RouteMeta {
-  const path = pathname.toLowerCase().replace(/\/+$/, '') || '/';
-  const productSlug = path.match(/^\/products?\/([^/]+)$/)?.[1];
-  if (productSlug) {
-    const product = getProductBySlug(productSlug);
-    if (!product) return NOT_FOUND_META;
-    const canonicalPath = `/products/${product.slug}`;
-    return {
-      path: canonicalPath,
-      title: `${product.name} energy drink – ${BRAND.name}`,
-      description: `${product.name}: ${product.tagline} ${BRAND.volume} can with natural caffeine, electrolytes, B vitamins and added Zamzam water. Halal certified.`,
-      canonical: absolute(canonicalPath),
-      image: productImage(product),
-      jsonLd: graph(productSchema(product), breadcrumb([['Home', '/'], ['Flavors', '/#gamme'], [product.name, canonicalPath]])),
-    };
+export function pageMeta(route: SeoRoute): PageMeta {
+  switch (route.type) {
+    case 'HOME':
+      return {
+        path: '/',
+        title: `${BRAND.name} – ${BRAND.tagline} | Halal energy drink made in Pakistan`,
+        description: `${BRAND.name} is a halal-certified energy drink made in Pakistan, with natural caffeine, B vitamins, electrolytes and added Zamzam water. Six flavors in ${BRAND.volume} cans.`,
+        image: imageFor(),
+        noindex: false,
+        jsonLd: [organization(), website(), faqSchema()],
+      };
+    case 'SHOP':
+      return {
+        path: '/shop',
+        title: `Shop ${BRAND.name} – all six flavors`,
+        description: `Shop all six ${BRAND.name} flavors (${FLAVOR_NAMES.join(', ')}). ${BADGES.join(', ')}. ${BRAND.origin}.`,
+        image: imageFor(),
+        noindex: false,
+        jsonLd: [
+          breadcrumb([{ name: 'Home', path: '/' }, { name: 'Shop', path: '/shop' }]),
+          {
+            '@type': 'ItemList',
+            itemListElement: PRODUCTS.map((product, index) => ({ '@type': 'ListItem', position: index + 1, url: productUrl(product.slug), name: product.name })),
+          },
+        ],
+      };
+    case 'PRODUCT': {
+      const product = PRODUCTS.find((item) => item.slug === route.slug);
+      if (!product) return pageMeta({ type: 'NOT_FOUND' });
+      return {
+        path: `/products/${product.slug}`,
+        title: `${product.name} energy drink – ${BRAND.name}`,
+        description: `${product.name}: ${product.tagline} A ${LABEL}, halal certified, with added Zamzam water. ${BRAND.origin}.`,
+        image: imageFor(product.slug),
+        noindex: false,
+        jsonLd: [
+          productSchema(product),
+          breadcrumb([{ name: 'Home', path: '/' }, { name: 'Shop', path: '/shop' }, { name: product.name, path: `/products/${product.slug}` }]),
+        ],
+      };
+    }
+    case 'HALAL':
+      return {
+        path: '/halal-zamzam',
+        title: `Halal and Zamzam – ${BRAND.name}`,
+        description: `${BRAND.name} is halal certified and made with added Zamzam water. What that means, and where the details will be published.`,
+        image: imageFor(),
+        noindex: false,
+        jsonLd: [breadcrumb([{ name: 'Home', path: '/' }, { name: 'Halal and Zamzam', path: '/halal-zamzam' }])],
+      };
+    case 'MIX':
+      return {
+        path: '/mix',
+        title: `Mix your own pack – ${BRAND.name}`,
+        description: `Build a 6, 12 or 24 can pack of ${BRAND.name} from any mix of the six flavors.`,
+        image: imageFor(),
+        noindex: false,
+        jsonLd: [breadcrumb([{ name: 'Home', path: '/' }, { name: 'Mix your own pack', path: '/mix' }])],
+      };
+    case 'STORES':
+      return {
+        path: '/stores',
+        title: `Find a store – ${BRAND.name}`,
+        description: `Where to buy ${BRAND.name}. The store list is coming soon; you can order online in the meantime.`,
+        image: imageFor(),
+        noindex: false,
+        jsonLd: [breadcrumb([{ name: 'Home', path: '/' }, { name: 'Find a store', path: '/stores' }])],
+      };
+    case 'CART':
+      return { path: '/cart', title: `Your bag – ${BRAND.name}`, description: `Your ${BRAND.name} bag.`, image: imageFor(), noindex: true, jsonLd: [] };
+    case 'CHECKOUT':
+      return { path: '/checkout', title: `Checkout – ${BRAND.name}`, description: `Checkout for ${BRAND.name}.`, image: imageFor(), noindex: true, jsonLd: [] };
+    default:
+      return { path: '/404', title: `Page not found – ${BRAND.name}`, description: `This page doesn't exist. Head back to the ${BRAND.name} range.`, image: imageFor(), noindex: true, jsonLd: [] };
   }
-  const page = STATIC_PAGES[path];
-  if (!page) return NOT_FOUND_META;
-  const jsonLd =
-    path === '/'
-      ? graph(website, faqSchema(), ...PRODUCTS.map(productSchema))
-      : page.noindex
-        ? []
-        : graph(breadcrumb([['Home', '/'], [page.crumb ?? page.title, path]]));
-  return {
-    path,
-    title: page.title,
-    description: page.description,
-    canonical: absolute(path),
-    image: productImage(PRODUCTS[0]),
-    noindex: page.noindex,
-    jsonLd,
-  };
 }
 
-/** Every indexable path, for the sitemap and the prerender step. */
-export function getIndexablePaths(): string[] {
+/** Every indexable route, for the sitemap and the prerender. */
+export function indexableRoutes(): SeoRoute[] {
   return [
-    '/',
-    ...PRODUCTS.map((product) => `/products/${product.slug}`),
-    ...Object.entries(STATIC_PAGES)
-      .filter(([path, page]) => path !== '/' && !page.noindex)
-      .map(([path]) => path),
+    { type: 'HOME' },
+    { type: 'SHOP' },
+    ...PRODUCTS.map((product) => ({ type: 'PRODUCT' as const, slug: product.slug })),
+    { type: 'MIX' },
+    { type: 'HALAL' },
+    { type: 'STORES' },
   ];
 }
 
-const escapeHtml = (value: string) =>
-  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-function factsList(product: Product) {
-  return `<dl class="prerender__facts">${getProductFacts(product)
-    .map((fact) => `<div><dt>${escapeHtml(fact.label)}</dt><dd>${escapeHtml(fact.value)}</dd></div>`)
-    .join('')}</dl>`;
-}
-
-const flavorLinks = () =>
-  `<ul class="prerender__flavors">${PRODUCTS.map(
-    (product) =>
-      `<li><a href="/products/${product.slug}"><img src="/products/thumbs/${product.slug}.png" alt="${escapeHtml(`${product.name} can`)}" width="187" height="491" loading="lazy" decoding="async" /><span>${escapeHtml(product.name)}</span></a></li>`
-  ).join('')}</ul>`;
-
-const siteNav = `<nav class="prerender__nav" aria-label="Main navigation"><a href="/">Home</a><a href="/#gamme">Flavors</a><a href="/mix">Mix your pack</a><a href="/halal-zamzam">Halal and Zamzam</a><a href="/stores">Find a store</a><a href="/#FAQ">FAQ</a></nav>`;
-
-/**
- * Crawlable, readable HTML for a route, placed inside #root at build time. It is
- * the first paint (text and a still can before any script runs) and what search
- * engines and assistants read; React replaces it when the app mounts.
- */
-export function getStaticBody(meta: RouteMeta): string {
-  const product = meta.path.startsWith('/products/') ? getProductBySlug(meta.path.split('/').pop() ?? '') : undefined;
-  let main: string;
-  if (product) {
-    main = `<p class="prerender__eyebrow">${escapeHtml(BRAND.name)}</p>
-<h1>${escapeHtml(product.name)}</h1>
-<img class="prerender__hero" src="/products/thumbs/${product.slug}.png" alt="${escapeHtml(`${product.name} can`)}" width="187" height="491" fetchpriority="high" />
-<p>${escapeHtml(product.description)}</p>
-<h2>${escapeHtml(product.name)} facts</h2>
-${factsList(product)}
-<h2>Other flavors</h2>
-${flavorLinks()}`;
-  } else if (meta.path === '/') {
-    main = `<p class="prerender__eyebrow">${escapeHtml(BRAND.tagline)}</p>
-<h1>${escapeHtml(BRAND.name)}</h1>
-<img class="prerender__hero" src="/products/thumbs/${PRODUCTS[0].slug}.png" alt="${escapeHtml(`${PRODUCTS[0].name} can`)}" width="187" height="491" fetchpriority="high" />
-<h2>What is ${escapeHtml(BRAND.name)}?</h2>
-<p>${escapeHtml(BRAND_ANSWER)}</p>
-<h2>Six flavors</h2>
-${flavorLinks()}
-<h2>What is in the can</h2>
-<ul>${GRIZZLY_BENEFITS.map((benefit) => `<li><strong>${escapeHtml(benefit.title)}.</strong> ${escapeHtml(benefit.labelDetail)}</li>`).join('')}</ul>
-<h2>Frequently asked questions</h2>
-${FAQ_ITEMS.map((item) => `<h3>${escapeHtml(item.question)}</h3><p>${escapeHtml(item.answer)}</p>`).join('\n')}`;
-  } else {
-    const heading = meta.title.replace(` – ${BRAND.name}`, '');
-    main = `<p class="prerender__eyebrow">${escapeHtml(BRAND.name)}</p>
-<h1>${escapeHtml(heading)}</h1>
-<p>${escapeHtml(meta.description)}</p>
-<h2>Flavors</h2>
-${flavorLinks()}`;
-  }
-  return `<div class="prerender">${siteNav}<main id="main" class="prerender__main">${main}</main></div>`;
-}
-
-/** robots.txt body. */
-export function getRobotsTxt(): string {
-  return `User-agent: *\nAllow: /\nDisallow: /cart\nDisallow: /checkout\n\nSitemap: ${SITE_URL}/sitemap.xml\n`;
-}
-
-/** sitemap.xml body. */
-export function getSitemapXml(): string {
-  const urls = getIndexablePaths()
-    .map((path) => `  <url><loc>${absolute(path)}</loc></url>`)
-    .join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
-}
-
-/** llms.txt: a plain summary for AI assistants, built from the same confirmed facts. */
-export function getLlmsTxt(): string {
-  const products = PRODUCTS.map(
-    (product) =>
-      `### ${product.name}\n${product.description}\nURL: ${absolute(`/products/${product.slug}`)}\n${getProductFacts(product)
-        .map((fact) => `- ${fact.label}: ${fact.value}`)
-        .join('\n')}`
-  ).join('\n\n');
-  const faq = FAQ_ITEMS.map((item) => `- Q: ${item.question}\n  A: ${item.answer}`).join('\n');
-  return `# ${BRAND.name}\n\n> ${BRAND_ANSWER}\n\nTagline: ${BRAND.tagline}\nMaker: ${BRAND.company.name}\nWebsite: ${SITE_URL}/\n\n## Products\n\n${products}\n\n## FAQ\n\n${faq}\n\n## Notes\n\n- Values shown as "To be confirmed" are awaiting confirmation from the brand and should not be estimated.\n- ${BRAND.warning}\n`;
-}
+export { absolute as absoluteUrl };

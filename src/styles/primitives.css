@@ -17,6 +17,11 @@
   --color-white-a72: rgba(255, 255, 255, 0.72);
   --color-black-a40: rgba(0, 0, 0, 0.4);
   --color-black-a70: rgba(0, 0, 0, 0.7);
+  --color-black-a10: rgba(0, 0, 0, 0.1);
+  --color-silver-100: #f4f6f9;
+  --color-silver-300: #c4c9d1;
+  --color-silver-500: #8c929c;
+  --color-silver-700: #50555e;
   --color-grey-900: #0d0d0e;
   --color-grey-800: #1c1c1e;
   --color-grey-700: #2e2e30;

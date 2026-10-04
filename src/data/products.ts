@@ -3,7 +3,7 @@
  * names, copy, nutrition and accents have one source. Pack prices are
  * PLACEHOLDERS until real pricing is supplied (labelled as such in the UI).
  */
-import { BRAND, COMMERCE, GRIZZLY_BENEFITS, GRIZZLY_FLAVORS, NUTRITION, UNCONFIRMED, confirmed } from './brand';
+import { BRAND, COMMERCE, GRIZZLY_BENEFITS, GRIZZLY_FLAVORS, NUTRITION } from './brand';
 
 export const PLACEHOLDER_PRICING = COMMERCE.placeholderPricing;
 
@@ -15,12 +15,6 @@ export interface PackOption {
   unitPrice: number;
   badge?: string;
   inStock: boolean;
-}
-
-export interface TastingProfile {
-  /** Taste notes from the label artwork; sensory scores are optional. */
-  notes: string[];
-  scores?: { sweetness: number; tartness: number; aroma: number; fizz: number; energyLift: number };
 }
 
 export interface Product {
@@ -47,7 +41,6 @@ export interface Product {
   features: string[];
   textureUrl: string;
   relatedSlugs: string[];
-  tasting: TastingProfile;
 }
 
 export const PACK_OPTIONS: PackOption[] = COMMERCE.packs.map((pack) => ({
@@ -83,7 +76,6 @@ export const PRODUCTS: Product[] = GRIZZLY_FLAVORS.map((flavor, index, all) => (
   features: GRIZZLY_BENEFITS.map((benefit) => benefit.title),
   textureUrl: `/textures/grizzly/${flavor.slug}.webp`,
   relatedSlugs: [1, 2, 3].map((step) => all[(index + step) % all.length].slug),
-  tasting: { notes: [flavor.taste] },
 }));
 
 export function getProductBySlug(slug: string): Product | undefined {
@@ -104,26 +96,4 @@ export function getRelatedProducts(slug: string): Product[] {
   const current = getProductBySlug(slug);
   if (!current) return PRODUCTS.slice(0, 3);
   return current.relatedSlugs.map((s) => getProductBySlug(s)).filter((p): p is Product => Boolean(p));
-}
-
-export interface ProductFact {
-  label: string;
-  value: string;
-}
-
-/**
- * The facts block for one flavor: shown on the product page, in the static HTML
- * and in the Product schema, so all three always say the same thing. Unconfirmed
- * values read "To be confirmed" and are never guessed.
- */
-export function getProductFacts(product: Product): ProductFact[] {
-  return [
-    { label: 'Size', value: product.volume },
-    { label: 'Caffeine', value: confirmed(UNCONFIRMED.caffeine) },
-    { label: 'Sugar', value: confirmed(UNCONFIRMED.sugar) },
-    { label: 'Ingredients', value: confirmed(product.ingredients) },
-    { label: 'Halal status', value: 'Halal certified' },
-    { label: 'Water', value: 'Made with added Zamzam water' },
-    { label: 'Made in', value: product.origin.replace(/^Made in\s+/i, '') },
-  ];
 }

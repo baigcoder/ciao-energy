@@ -29,6 +29,11 @@ export const STRINGS = {
   notFoundTitle: { en: 'Lost in the wild', ur: 'راستہ کھو گیا' },
   notFoundText: { en: 'This page doesn’t exist. Head back to the range.', ur: 'یہ صفحہ موجود نہیں۔ ذائقوں کی طرف واپس جائیں۔' },
   backHome: { en: 'Back to the range', ur: 'ذائقوں پر واپس جائیں' },
+  shopTheRange: { en: 'Shop the range', ur: 'رینج خریدیں' },
+  shopTitle: { en: 'Shop Grizzly Energy', ur: 'گرزلی انرجی خریدیں' },
+  claims: { en: 'Six flavors · Halal certified · Made in Pakistan', ur: 'چھ ذائقے · حلال سرٹیفائیڈ · پاکستان میں تیار' },
+  mixOwn: { en: 'Mix your own pack', ur: 'اپنا پیک خود بنائیں' },
+  viewAndAdd: { en: 'View and add to bag', ur: 'دیکھیں اور تھیلے میں ڈالیں' },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

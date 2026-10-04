@@ -11,7 +11,7 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onNavigate }) => {
   const { t } = useLocale();
   return (
     <section className="not-found" aria-labelledby="nf-title">
-      <img className="not-found__bear" src="/brand/bear-404.webp" alt="" aria-hidden="true" />
+      <img className="not-found__bear" src="/textures/grizzly/bear/blue-raspberry.webp" alt="" aria-hidden="true" />
       <p className="not-found__code display" aria-hidden="true">404</p>
       <h1 id="nf-title" className="display not-found__title">{t('notFoundTitle')}</h1>
       <p className="not-found__text">{t('notFoundText')}</p>

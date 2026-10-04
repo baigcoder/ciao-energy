@@ -6,11 +6,13 @@
  *   node scripts/build-social.mjs
  */
 import { chromium } from 'playwright';
+import { localFontCss } from './local-fonts.mjs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const fontCss = await localFontCss();
 const data = JSON.parse(await readFile(resolve(root, 'src/data/grizzly.json'), 'utf8'));
 const outDir = resolve(root, 'public/social');
 await mkdir(outDir, { recursive: true });
@@ -20,7 +22,7 @@ const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });
 for (const flavor of data.flavors) {
   const front = await readFile(resolve(root, `public/textures/grizzly/${flavor.slug}-front.png`));
   await page.setContent(`<!doctype html><html><head>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Libre+Franklin:ital,wght@1,900&display=block" rel="stylesheet">
+  ${fontCss}
   <style>
     body { margin: 0; width: 1200px; height: 630px; overflow: hidden; font-family: Geist, sans-serif; color: #fff;
       background: radial-gradient(60% 80% at 70% 60%, ${flavor.accent} 0%, ${flavor.accentDeep} 55%, #000 100%); }
@@ -46,7 +48,7 @@ const poster = await browser.newPage({ viewport: { width: 1080, height: 1350 } }
 for (const flavor of data.flavors) {
   const front = await readFile(resolve(root, `public/textures/grizzly/${flavor.slug}-front.png`));
   await poster.setContent(`<!doctype html><html><head>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Libre+Franklin:ital,wght@1,900&display=block" rel="stylesheet">
+  ${fontCss}
   <style>
     body { margin: 0; width: 1080px; height: 1350px; overflow: hidden; font-family: Geist, sans-serif; color: #fff;
       background: radial-gradient(70% 55% at 50% 52%, ${flavor.accent} 0%, ${flavor.accentDeep} 52%, #000 100%); }

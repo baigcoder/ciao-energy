@@ -20,6 +20,23 @@
   pointer-events: none;
 }
 
+/* Scrim: the close-up chapters run the can under the header, so the bar gets a dark fade to stay legible. */
+body[data-scene] .site-header::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--layout-header-scrim);
+  background: linear-gradient(to bottom, var(--color-surface-base), transparent);
+  opacity: 0;
+  transition: opacity var(--motion-standard) var(--ease-out);
+  pointer-events: none;
+}
+
+body[data-scene='benefit'] .site-header::before,
+body[data-scene='argument'] .site-header::before {
+  opacity: var(--opacity-scrim);
+}
+
 .site-header__bar {
   position: relative;
   display: grid;
@@ -101,8 +118,6 @@
   border-radius: var(--radius-round);
   background: var(--color-text-primary);
   filter: blur(var(--blur-glint));
-  /* Hidden at rest: the head only glows once the visitor has scrolled. */
-  opacity: min(1, calc(var(--progress) * 40));
   transform: translateY(-50%);
 }
 
@@ -398,17 +413,10 @@
   top: 50%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-xs);
-  font-family: var(--font-family-mono);
+  gap: var(--space-3xl);
   font-size: var(--font-size-sm);
   line-height: 1;
-  color: var(--color-text-muted);
-  transform: translateY(-50%);
-}
-
-.frame-index span:first-child {
-  color: var(--color-text-primary);
+  transform: translateY(-15%);
 }
 
 .frame-hint {

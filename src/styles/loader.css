@@ -1,7 +1,7 @@
 /* ============================================================
-   LOADER — the wordmark fills with liquid light from the bottom,
-   a glowing level line rides the fill edge, ENERGY in the flavor
-   accent, hairline bar + zero-padded percent. Exit: two panels part.
+   LOADER — the wordmark forms in brushed silver, left to right, as
+   progress completes; ENERGY in the flavor accent, hairline bar +
+   zero-padded percent. Exit: the overlay fades, the scene carries on.
    --loader-fill is 0..1 (set from React).
    ============================================================ */
 
@@ -12,23 +12,43 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-}
-
-.loader__panel {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 50.5%;
   background: var(--color-surface-base);
-  transition: transform var(--motion-slow) var(--ease-in-out);
+  transition: opacity var(--motion-slow) var(--ease-out);
 }
 
-.loader__panel--top {
-  top: 0;
+/* The 3D opening plays behind the loader: the overlay only carries the wordmark and the percentage. */
+
+
+/* The 3D opening plays behind the loader: the overlay only carries the wordmark and the percentage. */
+.loader--stage {
+  background: transparent;
 }
 
-.loader__panel--bottom {
-  bottom: 0;
+.loader.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Still of the night stage with a can: visible from the first paint, hidden once the 3D opening can play. */
+.loader__still {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--image-night-stage) center / cover no-repeat;
+  opacity: 0.75;
+  transition: opacity var(--motion-slow) var(--ease-out);
+}
+
+.loader__still img {
+  height: 46vh;
+  width: auto;
+  margin-top: 14vh;
+  opacity: 0.55;
+}
+
+.loader__still.is-hidden {
+  opacity: 0;
 }
 
 /* Accent glow that rises and brightens with the fill. */
@@ -79,30 +99,27 @@
   -webkit-text-stroke: var(--border-hairline) var(--color-white-a30);
 }
 
-/* Liquid: silver-to-white light, clipped to the fill level. */
+/* Brushed silver, forming left to right out of the mist: a feathered mask follows the fill. */
 .loader__word-fill {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to top,
-    var(--color-accent) 0%,
-    var(--color-text-primary) 45%,
-    var(--color-text-primary) 100%
-  );
+  background: var(--texture-brushed), var(--gradient-brushed-silver);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  clip-path: inset(calc((1 - var(--loader-fill)) * 100%) 0 0 0);
+  -webkit-mask-image: linear-gradient(100deg, var(--color-white) calc(var(--loader-fill) * 125% - 25%), transparent calc(var(--loader-fill) * 125%));
+  mask-image: linear-gradient(100deg, var(--color-white) calc(var(--loader-fill) * 125% - 25%), transparent calc(var(--loader-fill) * 125%));
+  filter: blur(calc((1 - var(--loader-fill)) * var(--blur-forming)));
 }
 
-/* The level line: a thin glowing bar riding the top of the fill. */
+/* The forming edge: a thin cold light riding the front of the sweep. */
 .loader__word-edge {
   position: absolute;
-  left: calc(var(--space-sm) * -1);
-  right: calc(var(--space-sm) * -1);
-  top: calc((1 - var(--loader-fill)) * 100%);
-  height: var(--border-hairline);
-  background: linear-gradient(90deg, transparent, var(--color-accent), var(--color-text-primary), var(--color-accent), transparent);
+  top: calc(var(--space-sm) * -1);
+  bottom: calc(var(--space-sm) * -1);
+  left: calc(var(--loader-fill) * 100%);
+  width: var(--border-hairline);
+  background: linear-gradient(to bottom, transparent, var(--color-silver-100), transparent);
   box-shadow: var(--shadow-accent-glow);
   opacity: calc(1 - var(--loader-fill) * var(--loader-fill));
 }
@@ -164,14 +181,6 @@
 }
 
 /* Exit: the panels part, the wordmark lifts toward the viewer and dissolves. */
-.loader.is-leaving .loader__panel--top {
-  transform: translateY(-100%);
-}
-
-.loader.is-leaving .loader__panel--bottom {
-  transform: translateY(100%);
-}
-
 .loader.is-leaving .loader__stage {
   transform: scale(1.08);
   opacity: 0;
@@ -189,7 +198,7 @@
 
 @media (max-width: 767px) {
   .loader__word {
-    font-size: var(--font-size-4xl);
+    font-size: min(var(--font-size-4xl), 17vw);
   }
 
   .loader__sub {
@@ -204,8 +213,44 @@
 
 @media (prefers-reduced-motion: reduce) {
   .loader__glow { animation: none; }
-  .loader__panel,
   .loader__stage { transition: opacity var(--motion-fast) linear; }
-  .loader.is-leaving .loader__panel { transform: none; opacity: 0; }
   .loader.is-leaving .loader__stage { transform: none; filter: none; }
+}
+
+/* The opening owns the screen: header, hero HUD and frame marks wait until the loader leaves. */
+html[data-loading='true'] .site-header,
+html[data-loading='true'] .hero__hud,
+html[data-loading='true'] .hero-arrow,
+html[data-loading='true'] .site-frame {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.site-header,
+.hero__hud,
+.hero-arrow,
+.site-frame {
+  transition: opacity var(--motion-slow) var(--ease-out);
+}
+
+/* With the can in frame the wordmark sits in the upper half, the can's lid below it. */
+.loader--stage .loader__stage {
+  transform: translateY(-17vh);
+}
+
+.loader--stage.is-leaving .loader__stage {
+  transform: translateY(-17vh) scale(1.06);
+}
+
+.loader__skip {
+  position: absolute;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--color-text-muted);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  white-space: nowrap;
 }

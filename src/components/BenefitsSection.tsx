@@ -4,6 +4,7 @@ import { publicText } from '../data/brand';
 import { audioManager } from '../audio/audioManager';
 import { BenefitIcon } from './BenefitIcons';
 import { RevealText } from './RevealText';
+import { HalalSeal } from './HalalSeal';
 
 interface BenefitsSectionProps {
   activeChapter: number;
@@ -69,6 +70,7 @@ export const BenefitsSection: React.FC<BenefitsSectionProps> = ({ activeChapter,
           />
           <p className="section-copy__text">{publicText(benefit.description)}</p>
         </div>
+        {benefit.iconType === 'zamzam' && <HalalSeal placed />}
       </section>
     ))}
   </>

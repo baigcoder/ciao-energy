@@ -70,6 +70,25 @@
   --color-fruit-ice-edge: var(--color-ice-white-a60);
   --color-vignette: var(--color-black-a70);
 
+  /* Brushed silver: the wordmark metal (long highlights across fine horizontal grain) */
+  --gradient-brushed-silver: linear-gradient(105deg, var(--color-silver-500) 0%, var(--color-silver-100) 22%, var(--color-silver-300) 40%, var(--color-silver-100) 58%, var(--color-silver-500) 78%, var(--color-silver-300) 100%);
+  --texture-brushed: repeating-linear-gradient(0deg, var(--color-black-a10) 0 1px, transparent 1px 3px);
+  --blur-forming: 0.9rem;
+  --drift-distance: 2.5vw;
+  --image-night-stage: url('/brand/night-stage.jpg'); /* still of the WebGL night stage (no-WebGL fallback and first paint) */
+
+  /* Quiet chapter (Zamzam and halal): slow, single strokes */
+  --motion-draw: 2.6s;
+  --stagger-draw: 0.8s;
+  --size-seal: min(34vh, 21.5rem);
+  --stroke-seal: 0.5;
+  --size-shop-card: 26rem;
+  --size-fact: 17rem;
+  --size-shop-can: 9rem;
+  --size-shop-can-narrow: 6.5rem;
+  --size-seal-latin: 4.2px; /* in seal viewBox units */
+  --letter-spacing-label: 0.3em;
+
   /* Typography */
   --font-family-body: var(--font-geist);
   --font-family-mono: var(--font-geist-mono);
@@ -153,6 +172,7 @@
   /* Interaction states */
   --opacity-hover: 0.72;
   --opacity-pressed: 0.5;
+  --opacity-scrim: 0.85;
   --opacity-dimmed: 0.45;
   --opacity-disabled: 0.6;
   --opacity-faint: 0.25;
@@ -170,6 +190,7 @@
   --stagger-char: 22ms;
   --stagger-item: 50ms;
   --delay-reveal-body: 160ms;
+  --delay-finale-cta: 1400ms; /* after the cans have landed */
   --delay-reveal-line: 120ms;
   --motion-pulse: 1600ms;
   --motion-bars: 900ms;
@@ -188,13 +209,14 @@
   --layout-hint-bottom: 12rem;
   --layout-loader-word-max: 64rem;   /* loader wordmark width cap */
   --layout-arrow-offset: 15rem;      /* hero arrows from the centre line, either side of the flavor name */
+  --layout-header-scrim: 8.5rem;     /* dark fade behind the header over close-up chapters */
   --layout-arrow-top: 76%;           /* hero arrows ride the flavor-name row, clear of the cans */
   --layout-slider-width: 37.5rem;
   --layout-letters-inset: 8.2rem;
   --layout-footer-max: 50rem;
   --layout-intro-max: 30rem;
   --layout-faq-lead: 62svh;          /* FAQ title sits under the rising lineup */
-  --hero-fade-rate: 30;              /* hero HUD gone a quarter into the first segment, before it reaches the cans */
+  --hero-fade-rate: 16;              /* hero HUD gone by half the first segment */
 
   /* Backdrop composition (viewport-relative by design) */
   --backdrop-glow-width: 22vw;
@@ -286,7 +308,7 @@
   --size-hotspot: 2.25rem;
   --layout-checkout-max: 72rem;
   --layout-story-max: 60rem;
-  --size-bear-watermark: 34rem;
+  --size-bear-watermark: 56rem;
   --size-palette-min: 9rem;
   --size-story-col: 16rem;
   --layout-hotspot-panel: 20rem;
@@ -297,4 +319,4 @@
   --layout-notice-max: 26rem;
   --stroke-hex: 2.5;
 }
-:root { --opacity-watermark: 0.12; }
+:root { --opacity-watermark: 0.32; }
