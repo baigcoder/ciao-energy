@@ -92,7 +92,7 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
   // Flavor intro: the camera swings round to the left while the can leans in on the right, fully in frame.
   profile: {
     camera: cam(-1.4, 0.2, 27, 0.03, 0.05, 0),
-    product: { scale: 1.2, posX: 2.4, posY: 0.1, posZ: 0, rotX: 6 * DEG, rotY: 0.34, rotZ: 12 * DEG, spin: 0 },
+    product: { scale: 1.35, posX: -0.9, posY: 0.1, posZ: 0, rotX: 6 * DEG, rotY: 0.34, rotZ: 12 * DEG, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0.12 },
     stage: { ...STAGE, floorY: -4.4, reflect: 0.7, mistFg: 0.55 },
     spacing: CAROUSEL_CONFIG.spacing,

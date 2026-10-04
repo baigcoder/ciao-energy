@@ -1327,11 +1327,16 @@ function landing(t: number) {
  * side, three front cans on the floor. `delay` staggers the drop: the back row lands first.
  * Slot 0 is the flavor in focus (it takes the peak); the rest follow catalogue order.
  */
+/**
+ * Finale ridge: six cans, six distinct columns, so none hides another. The active
+ * flavor takes the higher of the twin summits; shoulders step down and toward the
+ * camera. Tops stay under the header and bases above the tagline and the button.
+ */
 const LINEUP_SLOTS = [
-  { x: 0, y: 2.6, z: -3.2, rotX: 0.02, rotY: 0, rotZ: 0, delay: 0 }, // peak
-  { x: -2.7, y: 0.2, z: -1.0, rotX: 0.03, rotY: 0.16, rotZ: 0.04, delay: 0.18 },
-  { x: 2.7, y: 0.2, z: -1.0, rotX: 0.03, rotY: -0.16, rotZ: -0.04, delay: 0.26 },
-  { x: -5.2, y: -0.8, z: 0.6, rotX: 0.03, rotY: 0.3, rotZ: 0.06, delay: 0.4 },
-  { x: 0, y: -1.25, z: 1.2, rotX: 0.04, rotY: 0, rotZ: 0, delay: 0.5 },
-  { x: 5.2, y: -0.8, z: 0.6, rotX: 0.03, rotY: -0.3, rotZ: -0.06, delay: 0.6 },
+  { x: -1.25, y: 1.45, z: -1.8, rotX: 0.02, rotY: 0.06, rotZ: 0.02, delay: 0 }, // summit (active flavor)
+  { x: 1.25, y: 1.15, z: -1.6, rotX: 0.02, rotY: -0.06, rotZ: -0.02, delay: 0.1 },
+  { x: -3.7, y: 0.35, z: -0.6, rotX: 0.03, rotY: 0.18, rotZ: 0.04, delay: 0.22 },
+  { x: 3.7, y: 0.2, z: -0.5, rotX: 0.03, rotY: -0.18, rotZ: -0.04, delay: 0.32 },
+  { x: -6.1, y: -0.6, z: 0.6, rotX: 0.03, rotY: 0.3, rotZ: 0.06, delay: 0.44 },
+  { x: 6.1, y: -0.7, z: 0.6, rotX: 0.03, rotY: -0.3, rotZ: -0.06, delay: 0.54 },
 ];

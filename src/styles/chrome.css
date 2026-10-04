@@ -26,7 +26,8 @@ body[data-scene] .site-header::before {
   position: absolute;
   inset: 0 0 auto;
   height: var(--layout-header-scrim);
-  background: linear-gradient(to bottom, var(--color-surface-base), transparent);
+  /* Solid through the logo band, then a long fade, so no label text reads behind the wordmark. */
+  background: linear-gradient(to bottom, var(--color-surface-base) 0%, var(--color-surface-base) 55%, transparent 100%);
   opacity: 0;
   transition: opacity var(--motion-standard) var(--ease-out);
   pointer-events: none;
@@ -413,10 +414,17 @@ body[data-scene='argument'] .site-header::before {
   top: 50%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3xl);
+  align-items: center;
+  gap: var(--space-xs);
+  font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
   line-height: 1;
-  transform: translateY(-15%);
+  color: var(--color-text-muted);
+  transform: translateY(-50%);
+}
+
+.frame-index span:first-child {
+  color: var(--color-text-primary);
 }
 
 .frame-hint {

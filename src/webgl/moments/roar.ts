@@ -27,7 +27,9 @@ const BEAR_FRAGMENT = /* glsl */ `
     vec2 d = (vUv - 0.5) * vec2(1.0, 1.15);
     float edge = smoothstep(0.55, 0.22, length(d));
     float a = smoothstep(0.06, 0.4, lum) * edge * uOpacity;
-    gl_FragColor = vec4(tex.rgb * a * 1.3, a);
+    // a cold, moonlit ghost: mostly desaturated, a little of the label's colour left
+    vec3 cold = mix(vec3(lum) * vec3(0.78, 0.86, 1.0), tex.rgb, 0.25);
+    gl_FragColor = vec4(cold * a, a);
   }
 `;
 
@@ -99,7 +101,7 @@ export class RoarMoment implements SceneMoment {
     // Rise fast, hold, then drift away like breath on cold glass.
     const rise = THREE.MathUtils.smoothstep(t, 0, 0.35);
     const fall = 1 - THREE.MathUtils.smoothstep(t, 1.5, DURATION);
-    const opacity = 0.62 * rise * fall;
+    const opacity = 0.3 * rise * fall; // felt more than seen: the copy stays readable over it
     const distance = scene.camera.position.z + 7;
     const height = 2 * Math.tan(THREE.MathUtils.degToRad(scene.camera.fov / 2)) * distance;
     const scale = height * 1.02 * (0.93 + 0.1 * THREE.MathUtils.smoothstep(t, 0, DURATION));

@@ -7,6 +7,7 @@ import { Preloader } from './components/Preloader';
 import { SiteHeader } from './components/SiteHeader';
 import { MenuDrawer } from './components/MenuDrawer';
 import { SiteFrame } from './components/SiteFrame';
+import { SCENE_SEQUENCE } from './webgl/sceneStates';
 import { StageBackdrop } from './components/StageBackdrop';
 import { Atmosphere } from './components/Atmosphere';
 import { HeroCarousel } from './components/HeroCarousel';
@@ -337,7 +338,7 @@ export const App: React.FC = () => {
         <FallbackStage activeIndex={activeIndex} />
       )}
 
-      <SiteFrame scene={isHome ? scene : 'page'} />
+      <SiteFrame scene={isHome ? scene : 'page'} chapter={isHome ? sectionIndex : undefined} chapters={SCENE_SEQUENCE.length} />
 
       <SiteHeader
         isMenuOpen={isMenuOpen}
