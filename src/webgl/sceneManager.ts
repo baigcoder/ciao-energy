@@ -1200,7 +1200,8 @@ export class SceneManager {
       const edge = Math.min(1, Math.max(0, (visibleSlots + 0.45 - stepDist) / 0.9));
       const edgeFade = smooth(edge);
       const ringArc = CAROUSEL_CONFIG.ringArc * Math.min(stepDist, 3) ** 2;
-      let canScale = heroScale * (0.7 + 0.3 * heroWeightSmooth) * (0.6 + 0.4 * edgeFade);
+      // neighbours nearly as large as the centre can (a product wall, as in the reference)
+      let canScale = heroScale * (0.9 + 0.1 * heroWeightSmooth) * (0.75 + 0.25 * edgeFade);
       // a product wall, not a parade: each neighbour hangs at its own height and lean (stable per can)
       const scatter = (1 - heroWeightSmooth) * (isMobile ? 0.4 : 1);
       const scatterY = Math.sin(i * 2.37 + 0.8) * 0.75 * scatter;
@@ -1450,13 +1451,14 @@ function landing(t: number) {
 const LINEUP_SLOTS = Array.from({ length: 12 }, (_, k) => {
   const t = k - 5.5;
   return {
-    // seen from a little above: one long row crossing the frame from lower left to upper right
-    x: t * 1.42,
-    y: 0.15 + t * 0.32,
-    z: -t * 0.12,
-    rotX: 0.38,
-    rotY: 0.3,
-    rotZ: 0.26,
+    // one tight row receding in depth: near and low at the left (showing bottoms), far and high
+    // at the right (showing tops), the cans twisting along it; the floor below stays empty
+    x: t * 1.62,
+    y: 0.75 + t * 0.38 - 0.012 * t * t, // rising, flattening toward the far end
+    z: 2.4 - t * 0.85,
+    rotX: -0.5 + (k / 11) * 1.1,
+    rotY: -0.3,
+    rotZ: 0.14,
     delay: (k / 11) * 0.6,
   };
 });

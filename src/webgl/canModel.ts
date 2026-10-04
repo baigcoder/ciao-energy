@@ -283,7 +283,8 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
           float gzSpot = gzRect(vMapUv, uGlowRect, 0.008) * step(0.001, uGlowStrength);
           diffuseColor.rgb *= mix(1.0, 0.1, uLabelDim * (1.0 - gzSpot)) * (1.0 + 0.7 * uLabelDim * gzSpot);
         #endif
-        diffuseColor.rgb *= mix(0.18, 1.0, uFocus);
+        // out-of-focus cans fall to near-black silhouettes; their chrome ends and edges stay lit
+        diffuseColor.rgb *= mix(0.07, 1.0, uFocus * uFocus);
         #ifdef USE_MAP
           // studio falloff down the body: lit under the lid, a touch darker at the base (packshot light)
           diffuseColor.rgb *= mix(0.8, 1.04, smoothstep(0.03, 0.97, vMapUv.y));
@@ -425,7 +426,8 @@ export function setCanFocus(can: THREE.Object3D, focus: number) {
     } else if (material.color) {
       // machined aluminium: dim it with the label, relative to its authored colour and reflectance
       const base = (material.userData.base ??= { color: material.color.clone(), env: material.envMapIntensity }) as { color: THREE.Color; env: number };
-      material.color.copy(base.color).multiplyScalar(0.18 + 0.82 * focus);
+      // the machined ends stay bright chrome even on dark side cans (only their reflections dim)
+      material.color.copy(base.color).multiplyScalar(0.6 + 0.4 * focus);
       material.envMapIntensity = base.env * (0.3 + 0.7 * focus);
     }
   });

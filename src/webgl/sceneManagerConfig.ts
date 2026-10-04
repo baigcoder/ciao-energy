@@ -4,14 +4,14 @@
  * symmetric arc, stepping back into the dark (flavors repeat, as on the shelf).
  */
 export const CAROUSEL_CONFIG = {
-  spacing: 2.5,          // arc length between cans: air between neighbours across the full width
+  spacing: 4.1,          // arc length between cans: air between neighbours across the full width
   spacingMobile: 2.6,
-  ringRadius: 11,        // tighter ring: neighbours step back in depth
+  ringRadius: 17,        // tighter ring: neighbours step back in depth
   ringRadiusMobile: 10,
   ringArc: 0.09,         // outer cans rise slightly (squared with the slot distance)
-  visibleSlots: 3.8,     // nine cans across the frame on desktop; the outermost fade into the frame edge
+  visibleSlots: 2.9,     // nine cans across the frame on desktop; the outermost fade into the frame edge
   visibleSlotsMobile: 1.35,
-  heroScale: 1.45,       // ≈55% of the viewport height when the space allows
+  heroScale: 1.25,       // ≈55% of the viewport height when the space allows
   heroScaleMobile: 1.6,
   heroLift: 1.4,         // focused can steps toward the camera
   yBase: 0.1,
