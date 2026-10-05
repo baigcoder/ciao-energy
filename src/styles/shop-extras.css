@@ -1034,6 +1034,13 @@ select.field__input--plain option {
   width: min(var(--size-seal), 40vw);
 }
 
+/* Very narrow phones: the seal's caption would run into the title that is pulled up under it. */
+@media (max-width: 359px) {
+  .story__seal {
+    margin-bottom: 0;
+  }
+}
+
 /* Privacy page lists: plain, readable, no bullets (each item is a full sentence). */
 .story-block__list {
   display: grid;
