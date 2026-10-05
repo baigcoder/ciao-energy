@@ -1228,10 +1228,12 @@ export class SceneManager {
           // vertical pose scales with it, so the lit benefit block keeps its place on screen
           // instead of the can for the lowest block leaving the top of the frame.
           // (the desktop intro can is very large; phones keep it to the old on-screen size)
-          const k = 0.45 + 0.13 * this.data.labelDim;
+          // The tagline section has no copy at the bottom, so there the can returns to near full size, centred.
+          const tagline = Math.max(0, 1 - Math.abs(this.sectionPosition - 6) / 0.6);
+          const k = 0.45 + 0.13 * this.data.labelDim + 0.32 * tagline;
           featScale *= k;
-          featY = featY * k + 1.45 + 1.4 * (1 - this.data.labelDim); // copy sits at the bottom, so the can rides higher
-          featX = 0.58;
+          featY = featY * k + (1.45 + 1.4 * (1 - this.data.labelDim)) * (1 - tagline); // copy sits at the bottom, so the can rides higher
+          featX = 0.58 * (1 - tagline);
         }
         featRotY += (this.pointer.smoothX / 1280) * this.tilt() + this.spinOffset;
         featRotY += this.userTurn.yaw;
@@ -1281,8 +1283,11 @@ export class SceneManager {
       let targetSectionPosY = this.data.canPosY;
       let targetSectionPosX = this.data.canPosX;
       if (isMobile && this.data.wave < 0.5) {
-        targetSectionScale *= 0.65;
-        targetSectionPosY += 1.0;
+        // Phones shrink and raise the can for the sections with copy at the bottom. The tagline section has
+        // no copy, so there the can returns to its full size and centre (it used to stay a small can at the top).
+        const tagline = Math.max(0, 1 - Math.abs(this.sectionPosition - 6) / 0.6);
+        targetSectionScale *= 0.65 + 0.35 * tagline;
+        targetSectionPosY += 1.0 * (1 - tagline);
         targetSectionPosX *= 0.2;
       }
 
@@ -1295,8 +1300,9 @@ export class SceneManager {
       canPosX += (targetSectionPosX - canPosX) * collapseBlend;
 
       // Depth falloff: the focused can is fully lit, neighbours step into the dark.
-      // neighbours fall to dark silhouettes (chrome edges and a hint of label); only the centre can is lit
-      const ringFocus = (0.07 + 0.13 * Math.max(0, 1 - stepDist / 3)) * edgeFade + 0.8 * heroWeightSmooth;
+      // neighbours step back into the dark but keep their label colour (it was a near-black silhouette, so the
+      // flavors beside the hero read as unlit shapes); only the centre can is fully lit
+      const ringFocus = (0.14 + 0.16 * Math.max(0, 1 - stepDist / 3)) * edgeFade + 0.8 * heroWeightSmooth;
       const focus = Math.max(ringFocus, p * collapseBlend);
       setCanFocus(can, Math.round(focus * 100) / 100);
       this.applyLabelState(can, p > 0.4);

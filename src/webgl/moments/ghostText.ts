@@ -102,17 +102,21 @@ export class GhostText implements SceneMoment {
     // visible while the argument section (position 6) is on screen
     const reveal = THREE.MathUtils.smoothstep(p, 5.35, 5.95);
     const leave = 1 - THREE.MathUtils.smoothstep(p, 6.3, 6.85);
-    const opacity = 0.55 * leave; // thin outline + faint fill: reads quieter than the old solid letters
+    // thin outline + faint fill: reads quieter than the old solid letters; a little stronger on phones, where the can covers more of it
+    const opacity = (scene.camera.aspect < 0.8 ? 0.8 : 0.55) * leave;
     this.mesh.visible = !!this.texture && reveal > 0.001 && opacity > 0.002;
     if (!this.mesh.visible) return;
     const z = -4.5;
     const distance = scene.camera.position.z - z;
     const viewHeight = 2 * Math.tan(THREE.MathUtils.degToRad(scene.camera.fov / 2)) * distance;
     const viewWidth = viewHeight * scene.camera.aspect;
-    const width = Math.min(viewWidth * 0.84, viewHeight * 1.5 * this.aspect * 0.5);
+    // Portrait phones: use nearly the whole width so the line stays readable instead of a thin band.
+    const widthFactor = scene.camera.aspect < 0.8 ? 0.94 : 0.84;
+    const width = Math.min(viewWidth * widthFactor, viewHeight * 1.5 * this.aspect * 0.5);
     this.mesh.scale.set(width, width / this.aspect, 1);
     // slow drift: the letters slide against the can as the section passes
-    const drift = (p - 6) * 1.6;
+    // (in proportion to the view width: a fixed 1.6 units pushed the type off a narrow phone screen)
+    const drift = (p - 6) * 0.12 * viewWidth;
     this.mesh.position.set(scene.camera.position.x + drift, scene.camera.position.y + 0.2, z);
     this.material.uniforms.uReveal.value = reveal;
     this.material.uniforms.uOpacity.value = opacity;

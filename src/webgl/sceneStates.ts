@@ -116,7 +116,9 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
   // The tagline: an upright can in front of the giant headline.
   argument: {
     camera: cam(0, 0.4, 28, -0.02),
-    product: { scale: 1.45, posX: 0, posY: 0.1, posZ: 0, rotX: 5 * DEG, rotY: 0.26, rotZ: 5 * DEG, spin: 0 },
+    // Was 1.45: the can read as a small object in front of the giant headline. Now it fills about 75% of the
+    // frame height, with its top clear of the header.
+    product: { scale: 1.65, posX: 0, posY: -0.4, posZ: 0, rotX: 5 * DEG, rotY: 0.26, rotZ: 5 * DEG, spin: 0 },
     lighting: LIGHT,
     stage: { ...STAGE, floorY: -3.4, mistFg: 0.35, stars: 0, field: 1 },
     spacing: CAROUSEL_CONFIG.spacing,
