@@ -4,7 +4,7 @@ import type { SceneMoment } from './types';
 import { FLAVORS } from '../../data/flavors';
 
 /**
- * Finale. All six cans drop into a mountain-shaped lineup (positions and the drop are in
+ * Finale. Every can drops into one tight, twisting row (positions and the drop are in
  * SceneManager.layoutCans); this moment adds a trace of each flavor's colour: a faint additive glow
  * behind the can and a light rim, both in the flavor accent, after the can lands.
  *
