@@ -32,6 +32,8 @@ export function confirmed(value: string, fallback = 'To be confirmed'): string {
 export type GrizzlyFlavor = (typeof grizzly.flavors)[number];
 export const GRIZZLY_FLAVORS: GrizzlyFlavor[] = grizzly.flavors;
 export const GRIZZLY_BENEFITS = grizzly.benefits;
+/** Label badges (natural caffeine, no artificial colors, no preservatives). */
+export const GRIZZLY_BADGES: string[] = grizzly.badges;
 export const GRIZZLY_FAQ = grizzly.faq;
 
 /**

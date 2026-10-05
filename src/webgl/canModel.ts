@@ -297,10 +297,12 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
             // Frost: a crystalline white film that creeps up from the base along a ragged, noisy front, with fine
             // sparkling grain; the label shows through where it is thin.
             float gzFrostN = 0.5 * gzN(vMapUv * vec2(38.0, 26.0)) + 0.3 * gzN(vMapUv * vec2(120.0, 84.0)) + 0.2 * gzN(vMapUv * vec2(8.0, 6.0));
-            gzFrost = smoothstep(0.0, 0.14, uFrost * 1.35 - vMapUv.y * 0.55 - gzFrostN * 0.6);
+            // (lighter than before: it covered the whole label white; now it creeps up the lower part in patches)
+            // a soft, broad front (a hard edge read as peeling paint) and a fine, low-contrast crystal grain
+            gzFrost = smoothstep(0.0, 0.45, uFrost * 1.05 - vMapUv.y * 0.75 - gzFrostN * 0.35);
             float gzCrystal = gzN(vMapUv * vec2(420.0, 300.0));
-            vec3 gzIce = vec3(0.8, 0.87, 0.95) * (0.72 + 0.4 * gzCrystal);
-            diffuseColor.rgb = mix(diffuseColor.rgb, gzIce, gzFrost * (0.55 + 0.35 * gzFrostN));
+            vec3 gzIce = vec3(0.82, 0.89, 0.96) * (0.85 + 0.2 * gzCrystal);
+            diffuseColor.rgb = mix(diffuseColor.rgb, gzIce, gzFrost * 0.32);
           }
         #endif
         // out-of-focus cans fall to near-black silhouettes; their chrome ends and edges stay lit
@@ -315,7 +317,7 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
         `#ifdef USE_ROUGHNESSMAP
           float roughnessFactor = roughness * texture2D(roughnessMap, vRoughnessMapUv).g * (0.85 + 0.3 * gzBrush);
           roughnessFactor = mix(roughnessFactor, 0.06, gzDrop.b * gzDropK);
-          roughnessFactor = mix(roughnessFactor, 0.7, gzFrost);
+          roughnessFactor = mix(roughnessFactor, 0.6, gzFrost);
         #else
           float roughnessFactor = roughness * mix(0.46, 0.2, gzMetal) * (0.82 + 0.36 * gzBrush);
         #endif`

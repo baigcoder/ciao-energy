@@ -29,7 +29,7 @@ One continuous WebGL scene carries a halal energy drink from Pakistan from the f
 <tr>
 <td align="center"><h2>12</h2><sub>cans in one live scene</sub></td>
 <td align="center"><h2>6</h2><sub>flavors, one limited</sub></td>
-<td align="center"><h2>11</h2><sub>choreographed 3D moments</sub></td>
+<td align="center"><h2>12</h2><sub>choreographed 3D moments</sub></td>
 <td align="center"><h2>0</h2><sub>audio files: every sound is synthesised</sub></td>
 <td align="center"><h2>15</h2><sub>pages prerendered to HTML</sub></td>
 <td align="center"><h2>109</h2><sub>end-to-end tests</sub></td>
@@ -65,13 +65,13 @@ The home page is one scroll-driven film. A pinned WebGL canvas sits behind the p
 </td>
 <td width="50%">
 <img src=".github/readme/flavor-intro.jpg" alt="Flavor intro">
-<p><b>02 · The flavor.</b> The camera swings round and the whole can floats beside its story. Frost creeps up the label from the base, holds for a breath, then melts into running drops.</p>
+<p><b>02 · The flavor.</b> The camera swings round and the whole can floats beside its story. Every spec fans in beside it on a leader line pinned to the can, riding it as it bobs and leans. Frost creeps up the label from the base, then melts into running drops.</p>
 </td>
 </tr>
 <tr>
 <td>
 <img src=".github/readme/electrolytes.jpg" alt="Electrolytes">
-<p><b>03–06 · The label.</b> The can turns to its side panel and lights one benefit at a time. On electrolytes, the air becomes the drink: fizz streams upward and fruit drifts past.</p>
+<p><b>03–06 · The label.</b> The whole can turns to its side panel and lights one benefit at a time. Between chapters it makes one full turn, scrubbed by your scroll. On electrolytes, the air becomes the drink: fizz streams upward and fruit drifts past.</p>
 </td>
 <td>
 <img src=".github/readme/zamzam.jpg" alt="Zamzam">
@@ -81,7 +81,7 @@ The home page is one scroll-driven film. A pinned WebGL canvas sits behind the p
 <tr>
 <td colspan="2">
 <img src=".github/readme/bear-swarm.jpg" alt="Finale">
-<p><b>08 · The pack.</b> Every can drops into one tight, twisting row. Above it, the grizzly from the label assembles out of thousands of drifting particles, breathes while you watch, and scatters when you move on. Then the camera rises into mountains and mist under a live sky, with the moon drawn at <i>tonight's</i> real phase.</p>
+<p><b>08 · The pack.</b> Every can drops into one tight, twisting row. Above it, the grizzly from the label assembles out of thousands of drifting particles, breathes while you watch, and scatters when you move on. Then the camera rises out of the studio into the open night: aurora, mountains and mist, with the moon drawn at <i>tonight's</i> real phase.</p>
 </td>
 </tr>
 </table>
@@ -94,6 +94,8 @@ The home page is one scroll-driven film. A pinned WebGL canvas sits behind the p
 | ✋ | **Press and hold** the centre can | Hero | It lifts out of the ring. Drag it to turn it any way you like |
 | 🌀 | **Flick** while turning | Any single-can scene | It keeps spinning the way you threw it, then eases to a stop |
 | 👉 | **Swipe** across the ring | Hero | The ring carries on with momentum, the background floods with the new flavor, and fruit bursts out |
+| 🎞 | **Scroll fast** | Anywhere on the story | Cinema bars close in, ice-cold water flings off the can, and vapour rises off the lid |
+| 🏷 | **Click a spec** | Flavor chapter (desktop) | The callouts pinned to the can jump to that benefit's chapter |
 | ⌨️ | <kbd>←</kbd> <kbd>→</kbd> · <kbd>Shift</kbd> + <kbd>↑</kbd> <kbd>↓</kbd> | Home, product pages | Turn and tilt the can like a model viewer |
 | 📱 | **Tilt** your phone | Mobile | The can follows (iOS asks once, on your first tap) |
 | 🖱 | **Hover** the wall | Desktop | Cans lean toward the pointer and chime, each in its own note |
@@ -160,10 +162,10 @@ flowchart LR
     P([Pointer · keys · tilt]) --> M
     T --> M[SceneManager<br/>render loop]
     M --> L[layoutCans<br/>fan · feature · finale row]
-    M --> MO[moments/*<br/>11 signature effects]
+    M --> MO[moments/*<br/>12 signature effects]
     M --> ST[Stage shader<br/>sky · studio · water]
     L & MO & ST --> R[Renderer]
-    R --> PF[Post<br/>lens focus → bloom → finish]
+    R --> PF[Post<br/>lens focus → anamorphic → bloom → grade]
     D[(grizzly.json)] -.-> T
     D -.-> UI[React DOM layer]
 ```
@@ -178,12 +180,13 @@ flowchart LR
   | `frostMelt` | Frost that melts into drops | `finaleGlow` | Flavor glow behind each can in the row |
   | `roar` | The bear rises on the first scroll | `bearSwarm` | The particle grizzly above the finale |
   | `fruitField` | Fruit burst on a flavor change | `iceDust` | Ice crystals drifting through every scene |
-  | `effervescence` | Fizz and fruit on the electrolytes chapter | | |
+  | `effervescence` | Fizz and fruit on the electrolytes chapter | `coldSpray` | Water flung off the can on a fast scroll |
 
 - **A can that behaves like metal.** [`canModel.ts`](src/webgl/canModel.ts) extends `MeshPhysicalMaterial` with `onBeforeCompile`. A single label texture drives brushed aluminium and lacquered ink, condensation beads at two scales, drops that run and clear a wet trail, frost, the lit benefit block and a rim light.
 - **A stage drawn in one shader.** [`stage.ts`](src/webgl/stage.ts) draws the aurora, today's moon, ridge-line mountains, fog banks, a wet mirror floor, the grey product studio and the flavor colour field at half resolution. All of it blends from timeline values.
 - **Reflections built in code.** [`studioEnv.ts`](src/webgl/studioEnv.ts) builds a softbox, strip lights and a flavor-coloured gel, prefiltered with PMREM. It is rebuilt when the flavor changes. There is no HDRI download.
-- **A lens.** [`post.ts`](src/webgl/post.ts) adds depth-of-field without a depth buffer, highlight-only bloom, and a finish pass with vignette, grain and dither.
+- **A lens.** [`post.ts`](src/webgl/post.ts) adds depth-of-field without a depth buffer, anamorphic streaks on the hottest highlights, highlight-only bloom, and a finish pass with a light grade, vignette, grain and dither.
+- **Film language.** Cinema bars close in on a fast scroll, a soft-box light sweeps across the can each time a chapter settles, and the can turns between chapters in step with the scroll.
 
 <details>
 <summary><b>Project map</b></summary>
@@ -199,7 +202,7 @@ src/
 │  ├─ sceneStates.ts       the scroll story
 │  ├─ canModel.ts          can materials and shader extensions
 │  ├─ stage.ts · post.ts · studioEnv.ts
-│  └─ moments/             the 11 signature effects
+│  └─ moments/             the 12 signature effects
 ├─ styles/                 tokens.css → primitives → component sheets
 ├─ seo/                    per-route head, JSON-LD
 └─ audio/                  synthesised UI sound

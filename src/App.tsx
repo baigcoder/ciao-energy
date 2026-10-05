@@ -30,6 +30,7 @@ import { FlavorFinder } from './components/FlavorFinder';
 import { StoreLocator } from './components/StoreLocator';
 import { PrivacyPage } from './components/PrivacyPage';
 import { PointerFX } from './components/PointerFX';
+import { SpecCallouts } from './components/SpecCallouts';
 import { CookieNotice } from './components/CookieNotice';
 import type { MenuItem } from './components/MenuDrawer';
 import { useCart } from './store/cart';
@@ -223,7 +224,12 @@ export const App: React.FC = () => {
         sm.setInitialFlavor(initialFlavorIndexRef.current);
         // The cans are only held back for the loader's cinematic; a scene created later has no loader to release them.
         if (initial.type === 'HOME' && loaderMode === 'cinematic') sm.armIntro(playOpening);
-        const unsubscribe = sm.carousel.onChanged(({ index }) => setActiveIndex(index));
+        // While the ring travels to a chosen flavor it passes the ones in between: those are not selections, so only
+        // the flavor the ring is heading for becomes active (the slider announces the choice at once, not on arrival).
+        const unsubscribe = sm.carousel.onChanged(({ index }) => {
+          const heading = Math.round(sm.carousel.target / sm.carousel.spacing);
+          if (index === ((heading % FLAVORS.length) + FLAVORS.length) % FLAVORS.length) setActiveIndex(index);
+        });
         readyFrame = requestAnimationFrame(() => {
           readyFrame = requestAnimationFrame(() => {
             performance.mark('grizzly:scene-first-frames');
@@ -363,8 +369,8 @@ export const App: React.FC = () => {
   }, [chapter]);
 
   const selectFlavor = useCallback((index: number) => {
-    if (sceneManagerRef.current) sceneManagerRef.current.carousel.goTo(index);
-    else setActiveIndex(index);
+    sceneManagerRef.current?.carousel.goTo(index);
+    setActiveIndex(index);
   }, []);
 
   const stepFlavor = useCallback((direction: 1 | -1) => {
@@ -450,6 +456,14 @@ export const App: React.FC = () => {
         <FallbackStage activeIndex={activeIndex} showCan={!sceneWanted ? false : true} />
       )}
 
+      {/* Cinema bars: slide in while the visitor scrolls fast, pull back at rest (driven from the scene loop). */}
+      {isHome && webGlAvailable && sceneWanted && (
+        <div className="cine-bars" aria-hidden="true">
+          <span className="cine-bars__bar cine-bars__bar--top" />
+          <span className="cine-bars__bar cine-bars__bar--bottom" />
+        </div>
+      )}
+
       <SiteFrame scene={isHome ? scene : 'page'} chapter={isHome ? sectionIndex : undefined} chapters={SCENE_SEQUENCE.length} />
 
       <SiteHeader
@@ -517,6 +531,9 @@ export const App: React.FC = () => {
             onViewDetails={(slug) => navigate(`/products/${slug}`)}
           />
           <ProfileSection activeIndex={activeIndex} isActive={scene === 'flavor'} onViewDetails={(slug) => navigate(`/products/${slug}`)} />
+          {webGlAvailable && sceneWanted && (
+            <SpecCallouts visible={sectionIndex === 1} sceneRef={sceneManagerRef} onNavigateChapter={(index) => scrollToSection(`benefits-${index + 1}`)} />
+          )}
           <BenefitsSection
             activeChapter={chapter}
             showRail={scene === 'flavor' || scene === 'benefit'}

@@ -26,15 +26,17 @@
   pointer-events: none;
 }
 
-/* Still of the night stage: visible from the first paint, hidden once the 3D opening can play.
-   A veil and a vignette keep it a backdrop, so the wordmark is the only thing that reads. */
+/* A clean product studio from the first paint (hidden once the 3D opening can play): deep black, a soft pool of the
+   flavor's colour behind the wordmark and a faint lit floor under the bar. It used to be a still of the night stage,
+   whose mountain ridgelines ran straight through the letters. */
 .loader__still {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 50% 45%, transparent 0%, var(--color-vignette) 75%),
-    linear-gradient(var(--color-surface-overlay), var(--color-surface-overlay)),
-    var(--image-night-stage) center 62% / cover no-repeat;
+    radial-gradient(ellipse 46% 34% at 50% 44%, color-mix(in oklab, var(--color-accent) 16%, transparent), transparent 72%),
+    radial-gradient(ellipse 70% 22% at 50% 66%, var(--color-white-a08), transparent 70%),
+    radial-gradient(ellipse at 50% 45%, transparent 35%, var(--color-vignette) 90%),
+    var(--color-surface-base);
   transition: opacity var(--motion-slow) var(--ease-out);
 }
 
@@ -92,8 +94,9 @@
 
 .loader__word-base {
   display: block;
-  color: var(--color-white-a08);
-  -webkit-text-stroke: var(--border-hairline) var(--color-white-a20);
+  /* legible from the first frame (it read as an empty screen at a low fill) */
+  color: var(--color-white-a12);
+  -webkit-text-stroke: var(--border-hairline) var(--color-white-a30);
 }
 
 /* Brushed silver, forming left to right out of the mist: a feathered mask follows the fill. */
@@ -150,7 +153,7 @@
 .loader__sub-base {
   display: block;
   color: transparent;
-  -webkit-text-stroke: var(--border-hairline) color-mix(in oklab, var(--color-accent) 45%, transparent);
+  -webkit-text-stroke: var(--border-hairline) color-mix(in oklab, var(--color-accent) 70%, transparent);
 }
 
 /* ENERGY fills with the flavor colour just behind the silver sweep. */

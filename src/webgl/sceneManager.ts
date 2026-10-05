@@ -26,6 +26,7 @@ import { FinaleGlow } from './moments/finaleGlow';
 import { CanCrack } from './moments/canCrack';
 import { FrostMelt } from './moments/frostMelt';
 import { BearSwarm } from './moments/bearSwarm';
+import { ColdSpray } from './moments/coldSpray';
 import { CAN } from './canDimensions';
 import { MOTION_RATE, damp } from './motionVocabulary';
 import { SCENE_COLOR } from './palette';
@@ -43,6 +44,11 @@ const PRODUCT_POSE = { x: -3.3, y: 0.2, z: 0, scale: 1.6, rotX: 0.08, rotY: 0.3,
 const PRODUCT_POSE_NARROW = { x: 0, y: 1.6, z: 0, scale: 1.1, rotX: 0.08, rotY: 0.3, rotZ: 0.14 };
 
 const CAN_COUNT = 12;
+/**
+ * On-screen height of the tilted desktop hero can per unit of scale, in world units (lid to base with its lean and the
+ * step toward the camera). Was 5.0, which left about a sixth of the space between the header and the title unused.
+ */
+const HERO_CAN_SPAN = 4.55;
 const wrap = (value: number, min: number, max: number) => {
   const range = max - min;
   return ((((value - min) % range) + range) % range) + min;
@@ -269,6 +275,14 @@ export class SceneManager {
   private wipeStart = -1e9;
   private lastAccentIndex = -1;
 
+  /** Cinema bars (DOM, found lazily) and their eased amount. */
+  private cineBars: HTMLElement | null = null;
+  private cineLookupAt = -1e9;
+  private cine = 0;
+  private lastCineWritten = -1;
+  /** The single-can section the scroll last settled on (for the arrival light sweep). */
+  private settledSection = -1;
+
   // Intro: cans rise into the ring after the loader.
   private introArmedAt = -1;
   private introStart = -1e9;
@@ -328,7 +342,7 @@ export class SceneManager {
     this.openingMoment = new OpeningMoment();
     this.fruit = new FruitField(this);
     this.crack = new CanCrack();
-    this.moments.push(this.openingMoment, this.roarMoment, this.fruit, this.crack, new FrostMelt());
+    this.moments.push(this.openingMoment, this.roarMoment, this.fruit, this.crack, new FrostMelt(), new ColdSpray(this));
     this.bindEvents();
     (window as unknown as { __GRIZZLY_SCENE__: SceneManager }).__GRIZZLY_SCENE__ = this;
     this.animate(0);
@@ -537,6 +551,25 @@ export class SceneManager {
     return ((Math.round(this.carousel.position / this.carousel.spacing) % count) + count) % count;
   }
 
+  private readonly edgeWorld = new THREE.Vector3();
+  private readonly edgeRight = new THREE.Vector3();
+  /**
+   * Where a point on the featured can's left silhouette, at a height along its axis (local units, 0 = middle), sits
+   * on screen in CSS pixels. Spec callouts hang their leader lines from it. False when no featured can is drawn.
+   */
+  public canEdgeOnScreen(localY: number, out: { x: number; y: number }): boolean {
+    if (this.routeMode !== 'HOME') return false;
+    const can = this.cans[this.featuredCanIndex()];
+    if (!can?.visible) return false;
+    this.edgeWorld.set(0, localY, 0).applyMatrix4(can.matrixWorld);
+    this.edgeRight.setFromMatrixColumn(this.camera.matrixWorld, 0);
+    this.edgeWorld.addScaledVector(this.edgeRight, -CAN.radius * can.scale.x).project(this.camera);
+    if (this.edgeWorld.z > 1) return false;
+    out.x = (this.edgeWorld.x * 0.5 + 0.5) * window.innerWidth;
+    out.y = (0.5 - this.edgeWorld.y * 0.5) * window.innerHeight;
+    return true;
+  }
+
   /** Cracks the centre hero can open (click on it, or the O key). Only while the hero ring is on screen. */
   public crackOpen() {
     if (this.routeMode !== 'HOME' || this.data.wave < 0.6) return;
@@ -573,14 +606,18 @@ export class SceneManager {
     const baseScale = isMobile ? CAROUSEL_CONFIG.heroScaleMobile : CAROUSEL_CONFIG.heroScale;
     const topY = (height / 2 - (headerBottomPx + marginPx * 0.5)) * unitsPerPx;
     const available = headerBottomPx > 0 ? topY - safeY : Number.POSITIVE_INFINITY;
-    this.heroFit = Math.min(1, Math.max(0.6, available / (5.0 * baseScale)));
+    // phones keep the roomier span: their can stands closer to upright under a smaller header
+    const span = isMobile ? 5.0 : HERO_CAN_SPAN;
+    this.heroFit = Math.min(1, Math.max(0.6, available / (span * baseScale)));
     const scale = baseScale * this.heroFit;
-    const canBottom = CAROUSEL_CONFIG.yBase + (isMobile ? 0.7 : 0) - 2.6 * scale;
+    // the base sits about 2.15 scaled units below the can's centre once tilted (2.6 lifted the can ~60 px too high,
+    // into the header logo)
+    const canBottom = CAROUSEL_CONFIG.yBase + (isMobile ? 0.7 : 0) - (isMobile ? 2.6 : 2.15) * scale;
     // The hero camera looks slightly up and sits a little low: both move the can down the screen.
     const heroCamera = SCENE_STATES.hero.camera;
     this.heroLift = safeY - canBottom + distance * Math.tan(heroCamera.rotX) + heroCamera.posY;
-    if (!isMobile && available !== Number.POSITIVE_INFINITY && available > 5.0 * scale) {
-      this.heroLift += (available - 5.0 * scale) * 0.3;
+    if (!isMobile && available !== Number.POSITIVE_INFINITY && available > span * scale) {
+      this.heroLift += (available - span * scale) * 0.3;
     }
   }
 
@@ -1333,15 +1370,48 @@ export class SceneManager {
     if (this.introStart > -1e8 && this.introStart < now - 4500) this.introStart = -1e9;
 
     this.layoutCans(delta, time, isMobile);
+    this.updateCinema(delta, now);
     this.reflections?.update(this.cans, this.data.floorY, this.data.reflect, this.reducedMotion);
     const focus = this.cans[this.featuredCanIndex()] ?? this.cans[0];
     this.updateStage(time, focus);
     // Lens focus: the ring's back cans fall softly out of focus, single-can scenes keep only a whisper of it, the
     // finale row stays sharp; a fast scroll softens the frame a little more (never under reduced motion).
-    const lens = 0.95 * this.data.wave + 0.22 * (1 - this.data.wave) * (1 - this.data.swirl);
+    // (a strong blur read as low-quality cans: the ring keeps only a gentle depth cue)
+    const lens = 0.4 * this.data.wave + 0.18 * (1 - this.data.wave) * (1 - this.data.swirl);
     const rush = this.reducedMotion ? 0 : Math.min(1, Math.abs(this.scrollVelocity) * 0.6) * 0.7;
     this.post?.setFocus(this.focusScreen.x, this.focusScreen.y, (lens + rush) * (1 - 0.8 * this.pickBlend));
     this.renderScene(time);
+  }
+
+  /**
+   * Film language on top of the timeline: cinema bars close in while the visitor scrolls fast and pull back at rest,
+   * and each time the scroll settles on a single-can chapter a soft-box light sweeps across the can (the same glint as
+   * a flavor change).
+   */
+  private updateCinema(delta: number, now: number) {
+    const speed = Math.abs(this.scrollVelocity);
+    const target = this.reducedMotion ? 0 : THREE.MathUtils.clamp((speed - 0.3) * 0.9, 0, 1);
+    this.cine += (target - this.cine) * damp(MOTION_RATE.focus, delta);
+    if (!this.cineBars && now - this.cineLookupAt > 1000) {
+      this.cineLookupAt = now;
+      this.cineBars = document.querySelector<HTMLElement>('.cine-bars');
+    }
+    if (this.cineBars && !this.cineBars.isConnected) this.cineBars = null;
+    const rounded = Math.round(this.cine * 1000) / 1000;
+    if (this.cineBars && rounded !== this.lastCineWritten) {
+      this.lastCineWritten = rounded;
+      this.cineBars.style.setProperty('--cine', String(rounded));
+    }
+
+    const nearest = Math.round(this.sectionPosition);
+    const state = SCENE_STATES[SCENE_SEQUENCE[nearest]?.state];
+    const settled = Math.abs(this.sectionPosition - nearest) < 0.04 && speed < 0.2;
+    if (settled && nearest !== this.settledSection) {
+      this.settledSection = nearest;
+      if (state && state.wave === 0 && state.swirl === 0 && !this.reducedMotion) this.spinStart = now;
+    } else if (Math.abs(this.sectionPosition - this.settledSection) > 0.5) {
+      this.settledSection = -1;
+    }
   }
 
   /** Positions every can for the current timeline state: hero ring, single feature or finale lineup. */
@@ -1413,14 +1483,34 @@ export class SceneManager {
           // (the desktop intro can is very large; phones keep it to the old on-screen size)
           // The tagline section has no copy at the bottom, so there the can returns to near full size, centred.
           const tagline = Math.max(0, 1 - Math.abs(this.sectionPosition - 6) / 0.6);
-          const k = 0.45 + 0.13 * this.data.labelDim + 0.32 * tagline;
+          // every single-can pose now shows the whole can (≈1.5 scale): phones show it whole too, in the upper half
+          const k = 0.7 + 0.25 * tagline;
           featScale *= k;
-          featY = featY * k + (1.45 + 1.4 * (1 - this.data.labelDim)) * (1 - tagline); // copy sits at the bottom, so the can rides higher
-          featX = 0.58 * (1 - tagline);
+          featY = featY * k + 1.75 * (1 - tagline); // copy sits at the bottom, so the can rides higher
+          featX = 0.3 * (1 - tagline);
         }
         featRotY += (this.pointer.smoothX / 1280) * this.tilt() + this.spinOffset;
         featRotY += this.userTurn.yaw;
         featRotX = featRotX + this.userTurn.pitch;
+        // Between two chapters the can makes one full turn, scrubbed by the scroll (not timed): it swings toward the
+        // camera mid-turn with a little roll, and lands facing exactly as the next pose wants (2π apart). The turn
+        // alternates direction chapter to chapter. Off for reduced motion.
+        let featZ = this.data.canPosZ;
+        let featRotZ = this.data.canRotZ;
+        const section = this.sectionPosition;
+        const fromState = SCENE_STATES[SCENE_SEQUENCE[Math.floor(section)]?.state];
+        const toState = SCENE_STATES[SCENE_SEQUENCE[Math.floor(section) + 1]?.state];
+        // only between two single-can poses: out of the hero ring or into the finale row the layout switches branch
+        const singleToSingle = !!fromState && !!toState && fromState.wave === 0 && toState.wave === 0 && fromState.swirl === 0 && toState.swirl === 0;
+        if (!this.reducedMotion && singleToSingle) {
+          const local = THREE.MathUtils.clamp((section - Math.floor(section) - 0.15) / 0.7, 0, 1);
+          const turn = local * local * (3 - 2 * local);
+          const swing = Math.sin(Math.PI * local);
+          const dir = Math.floor(section) % 2 === 0 ? 1 : -1;
+          featRotY += Math.PI * 2 * turn * dir;
+          featZ += swing * 1.6;
+          featRotZ += swing * 0.12 * dir;
+        }
         // inertia: the can leans back against a fast scroll and trails it slightly, then settles
         featRotX -= this.scrollVelocity * 0.07;
         featY += this.scrollVelocity * 0.12;
@@ -1430,10 +1520,10 @@ export class SceneManager {
         const float = this.reducedMotion ? 0 : 1 - this.data.labelDim;
         featY += Math.sin(time * 0.0009) * 0.09 * float;
         featRotY += Math.sin(time * 0.00045) * 0.16 * float;
-        const featRotZ = this.data.canRotZ + Math.sin(time * 0.0007 + 1.3) * 0.025 * float;
+        featRotZ += Math.sin(time * 0.0007 + 1.3) * 0.025 * float;
         setCanFocus(can, 1);
         this.applyLabelState(can, true);
-        can.position.set(featX, featY + fo.posY, this.data.canPosZ + fo.posZ);
+        can.position.set(featX, featY + fo.posY, featZ + fo.posZ);
         can.rotation.set(featRotX + fo.rotX, featRotY, featRotZ);
         can.scale.setScalar(featScale * fo.scale);
         this.applyCanOverride(can, i);
@@ -1497,7 +1587,8 @@ export class SceneManager {
       // flavors beside the hero read as unlit shapes); only the centre can is fully lit
       // (raised again: at 0.14–0.3 the wall read as dull black shapes; now every label shows its colour and art,
       // stepping down gently with distance so the centre can still leads)
-      const ringFocus = (0.52 + 0.22 * Math.max(0, 1 - stepDist / 3)) * edgeFade + 0.3 * heroWeightSmooth;
+      // (0.52–0.74 still read as dull, dark cans next to the hero: now they keep most of their colour and gloss)
+      const ringFocus = (0.74 + 0.18 * Math.max(0, 1 - stepDist / 3)) * edgeFade + 0.3 * heroWeightSmooth;
       const focus = Math.min(1, Math.max(ringFocus, p * collapseBlend));
       setCanFocus(can, Math.round(focus * 100) / 100);
       this.applyLabelState(can, p > 0.4);

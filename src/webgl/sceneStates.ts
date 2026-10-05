@@ -49,24 +49,22 @@ const STAGE = { floorY: -3.6, reflect: 1, mountains: 1, moon: 1, mistFg: 0.7, gl
 const STAGE_CLOSE = { floorY: -9, reflect: 0, mountains: 0.35, moon: 0.45, mistFg: 0.15, glow: 1.15, stars: 0, field: 0.85, studio: 0 };
 
 /**
- * Benefit poses come from the label layout: the can turns so the right panel's centre faces the
- * camera (u = 0.5 faces it at rotY 0, u grows to the right), and moves vertically so the active
- * block sits at the same screen height each time.
+ * Benefit poses come from the label layout: the can turns so the right panel's centre faces the camera (u = 0.5
+ * faces it at rotY 0, u grows to the right). The whole can stays in frame, lid to base, beside the copy: at 2.6
+ * the close-ups cut the can off at the top and bottom of the screen. The camera still steps closer chapter by
+ * chapter, and the lit block reads on the full can.
  */
-const BENEFIT_SCALE = 2.6;
+const BENEFIT_SCALE = 1.55;
 const SHELL_HEIGHT = CAN.shellHeight;
-const BLOCK_SCREEN_Y = 0.15; // world Y where the active block is held (screen middle)
 const panelCentreU = (LABEL.panels.right[0] + LABEL.panels.right[1]) / 2;
 /** The Zamzam chapter's upright can (world units); its base sits on the water line. */
 const ZAMZAM_CAN = { scale: 1.45, x: 3.3, y: 0.55 };
 const BENEFIT_ROT_Y = (0.5 - panelCentreU) * Math.PI * 2;
 
-const benefit = (index: number, rotZ: number, camZ: number, camX: number): SceneStateConfig => {
-  const [, v0, , v1] = LABEL.benefitBlocks[index];
-  const posY = BLOCK_SCREEN_Y - ((v0 + v1) / 2 - 0.5) * SHELL_HEIGHT * BENEFIT_SCALE;
+const benefit = (rotZ: number, camZ: number, camX: number): SceneStateConfig => {
   return {
     camera: cam(camX, 0, camZ, 0, 0, 0),
-    product: { scale: BENEFIT_SCALE, posX: 0.9, posY, posZ: 0, rotX: 7 * DEG, rotY: BENEFIT_ROT_Y, rotZ, spin: 0 },
+    product: { scale: BENEFIT_SCALE, posX: 2.6, posY: 0, posZ: 0, rotX: 7 * DEG, rotY: BENEFIT_ROT_Y, rotZ, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0, labelDim: 1 },
     stage: STAGE_CLOSE,
     spacing: CAROUSEL_CONFIG.spacing,
@@ -110,9 +108,9 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
   },
 
   // Benefits: the camera pushes closer chapter by chapter; the can steps up so the active block stays mid-screen.
-  benefit01: benefit(0, 6 * DEG, 29, 0),
-  benefit02: benefit(1, 5 * DEG, 27.5, 0.2),
-  benefit03: benefit(2, 4 * DEG, 26, -0.2),
+  benefit01: benefit(6 * DEG, 28.5, 0),
+  benefit02: benefit(5 * DEG, 27.5, 0.2),
+  benefit03: benefit(4 * DEG, 26.5, -0.2),
   // Zamzam: the camera pulls back and the whole can stands upright over still, lit water (see moments/zamzamPool.ts):
   // the label is lit again and the can's base meets its own reflection on the water line.
   benefit04: {
@@ -130,7 +128,8 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
     camera: cam(0, 0.4, 28, -0.02),
     // Was 1.45: the can read as a small object in front of the giant headline. Now it fills about 75% of the
     // frame height, with its top clear of the header.
-    product: { scale: 1.65, posX: 0, posY: -0.4, posZ: 0, rotX: 5 * DEG, rotY: 0.26, rotZ: 5 * DEG, spin: 0 },
+    // (1.65 at -0.4 clipped the base at the bottom edge: the whole can now stands in frame)
+    product: { scale: 1.55, posX: 0, posY: 0.05, posZ: 0, rotX: 5 * DEG, rotY: 0.26, rotZ: 5 * DEG, spin: 0 },
     lighting: LIGHT,
     stage: { ...STAGE, floorY: -3.4, mistFg: 0.35, stars: 0, field: 1 },
     spacing: CAROUSEL_CONFIG.spacing,
@@ -149,12 +148,13 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
     swirl: 1,
   },
 
-  // FAQ: the camera lifts away; no can rests under the header.
+  // FAQ: the camera lifts out of the studio into the open night: aurora, the range, tonight's moon (it used to rise
+  // into an empty black frame over a flat grey band).
   faq: {
     camera: cam(0, -13, 32, 0.02),
     product: { scale: 1.12, posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0 },
-    stage: { ...STAGE, floorY: -2.3, reflect: 0, glow: 0.2, mistFg: 0.2, mountains: 0.35, studio: 1 },
+    stage: { ...STAGE, floorY: -2.3, reflect: 0, glow: 0.2, mistFg: 0.45, mountains: 0.8, studio: 0 },
     spacing: CAROUSEL_CONFIG.spacing,
     wave: 0,
     swirl: 1,

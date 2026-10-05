@@ -984,6 +984,9 @@
 
 .lineup:not(.is-active) .lineup__cta {
   pointer-events: none;
+  /* gone, not half-faded, once the finale hands over (its scroll fade has already taken it to ~0 by then); a
+     half-faded claims line failed contrast over the FAQ */
+  visibility: hidden;
 }
 
 .lineup__claims {
@@ -1051,4 +1054,106 @@
   .benefit .section-copy::before {
     inset-inline: calc(var(--space-md) * -1);
   }
+}
+
+/* ---------- Spec callouts (flavor chapter): labels pinned to the floating can ----------
+   Each callout's anchor is a point on the can's left silhouette (translate3d set by SpecCallouts every frame);
+   the body hangs to the left of it: text, a leader line, a glowing dot on the can. */
+.spec-callouts {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-content);
+  pointer-events: none;
+}
+
+.spec-callout {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.spec-callout__body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: right;
+  transform: translate(calc(-100% + var(--spec-dot) / 2), -50%);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.spec-callouts.is-visible .spec-callout__body {
+  opacity: 1;
+  transition-delay: calc(var(--i) * var(--stagger-char) * 4 + var(--delay-reveal-body));
+}
+
+.spec-callout__body--link {
+  cursor: pointer;
+}
+
+.spec-callouts.is-visible .spec-callout__body--link {
+  pointer-events: auto;
+}
+
+.spec-callout__text {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.spec-callout__title {
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.spec-callout__detail {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* the leader draws itself out from the label toward the can */
+.spec-callout__leader {
+  width: var(--spec-leader);
+  height: var(--border-hairline);
+  background: linear-gradient(90deg, var(--color-white-a30), var(--color-accent));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--motion-standard) var(--ease-out);
+}
+
+.spec-callouts.is-visible .spec-callout__leader {
+  transform: scaleX(1);
+  transition-delay: calc(var(--i) * var(--stagger-char) * 4 + var(--delay-reveal-body));
+}
+
+.spec-callout__dot {
+  flex: none;
+  width: var(--spec-dot);
+  height: var(--spec-dot);
+  border-radius: var(--radius-round);
+  background: var(--color-accent);
+  box-shadow: var(--shadow-accent-glow);
+}
+
+.spec-callout__body--link:hover .spec-callout__title,
+.spec-callout__body--link:focus-visible .spec-callout__title {
+  color: var(--color-accent);
+}
+
+@media (max-width: 1023px) {
+  .spec-callouts { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spec-callout__body,
+  .spec-callout__leader { transition: none; }
 }
