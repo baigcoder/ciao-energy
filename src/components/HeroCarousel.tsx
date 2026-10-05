@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { BRAND } from '../data/brand';
 import { FLAVORS } from '../data/flavors';
 import { RevealText } from './RevealText';
 import { useLocale, FLAVOR_NAMES_UR } from '../locale';
@@ -61,6 +62,8 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ activeIndex, isActiv
   return (
     <section id="gamme" className={`home-section hero ${isActive ? 'is-active' : ''}`} aria-label="Flavors">
       <h1 className="sr-only">Grizzly Energy, natural energy drinks in six flavors</h1>
+      {/* The direct answer to "What is Grizzly Energy?" comes first in the document (same text as the FAQ answer). */}
+      <p className="sr-only" id="what-is-grizzly">{BRAND.summary}</p>
 
       <button type="button" className="hero-arrow hero-arrow--prev" onClick={onPrev} aria-label="Previous flavor">
         <ArrowDots direction="prev" />

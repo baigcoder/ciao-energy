@@ -53,9 +53,12 @@ export interface Fact {
 export function productFacts(product: Product): Fact[] {
   const pending = 'To be confirmed';
   const row = (label: string, value: string): Fact => ({ label, value: isTodo(value) ? pending : value, confirmed: !isTodo(value) });
+  const energy = product.nutrition.rows.find(([label]) => label === 'Energy')?.[1] ?? 'TODO';
   return [
     row('Size', product.volume),
     row('Type', BRAND.productType),
+    row('Flavor', product.tagline),
+    row('Calories', isTodo(energy) ? energy : `${energy} per can`),
     row('Caffeine', 'TODO'),
     row('Sugar', 'TODO'),
     row('Ingredients', product.ingredients),

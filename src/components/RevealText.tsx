@@ -21,7 +21,10 @@ export const RevealText: React.FC<RevealTextProps> = ({ lines, as = 'h2', classN
   return (
     <Tag className={`reveal ${className}`} aria-label={lines.join(' ')} id={id}>
       {lines.map((line, lineIndex) => (
-        <span className="reveal__line" key={lineIndex} aria-hidden="true">
+        <React.Fragment key={lineIndex}>
+          {/* a real space between lines, so the text content reads "BLUE RASPBERRY" for crawlers (the lines are blocks) */}
+          {lineIndex > 0 && ' '}
+        <span className="reveal__line" aria-hidden="true">
           {split === 'lines' ? (
             <span className="reveal__unit" style={{ '--i': lineIndex * 3 } as React.CSSProperties}>
               {line}
@@ -37,6 +40,7 @@ export const RevealText: React.FC<RevealTextProps> = ({ lines, as = 'h2', classN
             })
           )}
         </span>
+        </React.Fragment>
       ))}
     </Tag>
   );

@@ -36,9 +36,13 @@ export function llmsTxt(): string {
   });
   lines.push('', '## Questions and answers', '');
   FAQ_ITEMS.filter((item) => !item.pending).forEach((item) => lines.push(`**${item.question}** ${item.answer}`, ''));
-  const first = PRODUCTS[0];
-  lines.push('## Product facts example', '');
-  productFacts(first).forEach((fact) => lines.push(`- ${first.name} ${fact.label.toLowerCase()}: ${fact.value}`));
+  // Per flavor: only the facts that are confirmed. Anything still being confirmed is named once, not guessed.
+  lines.push('## Facts per flavor', '');
+  PRODUCTS.forEach((product) => {
+    const known = productFacts(product).filter((fact) => fact.confirmed).map((fact) => `${fact.label.toLowerCase()} ${fact.value}`);
+    const pending = productFacts(product).filter((fact) => !fact.confirmed).map((fact) => fact.label.toLowerCase());
+    lines.push(`- ${product.name}: ${known.join('; ')}. Not yet published: ${pending.join(', ')}.`);
+  });
   if (isTodo(BRAND.contactEmail)) lines.push('', 'Contact details are being confirmed.');
   return `${lines.join('\n')}\n`;
 }

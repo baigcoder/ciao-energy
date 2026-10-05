@@ -60,7 +60,7 @@ function body(route: SeoRoute): string {
   switch (route.type) {
     case 'HOME':
       return `${header()}<main id="main">
-<p class="pre__eyebrow">${escapeHtml(BRAND.tagline)}</p>
+<div class="pre__eyebrow">${escapeHtml(BRAND.tagline)}</div>
 <h1>Grizzly Energy, natural energy drinks in six flavors</h1>
 <img class="pre__can" src="${getProductThumbUrl(PRODUCTS[0])}" alt="Grizzly Energy Blue Raspberry can" width="187" height="491" fetchpriority="high">
 <p>${escapeHtml(BRAND.summary)}</p>
