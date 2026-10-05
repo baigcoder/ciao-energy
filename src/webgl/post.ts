@@ -17,6 +17,9 @@ const FinishShader = {
     uGrain: { value: 0.035 },
     uVignette: { value: 0.55 },
     uAberration: { value: 0.0 }, // off: it softened label edges toward the frame corners
+    // A light product grade: inks a touch richer and blacks a touch deeper, so labels pop instead of reading washed out.
+    uSaturation: { value: 1.12 },
+    uContrast: { value: 1.06 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -30,6 +33,8 @@ const FinishShader = {
     uniform float uGrain;
     uniform float uVignette;
     uniform float uAberration;
+    uniform float uSaturation;
+    uniform float uContrast;
     varying vec2 vUv;
     float hash(vec2 p) {
       vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -46,6 +51,11 @@ const FinishShader = {
         texture2D(tDiffuse, vUv).g,
         texture2D(tDiffuse, vUv + shift).b
       );
+      // grade: saturation around the pixel's own luma, contrast around mid-grey (display space)
+      float lumaIn = dot(col, vec3(0.299, 0.587, 0.114));
+      col = mix(vec3(lumaIn), col, uSaturation);
+      col = (col - 0.5) * uContrast + 0.5;
+      col = max(col, 0.0);
       float vig = smoothstep(0.95, 0.15, r2 * 1.9);
       col *= mix(1.0 - uVignette, 1.0, vig);
       float luma = dot(col, vec3(0.299, 0.587, 0.114));

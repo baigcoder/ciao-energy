@@ -106,6 +106,9 @@ export class OpeningMoment implements SceneMoment {
     d.glow *= fade;
     d.mistFg *= 0.4 + 0.6 * fade;
     d.reflect *= fade;
+    // the hero's grey studio and colour field come up with the rest (they showed through the opening as a grey band)
+    d.studio *= fade;
+    d.field *= fade;
 
     if (this.state === 'returning' && r >= 1) {
       this.state = 'done';
