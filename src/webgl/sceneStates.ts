@@ -124,12 +124,12 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
     swirl: 0,
   },
 
-  // Finale: all six cans on a mountain-shaped lineup, each lit in its own colour.
+  // Finale: every can on one tight, twisting row in the grey studio (no floor reflection).
   range: {
     camera: cam(0, 0.3, 32, 0.02),
-    product: { scale: 1.02, posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, spin: 0 },
+    product: { scale: 1.04, posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0 },
-    stage: { ...STAGE, floorY: -2.3, reflect: 1, mistFg: 0.2, glow: 0.4, studio: 1 },
+    stage: { ...STAGE, floorY: -2.3, reflect: 0, mistFg: 0.2, glow: 0.4, studio: 1 },
     spacing: CAROUSEL_CONFIG.spacing,
     wave: 0,
     swirl: 1,

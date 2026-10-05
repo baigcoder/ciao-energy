@@ -136,7 +136,8 @@ export class IceDust implements SceneMoment {
     u.uWind.value.copy(this.wind);
     // quieter in the close-up label chapters and inside the can, where it would sit on the text
     const calm = Math.max(scene.data.labelDim, scene.stageParams.water);
-    u.uOpacity.value = 0.9 * (1 - 0.75 * calm);
+    // and nearly gone in the grey product studio, which reads clean like the reference
+    u.uOpacity.value = 0.9 * (1 - 0.75 * calm) * (1 - 0.8 * scene.data.studio);
   }
 
   dispose() {

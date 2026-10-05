@@ -317,19 +317,16 @@ const BACKDROP_FRAGMENT = /* glsl */ `
     col += accent * (0.035 * exp(-gd * 2.6) + 0.1 * exp(-gd * 8.0)) * uGlow;
     col += accent * 0.003 * (1.0 - smoothstep(0.0, 1.0, (uv.y - uHorizon) / (1.0 - uHorizon + 0.001)));
 
-    // Grey product studio: black above, a lit grey floor that is brightest toward the lower left,
-    // a soft horizon where floor meets the dark, and only a trace of the flavor colour in the light
-    // pooled under the featured can. Clean, neutral, product-first.
+    // Grey product studio, as in the reference: black through the upper half, one soft grey floor
+    // band lit from the left (brightest at the left edge, about a quarter up the frame), falling to
+    // dark again at the bottom and toward the right. Neutral grey, never blue.
     if (uStudio > 0.001) {
-      float fy = clamp((uHorizon + 0.12 - uv.y) / (uHorizon + 0.12), 0.0, 1.0);   // 0 at horizon, 1 at bottom
-      vec3 sCol = mix(vec3(0.0), vec3(0.006, 0.0065, 0.0075), smoothstep(1.0, uHorizon, uv.y));
-      vec3 floorLit = vec3(0.055, 0.057, 0.062) * pow(fy, 0.7);
-      float keyPool = exp(-length((uv - vec2(0.18, -0.05)) * vec2(asp * 0.55, 1.0)) * 1.8);
-      floorLit += vec3(0.09, 0.092, 0.098) * keyPool;
-      sCol += floorLit;
-      sCol += vec3(0.012, 0.013, 0.015) * exp(-abs(uv.y - uHorizon) * 18.0);     // soft horizon line
+      float bandY = 0.27 - 0.07 * uv.x;
+      float bandD = (uv.y - bandY) / (uv.y > bandY ? 0.2 : 0.18);
+      float band = exp(-bandD * bandD) * mix(1.0, 0.45, smoothstep(0.0, 1.0, uv.x));
+      vec3 sCol = vec3(1.0, 0.996, 0.988) * (0.17 * band + 0.006 * smoothstep(0.7, 0.2, uv.y));
       vec2 sq = (uv - uGlowPos) * vec2(asp, 1.0);
-      sCol += accent * 0.03 * exp(-dot(sq, sq) * 6.0) * uGlow;                    // a breath of flavor light
+      sCol += accent * 0.008 * exp(-dot(sq, sq) * 6.0) * uGlow;                   // only a trace of flavor light: no halo
       col = mix(col, sCol, uStudio);
       skyVis *= 1.0 - uStudio;
     }
