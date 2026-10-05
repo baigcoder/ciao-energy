@@ -549,8 +549,10 @@ export class SceneManager {
   // ───────────────────────── quality ─────────────────────────
 
   /**
-   * Steps quality down when the device can't hold ~50 fps: pixel ratio first,
-   * then bloom, then the low tier. Never steps back up within a visit.
+   * Steps quality down when the device can't hold ~45 fps, effects first and resolution last, because a soft,
+   * stair-stepped label reads far worse than a missing glow: backdrop refresh, then bloom (MEDIUM, which keeps
+   * MSAA), then a little resolution, but never below native on desktop. The low tier is only for a device that
+   * stays under 30 fps. Measured after the opening, never during loading. Never steps back up within a visit.
    */
   private governQuality(rawDelta: number, time: number) {
     if (rawDelta <= 0 || rawDelta > 0.5) {
@@ -565,13 +567,15 @@ export class SceneManager {
     const fps = (this.govFrames * 1000) / elapsed;
     this.govStart = time;
     this.govFrames = 0;
-    if (time < 4000 || fps >= 50 || this.govStep >= 4) return;
+    if (time < 6000 || fps >= 45 || this.govStep >= 4) return;
+    if (this.govStep >= 3 && fps >= 30) return;
     this.govStep += 1;
     const dpr = Math.min(window.devicePixelRatio || 1, this.pixelRatioCap);
-    const ratios = [dpr, dpr * 0.85, Math.min(dpr * 0.75, 1), Math.min(dpr * 0.75, 1), 0.75];
+    const floor = Math.min(dpr, this.isLowPower ? 0.75 : 1);
+    const ratios = [dpr, dpr, Math.max(floor, dpr * 0.85), Math.max(floor, dpr * 0.75), floor];
     this.setPixelRatio(ratios[this.govStep]);
-    if (this.govStep >= 2) this.stage.refreshEvery = 3;
-    if (this.govStep === 3) this.applyQuality('MEDIUM');
+    if (this.govStep >= 1) this.stage.refreshEvery = 3;
+    if (this.govStep === 2) this.applyQuality('MEDIUM');
     if (this.govStep >= 4) this.applyQuality('LOW');
   }
 

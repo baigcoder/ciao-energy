@@ -66,7 +66,8 @@ export class PostFx {
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, width: number, height: number, pixelRatio: number, tier: PostTier) {
     const target = new THREE.WebGLRenderTarget(width * pixelRatio, height * pixelRatio, {
       type: THREE.HalfFloatType,
-      samples: tier === 'HIGH' ? 4 : 0,
+      // MSAA on every tier that has post: without it the can's silhouette and lid rings stair-step
+      samples: tier === 'HIGH' ? 4 : 2,
     });
     this.composer = new EffectComposer(renderer, target);
     this.composer.setPixelRatio(pixelRatio);

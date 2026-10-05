@@ -109,7 +109,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ isReady, onDone, onLeave, 
       aria-valuemax={100}
       aria-valuenow={percent}
     >
-      {/* First paint: the night stage, darkened, so the screen is never empty while the 3D loads.
+      {/* First paint: the grey product studio in CSS, so the screen is never empty while the 3D loads.
           No still can here: it would sit on the wordmark; the 3D opening brings the can. */}
       <span className={`loader__still ${showStage && isReady ? 'is-hidden' : ''}`} aria-hidden="true" />
       <span className="loader__glow" aria-hidden="true" />

@@ -26,15 +26,17 @@
   pointer-events: none;
 }
 
-/* Still of the night stage: visible from the first paint, hidden once the 3D opening can play.
-   A veil and a vignette keep it a backdrop, so the wordmark is the only thing that reads. */
+/* First paint, before the 3D opening can play: the same grey product studio the hero opens on, drawn in CSS so
+   the hand-off is seamless. Black through the upper half, one soft neutral floor band lit from the left, low in
+   the frame and well below the wordmark and the bar, so nothing crosses the type. (It used to be a photo of the
+   old night mountains, whose ridge line ran straight through the wordmark.) */
 .loader__still {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 50% 45%, transparent 0%, var(--color-vignette) 75%),
-    linear-gradient(var(--color-surface-overlay), var(--color-surface-overlay)),
-    var(--image-night-stage) center 62% / cover no-repeat;
+    radial-gradient(ellipse 62% 30% at 18% 80%, color-mix(in oklab, var(--color-floor-high) 34%, transparent) 0%, transparent 100%),
+    radial-gradient(ellipse 90% 26% at 52% 84%, color-mix(in oklab, var(--color-floor-mid) 22%, transparent) 0%, transparent 100%),
+    linear-gradient(to bottom, var(--color-surface-base) 0%, var(--color-surface-base) 52%, color-mix(in oklab, var(--color-floor-low) 55%, var(--color-surface-base)) 82%, var(--color-surface-base) 100%);
   transition: opacity var(--motion-slow) var(--ease-out);
 }
 
