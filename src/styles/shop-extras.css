@@ -76,6 +76,7 @@
 
 .promo__input {
   flex: 1;
+  min-width: 0; /* an input's default minimum width pushed the Apply button past the edge on phones */
   min-height: var(--control-size);
   padding: 0 var(--space-sm);
   border: var(--border-hairline) solid var(--color-line);
@@ -99,7 +100,9 @@
 }
 
 .promo .button-outline {
+  flex-shrink: 0;
   min-height: var(--control-size);
+  padding-inline: var(--space-md);
 }
 
 .promo__message {
@@ -179,6 +182,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
+  min-width: var(--control-size);
   min-height: var(--control-size);
   padding: 0 var(--space-sm) 0 var(--space-3xs);
   border: var(--border-hairline) solid var(--color-line);

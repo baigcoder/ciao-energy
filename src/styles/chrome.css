@@ -313,7 +313,7 @@ body:has(main.page) .site-header::before {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--space-xl);
+  min-height: var(--control-size);
   padding: var(--space-3xs) var(--space-xl);
   border: var(--border-hairline) solid var(--color-text-primary);
   border-radius: var(--radius-xs);

@@ -129,7 +129,8 @@
 .stepper {
   display: inline-flex;
   align-items: center;
-  height: var(--control-size);
+  /* the buttons inside are exactly --control-size tall: the border sits outside them */
+  height: calc(var(--control-size) + 2 * var(--border-hairline));
   border: var(--border-hairline) solid var(--color-line);
   border-radius: var(--radius-sm);
   background: var(--color-surface-raised);
@@ -163,7 +164,7 @@
 }
 
 .stepper--compact {
-  height: var(--control-size);
+  height: calc(var(--control-size) + 2 * var(--border-hairline));
 }
 
 /* Primary button success state */
@@ -698,6 +699,9 @@ html.is-locked {
 }
 
 .bag-item__name {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-size);
   font-weight: var(--font-weight-medium);
   transition: color var(--motion-instant) var(--ease-out);
 }
