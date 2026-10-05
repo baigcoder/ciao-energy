@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { COMMERCE } from '../data/brand';
-import { formatPrice } from '../data/products';
+import { PLACEHOLDER_PRICING, formatPrice } from '../data/products';
 import { useCart } from '../store/cart';
 import { CartContents } from './CartContents';
 import { ButtonLabel } from './ButtonLabel';
@@ -44,7 +44,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
   const [values, setValues] = useState<Values>({ name: '', phone: '', email: '', address: '', city: '', province: '', postcode: '', notes: '', payment: 'cod' });
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [status, setStatus] = useState<'editing' | 'submitting' | 'confirmed'>('editing');
-  const [confirmation, setConfirmation] = useState<{ reference: string; name: string; total: number } | null>(null);
+  /** Everything the confirmation shows is captured at submit, before the bag is cleared. */
+  const [confirmation, setConfirmation] = useState<{
+    reference: string;
+    name: string;
+    total: number;
+    lines: Array<{ id: string; label: string; quantity: number; amount: number }>;
+    totals: { subtotal: number; discount: number; delivery: number; total: number };
+    details: Array<[string, string]>;
+  } | null>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
   const confirmRef = useRef<HTMLHeadingElement>(null);
 
@@ -68,10 +76,19 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
     }
     setStatus('submitting');
     window.setTimeout(() => {
+      const address = [values.address.trim(), values.city.trim(), values.province, values.postcode.trim()].filter(Boolean).join(', ');
       setConfirmation({
         reference: `GE-${Date.now().toString(36).toUpperCase().slice(-6)}`,
         name: values.name.trim().split(' ')[0],
         total: totals.total,
+        lines: items.map((item) => ({ id: item.id, label: `${item.productName}, ${item.packLabel}`, quantity: item.quantity, amount: item.price * item.quantity })),
+        totals: { subtotal: totals.subtotal, discount: totals.discount, delivery: totals.delivery, total: totals.total },
+        details: [
+          ['Name', values.name.trim()],
+          ['Mobile', values.phone.trim()],
+          ['Deliver to', address],
+          ['Payment', 'Cash on delivery'],
+        ],
       });
       clearCart();
       setStatus('confirmed');
@@ -83,10 +100,39 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
     return (
       <section className="checkout checkout--done" aria-labelledby="confirm-title">
         <h1 id="confirm-title" ref={confirmRef} className="display checkout__title" tabIndex={-1}>Thank you, {confirmation.name}</h1>
-        <p className="checkout__lead">Your order details are ready. Reference <strong>{confirmation.reference}</strong>, total {formatPrice(confirmation.total)}, cash on delivery.</p>
-        <p className="checkout__notice" role="note">
-          This is a preview store: no order has been sent and nothing will be delivered yet. Online ordering opens soon.
+        <p className="checkout__notice checkout__notice--strong" role="note">
+          <strong>No order was sent.</strong> This is a preview store: nothing was placed with a delivery service, nothing was charged and
+          nothing will be delivered. Online ordering opens soon.
         </p>
+        <p className="checkout__lead">
+          Your order details are ready. Reference <strong>{confirmation.reference}</strong>, total {formatPrice(confirmation.total)}, cash on delivery.
+        </p>
+
+        <div className="receipt">
+          <h2 className="receipt__title">Order summary</h2>
+          <ul className="receipt__lines">
+            {confirmation.lines.map((line) => (
+              <li key={line.id}>
+                <span>{line.quantity} × {line.label}</span>
+                <span>{formatPrice(line.amount)}</span>
+              </li>
+            ))}
+          </ul>
+          <dl className="receipt__totals">
+            <div><dt>Subtotal</dt><dd>{formatPrice(confirmation.totals.subtotal)}</dd></div>
+            {confirmation.totals.discount > 0 && <div><dt>Discount</dt><dd>−{formatPrice(confirmation.totals.discount)}</dd></div>}
+            <div><dt>Delivery</dt><dd>{confirmation.totals.delivery === 0 ? 'Free' : formatPrice(confirmation.totals.delivery)}</dd></div>
+            <div className="receipt__grand"><dt>Total</dt><dd>{formatPrice(confirmation.totals.total)}</dd></div>
+          </dl>
+          {PLACEHOLDER_PRICING && <p className="receipt__note">Prices are placeholders until the real price list is confirmed.</p>}
+          <h2 className="receipt__title">Your details</h2>
+          <dl className="receipt__details">
+            {confirmation.details.map(([label, value]) => (
+              <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+            ))}
+          </dl>
+        </div>
+
         <a className="button-primary" href="/" onClick={(event) => { event.preventDefault(); onNavigate('/'); }}>
           <ButtonLabel>Back to the range</ButtonLabel>
         </a>

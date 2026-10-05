@@ -24,6 +24,7 @@ import { IceDust } from './moments/iceDust';
 import { moonPhase, twilight } from './liveSky';
 import { FinaleGlow } from './moments/finaleGlow';
 import { CAN } from './canDimensions';
+import { MOTION_RATE, damp } from './motionVocabulary';
 import { SCENE_COLOR } from './palette';
 
 export { CAROUSEL_CONFIG };
@@ -625,6 +626,23 @@ export class SceneManager {
     this.benefitGlowIndex = index;
   }
 
+  /** The lit label region the shader draws: it glides to the active block instead of snapping between blocks. */
+  private readonly glowRect = new THREE.Vector4();
+  private glowRectReady = false;
+  private stepGlowRect(delta: number) {
+    if (this.benefitGlowIndex < 0) {
+      this.glowRectReady = false; // the next benefit lights up in place; the last position is kept while the glow fades
+      return;
+    }
+    const target = BENEFIT_GLOW_RECTS[this.benefitGlowIndex];
+    if (!this.glowRectReady || this.reducedMotion) {
+      this.glowRect.copy(target);
+      this.glowRectReady = true;
+    } else {
+      this.glowRect.lerp(target, damp(MOTION_RATE.transition, delta));
+    }
+  }
+
   /** Pushes scroll-driven label darkening and the benefit glow into a can's shader. */
   private applyLabelState(can: THREE.Group, isFeatured: boolean) {
     const surface = getCanSurface(can);
@@ -634,7 +652,7 @@ export class SceneManager {
     surface.uGlowStrength.value = strength;
     if (strength > 0.001) {
       surface.uGlowColor.value.copy(this.glowColor);
-      if (this.benefitGlowIndex >= 0) surface.uGlowRect.value.copy(BENEFIT_GLOW_RECTS[this.benefitGlowIndex]);
+      surface.uGlowRect.value.copy(this.glowRect);
     }
   }
 
@@ -983,7 +1001,7 @@ export class SceneManager {
 
     // Frame-rate independent damping keeps scroll, pointer and product motion consistent on 60 Hz,
     // high refresh and throttled mobile displays.
-    const pointerBlend = 1 - Math.exp(-12 * delta);
+    const pointerBlend = damp(MOTION_RATE.focus, delta);
     this.pointer.smoothX += (this.pointer.x - this.pointer.smoothX) * pointerBlend;
     this.pointer.smoothY += (this.pointer.y - this.pointer.smoothY) * pointerBlend;
     this.updateUserTurn(delta, now);
@@ -995,7 +1013,7 @@ export class SceneManager {
     }
 
     // the camera trails the scroll a little (cinematic follow), never snapping to it
-    const timelineBlend = 1 - Math.exp(-9 * delta);
+    const timelineBlend = damp(MOTION_RATE.transition, delta);
     this.currentTimelineProgress += (this.targetTimelineProgress - this.currentTimelineProgress) * timelineBlend;
     if (Math.abs(this.targetTimelineProgress - this.currentTimelineProgress) > 0.0001) {
       this.masterTimeline.seek(this.currentTimelineProgress * this.masterTimeline.duration());
@@ -1012,6 +1030,7 @@ export class SceneManager {
     this.cameraOffset.set(0, 0, 0);
     this.cameraRollOffset = 0;
     this.stepCarousel(delta, now);
+    this.stepGlowRect(delta);
     if (this.routeMode === 'HOME') this.moments.forEach((moment) => moment.update(time * 0.001, this));
     // the air is the same on every 3D route: the dust keeps drifting on the product page too
     this.iceDust?.update(time * 0.001, this);
@@ -1025,7 +1044,7 @@ export class SceneManager {
       this.stageParams.dusk = tw.dusk;
     }
     const dropTarget = this.routeMode === 'PRODUCT' ? 1 : 0.4 + 0.6 * this.data.wave;
-    condensation.uDropStrength.value += (dropTarget - condensation.uDropStrength.value) * (1 - Math.exp(-4 * delta));
+    condensation.uDropStrength.value += (dropTarget - condensation.uDropStrength.value) * damp(MOTION_RATE.reveal, delta);
     if (!this.reducedMotion) condensation.uDropTime.value += delta;
 
     if (this.routeMode === 'PRODUCT') this.renderProduct(delta, time);
@@ -1164,7 +1183,7 @@ export class SceneManager {
 
     // Benefit label glow: flavor-coloured, one block at a time, damped.
     const glowTarget = this.benefitGlowIndex >= 0 ? 1 : 0;
-    this.benefitGlowStrength += (glowTarget - this.benefitGlowStrength) * (1 - Math.exp(-6 * delta));
+    this.benefitGlowStrength += (glowTarget - this.benefitGlowStrength) * damp(MOTION_RATE.emphasize, delta);
 
     this.baseFill.intensity = 0.2 + 0.7 * this.data.wave;
     // Benefit chapters: a stronger front light so the active label block reads sharp and bright.
@@ -1172,7 +1191,7 @@ export class SceneManager {
     this.fillLight.intensity = 0.18 + 0.5 * this.data.labelDim;
     // Back light picks up the flavor colour, like a coloured gel behind a product shot.
     this.rimTint.copy(this.rimBase).lerp(this.glowColor, 0.55);
-    this.rimLight.color.lerp(this.rimTint, 1 - Math.exp(-4 * delta));
+    this.rimLight.color.lerp(this.rimTint, damp(MOTION_RATE.reveal, delta));
 
     // Flavor change: a soft-box glint sweeps across the featured can, left to right.
     const glintT = (now - this.spinStart) / 1100;
@@ -1457,7 +1476,7 @@ export class SceneManager {
     rotation.x += (rotation.targetX - rotation.x) * viewerBlend;
     rotation.y += (rotation.targetY - rotation.y) * viewerBlend;
 
-    this.routeBlend += (1 - this.routeBlend) * (1 - Math.exp(-3.6 * delta));
+    this.routeBlend += (1 - this.routeBlend) * damp(MOTION_RATE.settle, delta);
     const eased = smooth(this.routeBlend);
 
     // Same lens as the home scene so the can keeps its scale while travelling.
@@ -1477,7 +1496,7 @@ export class SceneManager {
     const flavor = FLAVORS[this.activeProductIndex];
     this.updateAccent(this.activeProductIndex, time);
     this.rimTint.copy(this.rimBase).lerp(this.glowColor, 0.55);
-    this.rimLight.color.lerp(this.rimTint, 1 - Math.exp(-4 * delta));
+    this.rimLight.color.lerp(this.rimTint, damp(MOTION_RATE.reveal, delta));
     this.keyLight.position.set(pose.x - 1.6, pose.y + 6.5, 4.2);
     this.keyLight.target.position.set(pose.x, pose.y, 0);
     this.keyLight.target.updateMatrixWorld();
@@ -1495,13 +1514,13 @@ export class SceneManager {
         setCanFocus(can, 1);
         // Label hotspots light one benefit block, with the rest of the label dimmed a little.
         const glowTarget = this.benefitGlowIndex >= 0 ? 1 : 0;
-        this.benefitGlowStrength += (glowTarget - this.benefitGlowStrength) * (1 - Math.exp(-6 * delta));
+        this.benefitGlowStrength += (glowTarget - this.benefitGlowStrength) * damp(MOTION_RATE.emphasize, delta);
         const surface = getCanSurface(can);
         if (surface) {
           surface.uLabelDim.value = this.benefitGlowStrength * 0.55;
           surface.uGlowStrength.value = this.benefitGlowStrength;
           surface.uGlowColor.value.set(flavor.theme.secondary);
-          if (this.benefitGlowIndex >= 0) surface.uGlowRect.value.copy(BENEFIT_GLOW_RECTS[this.benefitGlowIndex]);
+          surface.uGlowRect.value.copy(this.glowRect);
         }
       } else {
         // The rest of the ring clears out quickly so the featured can travels alone.

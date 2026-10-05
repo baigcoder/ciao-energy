@@ -741,6 +741,60 @@ select.field__input--plain option {
   font-size: var(--font-size-4xl);
   line-height: var(--line-height-giant);
   margin-bottom: var(--space-lg);
+  /* The heading is mirrored in the water below it (Chromium and Safari; elsewhere it is simply not drawn). */
+  -webkit-box-reflect: below calc(var(--space-2xs) * -1) linear-gradient(to bottom, transparent 62%, color-mix(in oklab, var(--color-white) 16%, transparent));
+}
+
+/* Water and clear light behind the story: still rings spreading from the seal, and a soft pool of the flavor colour
+   beneath. Pure CSS (works without WebGL); the rings only breathe slowly when motion is allowed. Decorative. */
+.story {
+  position: relative;
+  isolation: isolate;
+}
+
+.story::before,
+.story::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  pointer-events: none;
+  translate: -50% 0;
+}
+
+.story::before {
+  top: calc(var(--space-2xl) * 1.2);
+  width: min(88vw, 64rem);
+  aspect-ratio: 1;
+  background: repeating-radial-gradient(
+    circle at 50% 50%,
+    transparent 0,
+    transparent calc(var(--space-xl) - var(--border-hairline)),
+    color-mix(in oklab, var(--color-accent) 26%, transparent) calc(var(--space-xl) - var(--border-hairline)),
+    color-mix(in oklab, var(--color-accent) 26%, transparent) var(--space-xl)
+  );
+  mask-image: radial-gradient(circle at 50% 50%, var(--color-black) 0%, transparent 66%);
+  animation: water-breathe var(--motion-cloud) var(--ease-in-out) infinite alternate;
+}
+
+.story::after {
+  top: 40%;
+  left: 0;
+  width: 100%;
+  translate: none;
+  height: 55%;
+  background: radial-gradient(ellipse at 50% 30%, color-mix(in oklab, var(--color-accent) 22%, transparent) 0%, transparent 62%);
+}
+
+@keyframes water-breathe {
+  from { scale: 0.96; opacity: 0.8; }
+  to { scale: 1.04; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story::before {
+    animation: none;
+  }
 }
 
 .story__lead {

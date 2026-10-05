@@ -81,7 +81,7 @@ test('checkout validates, then reaches the confirmation screen', async ({ page }
   await page.getByRole('button', { name: 'Place order' }).click();
 
   await expect(page.getByRole('heading', { name: 'Thank you, Ayesha' })).toBeVisible();
-  await expect(page.getByText('no order has been sent')).toBeVisible();
+  await expect(page.getByText('No order was sent.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Bag, empty' })).toBeVisible();
 });
 

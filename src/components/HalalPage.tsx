@@ -9,7 +9,7 @@ export const HalalPage: React.FC = () => {
     <section className="story-block">
       <h2 className="story-block__title display">{icon}{title}</h2>
       {isTodo(value) ? (
-        <p className="story-block__placeholder">Coming soon: we’re preparing the details for this section.</p>
+        <p className="story-block__placeholder">To be confirmed. Verified details appear here once they are supplied.</p>
       ) : (
         <p className="story-block__text">{value}</p>
       )}
@@ -25,9 +25,9 @@ export const HalalPage: React.FC = () => {
         <section className="story-block story-block--certificate">
           <h2 className="story-block__title display"><span className="trust-badge__icon" aria-hidden="true">حلال</span>Halal certificate</h2>
           <div className="certificate-slot">
-            <span>Certificate image to come</span>
+            <span>Certificate image: to be confirmed</span>
           </div>
-          {isTodo(HALAL_PAGE.certificate) && <p className="story-block__placeholder">The certifier name and licence number will be published here.</p>}
+          {isTodo(HALAL_PAGE.certificate) && <p className="story-block__placeholder">Certifier name and licence number: to be confirmed.</p>}
         </section>
         {block('Zamzam water', HALAL_PAGE.zamzam, <BenefitIcon type="zamzam" size={28} />)}
         {block('How it’s made', HALAL_PAGE.process)}

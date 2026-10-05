@@ -212,3 +212,81 @@
   color: var(--color-text-muted);
   line-height: var(--line-height-body);
 }
+
+/* ---------- Checkout confirmation: the order summary (preview store: no order is sent) ---------- */
+.checkout__lead strong {
+  white-space: nowrap;
+}
+
+.checkout__notice--strong {
+  padding: var(--space-sm) var(--space-md);
+  border: var(--border-hairline) solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--color-accent) 12%, transparent);
+  color: var(--color-text-primary);
+}
+
+.receipt {
+  display: grid;
+  gap: var(--space-sm);
+  max-width: var(--layout-form-max);
+  margin: var(--space-lg) 0;
+}
+
+.receipt__title {
+  margin: var(--space-md) 0 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-label);
+}
+
+.receipt__lines {
+  display: grid;
+  gap: var(--space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.receipt__lines li,
+.receipt__totals > div,
+.receipt__details > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-bottom: var(--space-2xs);
+  border-bottom: var(--border-hairline) solid var(--color-line-subtle);
+}
+
+.receipt__totals,
+.receipt__details {
+  display: grid;
+  gap: var(--space-2xs);
+  margin: 0;
+}
+
+.receipt dt {
+  color: var(--color-text-muted);
+}
+
+.receipt dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.receipt__grand {
+  font-weight: var(--font-weight-medium);
+}
+
+.receipt__grand dd,
+.receipt__grand dt {
+  color: var(--color-text-primary);
+}
+
+.receipt__note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+}

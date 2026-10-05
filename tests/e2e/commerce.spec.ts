@@ -108,5 +108,14 @@ test('checkout: errors name each field, submit shows a busy state, confirmation 
   await expect(page.locator('.checkout__lead')).toContainText(/Reference GE-[A-Z0-9]{1,6}/);
   await expect(page.locator('.checkout__lead')).toContainText('cash on delivery');
   await expect(page.getByRole('button', { name: 'Bag, empty' })).toBeVisible();
+  // The summary shows what would have been ordered, the money, the details and the plain \"no order was sent\" notice.
+  const receipt = page.locator('.receipt');
+  await expect(receipt).toContainText(`1 × Watermelon, 6 cans`);
+  await expect(receipt).toContainText(rs(price('pack-6')));
+  await expect(receipt).toContainText(rs(price('pack-6') + commerce.deliveryFee));
+  await expect(receipt).toContainText('Ayesha Khan');
+  await expect(receipt).toContainText('12 Canal View Road, Lahore, Punjab');
+  await expect(receipt).toContainText('Cash on delivery');
+  await expect(page.getByRole('note').first()).toContainText('No order was sent.');
   expect(external, 'requests that left the origin').toEqual([]);
 });
