@@ -311,6 +311,40 @@ html[data-notice] .hero__turn-hint {
   visibility: hidden;
 }
 
+/* ---------- Cinema bars ----------
+   Two black bars that close in from the top and bottom edges while the visitor scrolls fast (a 2.39:1 frame for a
+   moment), and pull back at rest. --cine (0..1) is written on this element by the scene loop; transform only. */
+.cine-bars {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-chrome) - 1);
+  pointer-events: none;
+}
+
+.cine-bars__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--cine-bar-height);
+  background: var(--color-surface-base);
+  transform: scaleY(var(--cine, 0));
+  will-change: transform;
+}
+
+.cine-bars__bar--top {
+  top: 0;
+  transform-origin: top;
+}
+
+.cine-bars__bar--bottom {
+  bottom: 0;
+  transform-origin: bottom;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cine-bars { display: none; }
+}
+
 /* The end of every page stays reachable above the bar. */
 html[data-notice] body {
   padding-bottom: var(--notice-h, 0px);

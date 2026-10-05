@@ -315,7 +315,10 @@
   --size-can-top: 3.5rem;
   --size-can-top-small: 1.75rem;
   --size-can-top-carton: 4.25rem; /* cans in the pack carton: larger, they are the hero of the page */
-  --carton-tilt: 34deg; /* the pack carton seen from above at an angle */
+  --carton-tilt: 34deg;
+  --spec-leader: 4.5rem; /* spec callout leader line, label to can */
+  --spec-dot: 0.4rem;
+  --cine-bar-height: 11vh; /* cinema bars at full close: a 2.39:1 frame on a 16:9 screen */ /* the pack carton seen from above at an angle */
   --carton-depth: 0.6rem; /* how deep each can well is */
   --size-hotspot: 2.25rem;
   --layout-checkout-max: 72rem;

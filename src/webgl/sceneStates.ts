@@ -148,12 +148,13 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
     swirl: 1,
   },
 
-  // FAQ: the camera lifts away; no can rests under the header.
+  // FAQ: the camera lifts out of the studio into the open night: aurora, the range, tonight's moon (it used to rise
+  // into an empty black frame over a flat grey band).
   faq: {
     camera: cam(0, -13, 32, 0.02),
     product: { scale: 1.12, posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0 },
-    stage: { ...STAGE, floorY: -2.3, reflect: 0, glow: 0.2, mistFg: 0.2, mountains: 0.35, studio: 1 },
+    stage: { ...STAGE, floorY: -2.3, reflect: 0, glow: 0.2, mistFg: 0.45, mountains: 0.8, studio: 0 },
     spacing: CAROUSEL_CONFIG.spacing,
     wave: 0,
     swirl: 1,

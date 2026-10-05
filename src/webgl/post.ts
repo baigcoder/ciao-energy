@@ -112,6 +112,49 @@ const FocusShader = {
     }`,
 };
 
+/**
+ * Anamorphic streaks: the hottest highlights on the metal (lid rims, the specular line down the can) throw a thin,
+ * cool horizontal flare, as through a cinema lens. A one-pass, 32-tap horizontal gather of a soft bright-pass, run on
+ * the linear HDR target so only real highlights (well above the lit label) streak.
+ */
+const AnamorphicShader = {
+  uniforms: {
+    tDiffuse: { value: null as THREE.Texture | null },
+    uTexelX: { value: 1 / 1920 },
+    uStrength: { value: 0.16 },
+    uThreshold: { value: 1.7 }, // only true specular hot spots (rims at 1.15 joined up into lines across the ring)
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform float uTexelX;
+    uniform float uStrength;
+    uniform float uThreshold;
+    varying vec2 vUv;
+    vec3 bright(vec2 uv) {
+      vec3 c = texture2D(tDiffuse, uv).rgb;
+      float l = max(c.r, max(c.g, c.b));
+      return c * smoothstep(uThreshold, uThreshold * 2.2, l);
+    }
+    void main() {
+      vec4 base = texture2D(tDiffuse, vUv);
+      vec3 streak = vec3(0.0);
+      for (int i = 1; i <= 16; i++) {
+        float d = float(i) * 2.5;                   // close, even taps: a continuous streak (sparse taps drew dots)
+        float w = exp(-float(i) * 0.18);
+        streak += (bright(vUv + vec2(d * uTexelX, 0.0)) + bright(vUv - vec2(d * uTexelX, 0.0))) * w;
+      }
+      // a cool blue cast, as an anamorphic coating gives
+      vec3 tint = vec3(0.55, 0.78, 1.0);
+      gl_FragColor = vec4(base.rgb + streak * tint * uStrength * 0.12, base.a);
+    }`,
+};
+
 export type PostTier = 'HIGH' | 'MEDIUM';
 
 export class PostFx {
@@ -119,6 +162,7 @@ export class PostFx {
   readonly bloom: UnrealBloomPass | null;
   private readonly finish: ShaderPass;
   private readonly focus: ShaderPass | null;
+  private readonly anamorphic: ShaderPass | null;
 
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, width: number, height: number, pixelRatio: number, tier: PostTier) {
     const target = new THREE.WebGLRenderTarget(width * pixelRatio, height * pixelRatio, {
@@ -139,6 +183,11 @@ export class PostFx {
     // specular glints, the rim light and the glow blocks bleed.
     // threshold well above the lit lid and label: only true specular glints bloom, so no halo round the can
     this.bloom = tier === 'HIGH' ? new UnrealBloomPass(new THREE.Vector2(width, height), 0.24, 0.35, 1.7) : null;
+    this.anamorphic = tier === 'HIGH' ? new ShaderPass(AnamorphicShader) : null;
+    if (this.anamorphic) {
+      this.composer.addPass(this.anamorphic);
+      this.anamorphic.uniforms.uTexelX.value = 1 / Math.max(width, 1);
+    }
     if (this.bloom) this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
     this.finish = new ShaderPass(FinishShader);
@@ -151,6 +200,7 @@ export class PostFx {
   }
 
   private setFocusSize(width: number, height: number) {
+    if (this.anamorphic) this.anamorphic.uniforms.uTexelX.value = 1 / Math.max(width, 1);
     if (!this.focus) return;
     this.focus.uniforms.uAspect.value = width / Math.max(height, 1);
     this.focus.uniforms.uTexel.value.set(1 / Math.max(width, 1), 1 / Math.max(height, 1));

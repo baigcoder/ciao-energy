@@ -275,6 +275,14 @@ export class SceneManager {
   private wipeStart = -1e9;
   private lastAccentIndex = -1;
 
+  /** Cinema bars (DOM, found lazily) and their eased amount. */
+  private cineBars: HTMLElement | null = null;
+  private cineLookupAt = -1e9;
+  private cine = 0;
+  private lastCineWritten = -1;
+  /** The single-can section the scroll last settled on (for the arrival light sweep). */
+  private settledSection = -1;
+
   // Intro: cans rise into the ring after the loader.
   private introArmedAt = -1;
   private introStart = -1e9;
@@ -541,6 +549,25 @@ export class SceneManager {
   public featuredCanIndex() {
     const count = this.cans.length;
     return ((Math.round(this.carousel.position / this.carousel.spacing) % count) + count) % count;
+  }
+
+  private readonly edgeWorld = new THREE.Vector3();
+  private readonly edgeRight = new THREE.Vector3();
+  /**
+   * Where a point on the featured can's left silhouette, at a height along its axis (local units, 0 = middle), sits
+   * on screen in CSS pixels. Spec callouts hang their leader lines from it. False when no featured can is drawn.
+   */
+  public canEdgeOnScreen(localY: number, out: { x: number; y: number }): boolean {
+    if (this.routeMode !== 'HOME') return false;
+    const can = this.cans[this.featuredCanIndex()];
+    if (!can?.visible) return false;
+    this.edgeWorld.set(0, localY, 0).applyMatrix4(can.matrixWorld);
+    this.edgeRight.setFromMatrixColumn(this.camera.matrixWorld, 0);
+    this.edgeWorld.addScaledVector(this.edgeRight, -CAN.radius * can.scale.x).project(this.camera);
+    if (this.edgeWorld.z > 1) return false;
+    out.x = (this.edgeWorld.x * 0.5 + 0.5) * window.innerWidth;
+    out.y = (0.5 - this.edgeWorld.y * 0.5) * window.innerHeight;
+    return true;
   }
 
   /** Cracks the centre hero can open (click on it, or the O key). Only while the hero ring is on screen. */
@@ -1343,6 +1370,7 @@ export class SceneManager {
     if (this.introStart > -1e8 && this.introStart < now - 4500) this.introStart = -1e9;
 
     this.layoutCans(delta, time, isMobile);
+    this.updateCinema(delta, now);
     this.reflections?.update(this.cans, this.data.floorY, this.data.reflect, this.reducedMotion);
     const focus = this.cans[this.featuredCanIndex()] ?? this.cans[0];
     this.updateStage(time, focus);
@@ -1353,6 +1381,37 @@ export class SceneManager {
     const rush = this.reducedMotion ? 0 : Math.min(1, Math.abs(this.scrollVelocity) * 0.6) * 0.7;
     this.post?.setFocus(this.focusScreen.x, this.focusScreen.y, (lens + rush) * (1 - 0.8 * this.pickBlend));
     this.renderScene(time);
+  }
+
+  /**
+   * Film language on top of the timeline: cinema bars close in while the visitor scrolls fast and pull back at rest,
+   * and each time the scroll settles on a single-can chapter a soft-box light sweeps across the can (the same glint as
+   * a flavor change).
+   */
+  private updateCinema(delta: number, now: number) {
+    const speed = Math.abs(this.scrollVelocity);
+    const target = this.reducedMotion ? 0 : THREE.MathUtils.clamp((speed - 0.3) * 0.9, 0, 1);
+    this.cine += (target - this.cine) * damp(MOTION_RATE.focus, delta);
+    if (!this.cineBars && now - this.cineLookupAt > 1000) {
+      this.cineLookupAt = now;
+      this.cineBars = document.querySelector<HTMLElement>('.cine-bars');
+    }
+    if (this.cineBars && !this.cineBars.isConnected) this.cineBars = null;
+    const rounded = Math.round(this.cine * 1000) / 1000;
+    if (this.cineBars && rounded !== this.lastCineWritten) {
+      this.lastCineWritten = rounded;
+      this.cineBars.style.setProperty('--cine', String(rounded));
+    }
+
+    const nearest = Math.round(this.sectionPosition);
+    const state = SCENE_STATES[SCENE_SEQUENCE[nearest]?.state];
+    const settled = Math.abs(this.sectionPosition - nearest) < 0.04 && speed < 0.2;
+    if (settled && nearest !== this.settledSection) {
+      this.settledSection = nearest;
+      if (state && state.wave === 0 && state.swirl === 0 && !this.reducedMotion) this.spinStart = now;
+    } else if (Math.abs(this.sectionPosition - this.settledSection) > 0.5) {
+      this.settledSection = -1;
+    }
   }
 
   /** Positions every can for the current timeline state: hero ring, single feature or finale lineup. */
