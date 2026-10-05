@@ -5,8 +5,10 @@ import { FLAVORS } from '../../data/flavors';
 import { audioManager } from '../../audio/audioManager';
 
 /**
- * The roar. Once per visit, on the first scroll, the bear from the label appears huge and faint
- * behind the can, the camera shakes slightly, then calm returns.
+ * The roar. Once per visit, on the first scroll, the bear from the label rises behind the can: its detail
+ * reveals progressively (highlights first, then the darker fur), a cold key light sweeps across it from the upper
+ * left, and it takes a breath of the flavor's colour so it belongs to the can in front. The camera gives one short,
+ * calm tremor and settles. No particles and no extra post-processing: one textured plane and a small shader.
  *
  * Trigger: first scroll away from the top (App). Persists: nothing (a session flag stops repeats).
  * Scroll/pointer/state: state only (time since trigger). WebGL: a bear plane behind the cans, the
@@ -19,6 +21,9 @@ const DURATION = 3.4;
 const BEAR_FRAGMENT = /* glsl */ `
   uniform sampler2D map;
   uniform float uOpacity;
+  uniform float uReveal;   // 0..1: the brightness threshold falls, so detail appears highlights-first
+  uniform float uSweep;    // 0..1: a soft band of key light travelling left to right
+  uniform vec3 uTint;      // the flavor's accent
   varying vec2 vUv;
   void main() {
     vec4 tex = texture2D(map, vUv);
@@ -26,9 +31,26 @@ const BEAR_FRAGMENT = /* glsl */ `
     // keep the bear and the ice, drop the label's black; fade the edges into the night
     vec2 d = (vUv - 0.5) * vec2(1.0, 1.15);
     float edge = smoothstep(0.55, 0.22, length(d));
-    float a = smoothstep(0.06, 0.4, lum) * edge * uOpacity;
-    // a cold, moonlit ghost: mostly desaturated, a little of the label's colour left
-    vec3 cold = mix(vec3(lum) * vec3(0.78, 0.86, 1.0), tex.rgb, 0.25);
+    // The bear is the warm part of the art (brown fur, tan muzzle); the blue ice behind it stays a quiet backdrop.
+    float warm = smoothstep(0.0, 0.14, tex.r - tex.b);
+    // progressive reveal: first only the brightest detail (teeth, eyes, fur highlights), then the mid tones
+    float threshold = mix(0.6, 0.04, uReveal);
+    float body = smoothstep(threshold, threshold + 0.25, lum);
+    // the label's own wordmark sits along the bottom of the art: keep it out
+    float noWordmark = smoothstep(0.12, 0.3, vUv.y);
+    float a = (warm * body + (1.0 - warm) * body * 0.28) * edge * noWordmark * uOpacity;
+    // moonlit: cold light on the fur (it keeps some of its own warmth), cold blue-white ice
+    vec3 fur = mix(vec3(lum) * vec3(0.85, 0.9, 1.0), tex.rgb, 0.5);
+    vec3 ice = vec3(lum) * vec3(0.7, 0.82, 1.0);
+    vec3 cold = mix(ice, fur, warm);
+    // additive light on the night: the dark brown fur needs lifting to read as a bear, the ice stays quiet
+    cold *= mix(1.0, 2.3, warm);
+    // directional light: brighter toward the upper left (the key), darker on the lower right
+    float facing = dot(normalize(d + 0.0001), normalize(vec2(-0.6, 0.8))) * 0.5 + 0.5;
+    cold *= mix(0.55, 1.2, facing);
+    // the sweep: a soft band of key light crossing the fur, tinted by the flavor
+    float band = exp(-pow((vUv.x - (uSweep * 1.5 - 0.25)) * 3.4, 2.0));
+    cold += band * lum * 0.55 * mix(vec3(1.0), uTint, 0.55);
     gl_FragColor = vec4(cold * a, a);
   }
 `;
@@ -45,7 +67,7 @@ export class RoarMoment implements SceneMoment {
 
   constructor(private readonly host: SceneManager) {
     this.material = new THREE.ShaderMaterial({
-      uniforms: { map: { value: null }, uOpacity: { value: 0 } },
+      uniforms: { map: { value: null }, uOpacity: { value: 0 }, uReveal: { value: 0 }, uSweep: { value: 0 }, uTint: { value: new THREE.Color() } },
       vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
       fragmentShader: BEAR_FRAGMENT,
       transparent: true,
@@ -78,6 +100,7 @@ export class RoarMoment implements SceneMoment {
       this.textures.set(slug, texture);
     }
     this.material.uniforms.map.value = texture;
+    this.material.uniforms.uTint.value.set(FLAVORS[this.host.carousel.getIndex()].theme.secondary);
   }
 
   update(seconds: number, scene: SceneManager) {
@@ -98,10 +121,12 @@ export class RoarMoment implements SceneMoment {
       this.mesh.visible = false;
       return;
     }
-    // Rise fast, hold, then drift away like breath on cold glass.
-    const rise = THREE.MathUtils.smoothstep(t, 0, 0.35);
-    const fall = 1 - THREE.MathUtils.smoothstep(t, 1.5, DURATION);
-    const opacity = 0.3 * rise * fall; // felt more than seen: the copy stays readable over it
+    // Rise, hold, then drift away like breath on cold glass. Dominant but behind the can: the copy stays readable.
+    const rise = THREE.MathUtils.smoothstep(t, 0, 0.45);
+    const fall = 1 - THREE.MathUtils.smoothstep(t, 2.0, DURATION);
+    const opacity = 0.52 * rise * fall;
+    this.material.uniforms.uReveal.value = THREE.MathUtils.smoothstep(t, 0.05, 1.5);
+    this.material.uniforms.uSweep.value = THREE.MathUtils.smoothstep(t, 0.3, 2.6);
     const distance = scene.camera.position.z + 7;
     const height = 2 * Math.tan(THREE.MathUtils.degToRad(scene.camera.fov / 2)) * distance;
     const scale = height * 1.02 * (0.93 + 0.1 * THREE.MathUtils.smoothstep(t, 0, DURATION));
@@ -112,7 +137,7 @@ export class RoarMoment implements SceneMoment {
 
     // The camera shakes: a short, decaying tremor with a tiny push toward the can.
     const decay = Math.exp(-t * 2.4) * (1 - THREE.MathUtils.smoothstep(t, 1.4, 2.0));
-    const amp = 0.2 * decay;
+    const amp = 0.12 * decay; // one calm tremor, not a shake
     scene.cameraOffset.x += (Math.sin(t * 47) + 0.6 * Math.sin(t * 31 + 1)) * amp;
     scene.cameraOffset.y += (Math.cos(t * 53) + 0.5 * Math.sin(t * 37)) * amp * 0.8;
     scene.cameraOffset.z -= 0.9 * Math.exp(-t * 3.2);
