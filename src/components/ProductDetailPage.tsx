@@ -189,7 +189,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ slug, onNa
             All flavors
           </a>
 
-          <RevealText key={product.slug} id="pdp-title" as="h1" className="pdp-panel__title display" lines={[product.line1, product.line2].filter(Boolean)} />
+          <RevealText key={product.slug} id="pdp-title" as="h1" className="pdp-panel__title display" lines={[product.line1, product.line2].filter(Boolean)} label={product.name} joiner={product.name.includes(' ') ? ' ' : ''} />
           {product.edition && <p className="pdp-price__note pdp-panel__edition">{product.edition}</p>}
           <LimitedCountdown slug={product.slug} />
           <p className="pdp-panel__tagline">{product.tagline}</p>

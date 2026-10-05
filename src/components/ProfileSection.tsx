@@ -23,7 +23,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ activeIndex, isA
       aria-labelledby="flavor-title"
     >
       <div className="section-copy">
-        <RevealText key={flavor.id} id="flavor-title" className="section-copy__title display" lines={[flavor.line1, flavor.line2].filter(Boolean)} />
+        <RevealText key={flavor.id} id="flavor-title" className="section-copy__title display" lines={[flavor.line1, flavor.line2].filter(Boolean)} label={flavor.name} joiner={flavor.name.includes(' ') ? ' ' : ''} />
         <div className="section-copy__body framed">
           <p className="section-copy__text">{flavor.description}</p>
         </div>

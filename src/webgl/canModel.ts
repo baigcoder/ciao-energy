@@ -246,7 +246,14 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
             gzMetal = smoothstep(0.42, 0.78, min(gzInk.r, min(gzInk.g, gzInk.b)));
           #endif
           gzBrush = texture2D(uBrushMap, vMapUv * vec2(3.0, 2.4)).r;
-          gzDrop = texture2D(uDropMap, vMapUv * vec2(5.0, 4.0)).rgb;
+          {
+            // The same 512² bead map sampled twice, at two scales and offsets, so its tile never lines up, and
+            // thinned by a slow patchy mask: real condensation gathers in uneven clusters, it is never a even film.
+            vec3 gzDropA = texture2D(uDropMap, vMapUv * vec2(5.0, 4.0)).rgb;
+            vec3 gzDropB = texture2D(uDropMap, vMapUv * vec2(3.3, 2.7) + vec2(0.37, 0.61)).rgb;
+            float gzPatch = mix(0.35, 1.0, smoothstep(0.25, 0.75, gzN(vMapUv * vec2(9.0, 6.0) + 3.0)));
+            gzDrop = vec3(mix(gzDropA.rg, gzDropB.rg, 0.5), max(gzDropA.b, gzDropB.b * 0.75) * gzPatch);
+          }
           {
             // Running drops: in a few of 28 lanes round the can a bead slides down, wobbling, and
             // leaves a thinning wet trail (smoother, clearer) behind it. Then the lane rests.
@@ -270,6 +277,8 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
           }
           // small, dim background cans get fewer beads: at that size they only read as grain
           gzDropK = uDropStrength * mix(0.15, 1.0, uFocus * uFocus);
+          // while a benefit block is being lit, the beads back off so its text stays crisp
+          gzDropK *= 1.0 - 0.55 * uLabelDim;
           // droplets lift the colour a touch (light bending through water)
           diffuseColor.rgb += diffuseColor.rgb * gzDrop.b * 0.18 * gzDropK;
           float gzLum = dot(gzInk, vec3(0.2126, 0.7152, 0.0722));

@@ -74,7 +74,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ activeIndex, isActiv
 
       <div className="hero__hud">
         <div className="hero__title-wrap">
-          <RevealText key={flavor.id + locale} id="hero-title" as="h2" className="hero__title display" lines={titleLines} split={locale === 'ur' ? 'lines' : 'chars'} />
+          <RevealText key={flavor.id + locale} id="hero-title" as="h2" className="hero__title display" lines={titleLines} label={locale === 'ur' ? undefined : flavor.name} joiner={flavor.name.includes(' ') ? ' ' : ''} split={locale === 'ur' ? 'lines' : 'chars'} />
         </div>
         <a
           className="detail-link"
