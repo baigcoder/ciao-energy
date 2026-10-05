@@ -70,4 +70,15 @@ describe('SEO and AEO output', () => {
       expect(html).toContain('href="/shop"');
     });
   });
+
+  it('uses exactly one production origin everywhere (canonical, sitemap, robots, Open Graph, JSON-LD, llms.txt)', () => {
+    const urls = [everything(), robotsTxt()].join('\n').match(/https?:\/\/[^\s"'<>)\]]+/g) ?? [];
+    const origins = new Set(
+      urls
+        .map((url) => new URL(url).origin)
+        // schema.org / sitemaps.org namespace URLs are not site URLs
+        .filter((origin) => !/schema\.org|sitemaps\.org|w3\.org/.test(origin))
+    );
+    expect([...origins]).toEqual([new URL(SITE_URL).origin]);
+  });
 });

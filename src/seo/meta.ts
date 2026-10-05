@@ -33,7 +33,11 @@ export interface PageMeta {
   jsonLd: Array<Record<string, unknown>>;
 }
 
+/** The one production origin: canonical, sitemap, Open Graph, JSON-LD and llms.txt all build from this (grizzly.json → brand.siteUrl). */
 export const SITE_URL: string = BRAND.siteUrl.replace(/\/$/, '');
+export const SITE_NAME: string = BRAND.name;
+/** Social preview size (Open Graph and Twitter large card). */
+export const SOCIAL_IMAGE = { width: 1200, height: 630 } as const;
 const absolute = (path: string) => `${SITE_URL}${path}`;
 const LABEL = `${BRAND.volume} ${BRAND.productType.toLowerCase()}`;
 
@@ -62,7 +66,8 @@ export function productFacts(product: Product): Fact[] {
 }
 
 const productUrl = (slug: string) => absolute(`/products/${slug}`);
-const imageFor = (slug?: string) => absolute(`/social/${slug ?? 'blue-raspberry'}.png`);
+/** A flavor's own preview on its product page; every other page gets the brand preview with all six cans. */
+const imageFor = (slug?: string) => absolute(slug ? `/social/${slug}.png` : '/social/grizzly-energy.png');
 
 function organization() {
   return {
@@ -71,7 +76,7 @@ function organization() {
     name: BRAND.name,
     legalName: BRAND.company.name,
     url: SITE_URL,
-    logo: absolute('/brand/favicon.svg'),
+    logo: { '@type': 'ImageObject', url: absolute('/brand/logo.png'), width: 512, height: 512 },
     slogan: BRAND.tagline,
     areaServed: 'PK',
   };
@@ -194,9 +199,9 @@ export function pageMeta(route: SeoRoute): PageMeta {
         jsonLd: [breadcrumb([{ name: 'Home', path: '/' }, { name: 'Privacy', path: '/privacy' }])],
       };
     case 'CART':
-      return { path: '/cart', title: `Your bag – ${BRAND.name}`, description: `Your ${BRAND.name} bag.`, image: imageFor(), noindex: true, jsonLd: [] };
+      return { path: '/cart', title: `Your bag – ${BRAND.name}`, description: `Review the cans in your ${BRAND.name} bag, change quantities or save flavors for later.`, image: imageFor(), noindex: true, jsonLd: [] };
     case 'CHECKOUT':
-      return { path: '/checkout', title: `Checkout – ${BRAND.name}`, description: `Checkout for ${BRAND.name}.`, image: imageFor(), noindex: true, jsonLd: [] };
+      return { path: '/checkout', title: `Checkout – ${BRAND.name}`, description: `Place your ${BRAND.name} order with cash on delivery: add your contact and delivery details.`, image: imageFor(), noindex: true, jsonLd: [] };
     default:
       return { path: '/404', title: `Page not found – ${BRAND.name}`, description: `This page doesn't exist. Head back to the ${BRAND.name} range.`, image: imageFor(), noindex: true, jsonLd: [] };
   }

@@ -1,4 +1,4 @@
-import { absoluteUrl, pageMeta, type SeoRoute } from './meta';
+import { absoluteUrl, pageMeta, SITE_NAME, SOCIAL_IMAGE, type SeoRoute } from './meta';
 
 function upsert(selector: string, create: () => HTMLElement): HTMLElement {
   let element = document.head.querySelector<HTMLElement>(selector);
@@ -25,7 +25,11 @@ export function applyHead(route: SeoRoute) {
   setMeta('name', 'robots', meta.noindex ? 'noindex, follow' : 'index, follow');
   setMeta('property', 'og:title', meta.title);
   setMeta('property', 'og:description', meta.description);
+  setMeta('property', 'og:site_name', SITE_NAME);
   setMeta('property', 'og:image', meta.image);
+  setMeta('property', 'og:image:width', String(SOCIAL_IMAGE.width));
+  setMeta('property', 'og:image:height', String(SOCIAL_IMAGE.height));
+  setMeta('property', 'og:image:alt', meta.title);
   setMeta('property', 'og:url', absoluteUrl(meta.path === '/404' ? '/' : meta.path));
   setMeta('name', 'twitter:title', meta.title);
   setMeta('name', 'twitter:description', meta.description);
