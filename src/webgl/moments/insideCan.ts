@@ -102,7 +102,7 @@ export class InsideCan implements SceneMoment {
   private builtFor = -1;
   private amount = 0;
 
-  constructor(private readonly host: SceneManager) {
+  constructor() {
     const accent = { value: new THREE.Color() };
     const time = { value: 0 };
     this.wallMaterial = new THREE.ShaderMaterial({

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SCENE_COLOR } from './palette';
 
 /**
  * Studio environment for reflections, generated in code (no HDRI file): a black room with one
@@ -9,7 +10,7 @@ import * as THREE from 'three';
 export function createStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
   const pmrem = new THREE.PMREMGenerator(renderer);
   const room = new THREE.Scene();
-  room.background = new THREE.Color(0x000000);
+  room.background = new THREE.Color(SCENE_COLOR.black);
 
   const geometries: THREE.BufferGeometry[] = [];
   const materials: THREE.Material[] = [];
@@ -32,12 +33,12 @@ export function createStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Te
     materials.push(material);
   };
 
-  addPanel(8, 2.4, 0xeaf3ff, 6.5, [0, 7, 2.5]); // overhead softbox: the key (bright chrome lids)
-  addPanel(2.6, 10, 0xcfe2ff, 2.2, [-6.5, 0.8, 2.5]); // cold left strip: the long edge highlight
-  addPanel(1.4, 10, 0xb9cfff, 1.3, [6.5, 0.8, -1.5]); // right strip: the second, thinner edge highlight
-  addPanel(24, 24, 0x2c4260, 0.2, [0, -6, 0]); // moon-blue floor bounce
-  addPanel(12, 7, 0xdce8ff, 1.6, [-2, 2, 14]); // frontal fill so labels stay readable
-  addPanel(1.6, 1.6, 0xffffff, 5.0, [3.5, 3, -9]); // small hard kicker behind
+  addPanel(8, 2.4, SCENE_COLOR.studioKey, 6.5, [0, 7, 2.5]); // overhead softbox: the key (bright chrome lids)
+  addPanel(2.6, 10, SCENE_COLOR.studioStripLeft, 2.2, [-6.5, 0.8, 2.5]); // cold left strip: the long edge highlight
+  addPanel(1.4, 10, SCENE_COLOR.studioStripRight, 1.3, [6.5, 0.8, -1.5]); // right strip: the second, thinner edge highlight
+  addPanel(24, 24, SCENE_COLOR.studioFloorBounce, 0.2, [0, -6, 0]); // moon-blue floor bounce
+  addPanel(12, 7, SCENE_COLOR.studioFrontFill, 1.6, [-2, 2, 14]); // frontal fill so labels stay readable
+  addPanel(1.6, 1.6, SCENE_COLOR.white, 5.0, [3.5, 3, -9]); // small hard kicker behind
 
   const texture = pmrem.fromScene(room, 0.035).texture;
   geometries.forEach((geometry) => geometry.dispose());

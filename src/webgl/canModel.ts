@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CAN, LID_Y, TAB_PIVOT, getCanGeometry } from './canGeometry';
+import { CANVAS_BLACK, SCENE_COLOR } from './palette';
 
 /**
  * Grizzly can asset and material pipeline.
@@ -53,7 +54,7 @@ function getDropTexture(): THREE.Texture {
   height.height = size;
   const h = height.getContext('2d');
   if (h) {
-    h.fillStyle = '#000';
+    h.fillStyle = CANVAS_BLACK;
     h.fillRect(0, 0, size, size);
     let seed = 7;
     const rand = () => {
@@ -379,12 +380,12 @@ export function createCanMaterials(
 
   const aluminumMat = isLowPower
     ? new THREE.MeshStandardMaterial({
-        color: 0xd9dbe0,
+        color: SCENE_COLOR.lid,
         metalness: 1,
         roughness: 0.24,
       })
     : new THREE.MeshPhysicalMaterial({
-        color: 0xb4b8c1,
+        color: SCENE_COLOR.base,
         metalness: 1,
         roughness: 0.34, // machined lid: crisp rings, a hotspot that never clips to white
         anisotropy: 0.35,
@@ -399,7 +400,7 @@ function getBaseMaterial(aluminum: THREE.Material): THREE.Material {
   if (!base) {
     base = aluminum.clone();
     (base as THREE.MeshStandardMaterial).roughness = 0.42;
-    (base as THREE.MeshStandardMaterial).color.setHex(0xc9ccd2);
+    (base as THREE.MeshStandardMaterial).color.setHex(SCENE_COLOR.baseRim);
     baseMaterials.set(aluminum, base);
   }
   return base;
@@ -492,7 +493,7 @@ export function createCanMesh(
   tab.position.set(0, 0, -0.02);
   tabPivot.add(tab);
 
-  const opening = new THREE.Mesh(geometry.opening, new THREE.MeshBasicMaterial({ color: 0x020203 }));
+  const opening = new THREE.Mesh(geometry.opening, new THREE.MeshBasicMaterial({ color: SCENE_COLOR.canOpening }));
   opening.name = 'Opening';
   opening.position.set(0, LID_Y + 0.004, -0.2);
   opening.visible = false;

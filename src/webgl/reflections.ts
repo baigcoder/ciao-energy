@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { getCanGeometry } from './canGeometry';
 import { FLAVORS } from '../data/flavors';
 import type { LabelTextures } from './labelTextures';
+import { SCENE_COLOR } from './palette';
 
 /**
  * Faint floor reflection: every visible can is mirrored through the floor plane by a second,
@@ -39,12 +40,12 @@ export class FloorReflections {
       material.customProgramCacheKey = () => 'floor-reflection';
     };
 
-    this.metalMaterial = new THREE.MeshBasicMaterial({ color: 0x4c5563, opacity: 0.25 });
+    this.metalMaterial = new THREE.MeshBasicMaterial({ color: SCENE_COLOR.reflectionMetal, opacity: 0.25 });
     fade(this.metalMaterial);
 
     cans.forEach((_, i) => {
       const maps = labels.get(i % FLAVORS.length);
-      const shellMaterial = new THREE.MeshBasicMaterial({ map: maps.albedo, color: 0x9aa4b6, opacity: 0.25 });
+      const shellMaterial = new THREE.MeshBasicMaterial({ map: maps.albedo, color: SCENE_COLOR.reflectionShell, opacity: 0.25 });
       fade(shellMaterial);
       this.shellMaterials.push(shellMaterial);
       const group = new THREE.Group();

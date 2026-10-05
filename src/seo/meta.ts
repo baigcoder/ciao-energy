@@ -53,14 +53,17 @@ export interface Fact {
 export function productFacts(product: Product): Fact[] {
   const pending = 'To be confirmed';
   const row = (label: string, value: string): Fact => ({ label, value: isTodo(value) ? pending : value, confirmed: !isTodo(value) });
-  const energy = product.nutrition.rows.find(([label]) => label === 'Energy')?.[1] ?? 'TODO';
+  // One source: the nutrition rows in grizzly.json. Supply caffeine or sugar there and the facts block, the
+  // nutrition drawer and (later) structured data all update; until then they read "To be confirmed".
+  const nutrition = (label: string) => product.nutrition.rows.find(([name]) => name === label)?.[1] ?? 'TODO';
+  const energy = nutrition('Energy');
   return [
     row('Size', product.volume),
     row('Type', BRAND.productType),
     row('Flavor', product.tagline),
     row('Calories', isTodo(energy) ? energy : `${energy} per can`),
-    row('Caffeine', 'TODO'),
-    row('Sugar', 'TODO'),
+    row('Caffeine', nutrition('Caffeine')),
+    row('Sugar', nutrition('of which sugars')),
     row('Ingredients', product.ingredients),
     row('Halal status', 'Halal certified'),
     row('Zamzam water', 'Made with added Zamzam water'),

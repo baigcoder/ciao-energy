@@ -35,7 +35,7 @@ export class FinaleGlow implements SceneMoment {
   private readonly sprites: THREE.Sprite[] = [];
   private readonly texture = glowTexture();
 
-  constructor(private readonly host: SceneManager) {
+  constructor(host: SceneManager) {
     FLAVORS.forEach((flavor) => {
       const material = new THREE.SpriteMaterial({
         map: this.texture,

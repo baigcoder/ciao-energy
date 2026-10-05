@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import type { SceneManager } from '../sceneManager';
 import type { SceneMoment } from './types';
 import { FLAVORS } from '../../data/flavors';
+import { FRUIT_COLOR, FRUIT_PIECE_COLOR } from '../palette';
 
 /**
  * Fruit and ice that travel with the flavor colour wave. When the carousel turns, the new
@@ -26,26 +27,26 @@ export interface Recipe {
 /** What each flavor throws: fruit tints are the only literal colours outside the label art. */
 export const RECIPES: Record<string, Recipe[]> = {
   'blue-raspberry': [
-    { kind: 'berry', color: 0x2a4fd0, count: 9, size: 0.42 },
-    { kind: 'ice', color: 0xcfeaff, count: 4, size: 0.5 },
+    { kind: 'berry', color: FRUIT_PIECE_COLOR.berryBlue, count: 9, size: 0.42 },
+    { kind: 'ice', color: FRUIT_PIECE_COLOR.ice, count: 4, size: 0.5 },
   ],
   'mango-fuego': [
-    { kind: 'round', color: 0xf5a623, count: 6, size: 0.62 },
-    { kind: 'slice-mango', color: 0xffffff, count: 4, size: 0.8 },
+    { kind: 'round', color: FRUIT_PIECE_COLOR.mango, count: 6, size: 0.62 },
+    { kind: 'slice-mango', color: FRUIT_PIECE_COLOR.texture, count: 4, size: 0.8 },
   ],
   watermelon: [
-    { kind: 'slice-melon', color: 0xffffff, count: 7, size: 0.85 },
-    { kind: 'round', color: 0x2f7a3b, count: 2, size: 0.5 },
+    { kind: 'slice-melon', color: FRUIT_PIECE_COLOR.texture, count: 7, size: 0.85 },
+    { kind: 'round', color: FRUIT_PIECE_COLOR.melonRind, count: 2, size: 0.5 },
   ],
   'strawberry-kiwi': [
-    { kind: 'round', color: 0xd02a48, count: 6, size: 0.5 },
-    { kind: 'slice-kiwi', color: 0xffffff, count: 5, size: 0.78 },
+    { kind: 'round', color: FRUIT_PIECE_COLOR.strawberry, count: 6, size: 0.5 },
+    { kind: 'slice-kiwi', color: FRUIT_PIECE_COLOR.texture, count: 5, size: 0.78 },
   ],
   peach: [
-    { kind: 'round', color: 0xf3a074, count: 6, size: 0.62 },
-    { kind: 'slice-peach', color: 0xffffff, count: 4, size: 0.8 },
+    { kind: 'round', color: FRUIT_PIECE_COLOR.peach, count: 6, size: 0.62 },
+    { kind: 'slice-peach', color: FRUIT_PIECE_COLOR.texture, count: 4, size: 0.8 },
   ],
-  'blackout-berry': [{ kind: 'berry', color: 0x4a2a78, count: 12, size: 0.42 }],
+  'blackout-berry': [{ kind: 'berry', color: FRUIT_PIECE_COLOR.blackoutBerry, count: 12, size: 0.42 }],
 };
 
 const CAPACITY = 24;
@@ -67,10 +68,10 @@ function sliceTexture(kind: Kind): THREE.CanvasTexture {
       ctx.fill();
     };
     if (kind === 'slice-kiwi') {
-      disc(c, '#5a3b1d');
-      disc(c * 0.93, '#7fbf3a');
-      disc(c * 0.3, '#e6f2c4');
-      ctx.fillStyle = '#1b130c';
+      disc(c, FRUIT_COLOR.kiwi.rind);
+      disc(c * 0.93, FRUIT_COLOR.kiwi.flesh);
+      disc(c * 0.3, FRUIT_COLOR.kiwi.core);
+      ctx.fillStyle = FRUIT_COLOR.kiwi.seed;
       for (let i = 0; i < 28; i += 1) {
         const a = (i / 28) * Math.PI * 2;
         ctx.beginPath();
@@ -78,10 +79,10 @@ function sliceTexture(kind: Kind): THREE.CanvasTexture {
         ctx.fill();
       }
     } else if (kind === 'slice-melon') {
-      disc(c, '#1f6b2d');
-      disc(c * 0.9, '#e9f3d4');
-      disc(c * 0.84, '#e8403a');
-      ctx.fillStyle = '#1a0f0c';
+      disc(c, FRUIT_COLOR.melon.rind);
+      disc(c * 0.9, FRUIT_COLOR.melon.pith);
+      disc(c * 0.84, FRUIT_COLOR.melon.flesh);
+      ctx.fillStyle = FRUIT_COLOR.melon.seed;
       for (let i = 0; i < 14; i += 1) {
         const a = (i / 14) * Math.PI * 2 + 0.2;
         const r = c * (0.3 + 0.28 * ((i * 7) % 3) / 2);
@@ -90,13 +91,13 @@ function sliceTexture(kind: Kind): THREE.CanvasTexture {
         ctx.fill();
       }
     } else if (kind === 'slice-mango') {
-      disc(c, '#e1672a');
-      disc(c * 0.93, '#ffc233');
-      disc(c * 0.2, '#ffe9a8');
+      disc(c, FRUIT_COLOR.mango.skin);
+      disc(c * 0.93, FRUIT_COLOR.mango.flesh);
+      disc(c * 0.2, FRUIT_COLOR.mango.core);
     } else {
-      disc(c, '#d9743f');
-      disc(c * 0.93, '#ffc59a');
-      disc(c * 0.22, '#8a3b22');
+      disc(c, FRUIT_COLOR.peach.skin);
+      disc(c * 0.93, FRUIT_COLOR.peach.flesh);
+      disc(c * 0.22, FRUIT_COLOR.peach.stone);
     }
   }
   const texture = new THREE.CanvasTexture(canvas);
@@ -129,11 +130,11 @@ export function buildFruitMesh(kind: Kind, capacity: number): { mesh: THREE.Inst
   let material: THREE.Material;
   if (kind.startsWith('slice')) {
     map = sliceTexture(kind);
-    material = new THREE.MeshStandardMaterial({ map, roughness: 0.35, metalness: 0, emissive: 0xffffff, emissiveMap: map, emissiveIntensity: 0.18 });
+    material = new THREE.MeshStandardMaterial({ map, roughness: 0.35, metalness: 0, emissive: FRUIT_PIECE_COLOR.texture, emissiveMap: map, emissiveIntensity: 0.18 });
   } else if (kind === 'ice') {
-    material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.5, clearcoat: 1, envMapIntensity: 1.6 });
+    material = new THREE.MeshPhysicalMaterial({ color: FRUIT_PIECE_COLOR.texture, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.5, clearcoat: 1, envMapIntensity: 1.6 });
   } else {
-    material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: kind === 'berry' ? 0.28 : 0.4, metalness: 0, emissive: 0xffffff, emissiveIntensity: 0.0 });
+    material = new THREE.MeshStandardMaterial({ color: FRUIT_PIECE_COLOR.texture, roughness: kind === 'berry' ? 0.28 : 0.4, metalness: 0, emissive: FRUIT_PIECE_COLOR.texture, emissiveIntensity: 0.0 });
   }
   const mesh = new THREE.InstancedMesh(geometry, material, capacity);
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);

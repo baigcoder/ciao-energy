@@ -800,7 +800,7 @@ html.is-locked {
    still matches what you see. */
 @media (max-width: 767px) {
   .pdp-stage {
-    height: clamp(17rem, 38svh, 26rem);
+    height: clamp(var(--size-pdp-stage-min), 38svh, var(--size-pdp-stage-max));
   }
 
   .pdp-panel {

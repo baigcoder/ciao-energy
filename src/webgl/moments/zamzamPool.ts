@@ -90,7 +90,7 @@ export class ZamzamPool implements SceneMoment {
   private dropStart = -1;
   private dropSounded = false;
 
-  constructor(private readonly host: SceneManager) {
+  constructor(host: SceneManager) {
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         uAlpha: { value: 0 },

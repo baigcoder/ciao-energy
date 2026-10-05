@@ -524,7 +524,7 @@ body:has(.loader) {
   }
 
   .site-logo img {
-    width: 6.5rem;
+    width: var(--size-logo-phone);
   }
 
   .site-menu {

@@ -30,7 +30,6 @@ export class OpeningMoment implements SceneMoment {
   private cracked = false;
   private readonly lid = new THREE.Vector3();
 
-  constructor(private readonly host: SceneManager) {}
 
   /** Starts the opening clock on the next frame. */
   arm() {

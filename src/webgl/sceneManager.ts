@@ -24,6 +24,7 @@ import { IceDust } from './moments/iceDust';
 import { moonPhase, twilight } from './liveSky';
 import { FinaleGlow } from './moments/finaleGlow';
 import { CAN } from './canDimensions';
+import { SCENE_COLOR } from './palette';
 
 export { CAROUSEL_CONFIG };
 export type { SceneMode, SceneStateConfig };
@@ -120,7 +121,7 @@ export class SceneManager {
   private benefitGlowIndex = -1;
   private benefitGlowStrength = 0;
   private readonly glowColor = new THREE.Color();
-  private readonly rimBase = new THREE.Color(0xdfe6ff);
+  private readonly rimBase = new THREE.Color(SCENE_COLOR.rim);
   private readonly rimTint = new THREE.Color();
 
   // Per-can hover proximity state (smooth damped, outside React render)
@@ -246,7 +247,6 @@ export class SceneManager {
   private dragTurn = false;
 
   // Flavor colour wave: the new accent floods outward from the focused can.
-  private accentShown = new THREE.Color();
   private accentFrom = new THREE.Color();
   private accentTo = new THREE.Color();
   private wipeStart = -1e9;
@@ -289,7 +289,7 @@ export class SceneManager {
     });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(pixelRatio);
-    this.renderer.setClearColor(0x02040a, 1);
+    this.renderer.setClearColor(SCENE_COLOR.night, 1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
@@ -310,9 +310,9 @@ export class SceneManager {
 
     this.buildMasterTimeline();
     this.roarMoment = new RoarMoment(this);
-    this.openingMoment = new OpeningMoment(this);
+    this.openingMoment = new OpeningMoment();
     this.fruit = new FruitField(this);
-    this.moments.push(this.openingMoment, this.roarMoment, new GhostText(this), this.fruit, new InsideCan(this), new ZamzamPool(this), new FinaleGlow(this));
+    this.moments.push(this.openingMoment, this.roarMoment, new GhostText(this), this.fruit, new InsideCan(), new ZamzamPool(this), new FinaleGlow(this));
     this.iceDust = new IceDust(this);
     this.bindEvents();
     (window as unknown as { __GRIZZLY_SCENE__: SceneManager }).__GRIZZLY_SCENE__ = this;
@@ -326,27 +326,27 @@ export class SceneManager {
    * flavor-tinted back light separates the silhouette. Everything else stays dark.
    */
   private setupLights() {
-    this.hemiLight = new THREE.HemisphereLight(0xcfe0ff, 0x07090e, 0.14);
+    this.hemiLight = new THREE.HemisphereLight(SCENE_COLOR.skyFill, SCENE_COLOR.groundFill, 0.14);
     this.scene.add(this.hemiLight);
 
-    this.keyLight = new THREE.DirectionalLight(0xf2f7ff, 0.6);
+    this.keyLight = new THREE.DirectionalLight(SCENE_COLOR.key, 0.6);
     this.keyLight.position.set(-1.6, 6.5, 4.2);
     this.scene.add(this.keyLight, this.keyLight.target);
 
     // a strong back light draws a bright chrome edge round every silhouette (product-film look)
-    this.rimLight = new THREE.DirectionalLight(0xdfe6ff, 2.6);
+    this.rimLight = new THREE.DirectionalLight(SCENE_COLOR.rim, 2.6);
     this.rimLight.position.set(3.2, 3.5, -5);
     this.scene.add(this.rimLight);
 
-    this.fillLight = new THREE.DirectionalLight(0xe8eef8, 0.18);
+    this.fillLight = new THREE.DirectionalLight(SCENE_COLOR.softFill, 0.18);
     this.fillLight.position.set(2.6, -0.6, 4.0);
     this.scene.add(this.fillLight);
 
-    this.baseFill = new THREE.DirectionalLight(0xdfe4ec, 0.9);
+    this.baseFill = new THREE.DirectionalLight(SCENE_COLOR.baseFill, 0.9);
     this.baseFill.position.set(0.5, -6, 3);
     this.scene.add(this.baseFill);
 
-    this.flashLight = new THREE.DirectionalLight(0xffffff, 0);
+    this.flashLight = new THREE.DirectionalLight(SCENE_COLOR.white, 0);
     this.flashLight.position.set(0, 7, 2);
     this.scene.add(this.flashLight, this.flashLight.target);
   }

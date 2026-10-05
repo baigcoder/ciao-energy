@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { SceneManager } from '../sceneManager';
 import type { SceneMoment } from './types';
+import { SCENE_COLOR } from '../palette';
 
 /**
  * Ice dust: fine crystals hanging in the cold air between the camera and the mountains, so the
@@ -103,7 +104,7 @@ export class IceDust implements SceneMoment {
         uScroll: { value: 0 },
         uPixelRatio: { value: host.renderer.getPixelRatio() },
         uSize: { value: 2.4 },
-        uIce: { value: new THREE.Color(0xd8e8ff) },
+        uIce: { value: new THREE.Color(SCENE_COLOR.iceDust) },
         uAccent: { value: new THREE.Color() },
         uOpacity: { value: 0.9 },
         uCanPos: { value: new THREE.Vector3() },

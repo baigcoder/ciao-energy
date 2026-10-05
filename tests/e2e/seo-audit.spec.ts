@@ -58,6 +58,11 @@ for (const path of [...INDEXABLE, ...NOINDEX]) {
       if (index > 0) expect(heading.level - headings[index - 1].level, `heading order at "${heading.text}"`).toBeLessThanOrEqual(1);
     });
 
+    // Urdu has no localized URLs yet, so no hreflang and an English document: the in-page language switch is a
+    // convenience, not an SEO surface (decide the URL architecture with reviewed copy before adding either).
+    await expect(page.locator('link[rel="alternate"][hreflang]')).toHaveCount(0);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+
     // Images have alt text (empty alt is allowed only for decoration).
     const missingAlt = await page.locator('img:not([alt])').count();
     expect(missingAlt, 'images without an alt attribute').toBe(0);

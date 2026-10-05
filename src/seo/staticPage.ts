@@ -21,7 +21,7 @@ const NAV: Array<[string, string]> = [
 
 /** Minimal inline styling so the first paint is a calm dark page, not unstyled HTML. */
 export const STATIC_CSS = `
-.pre{box-sizing:border-box;min-height:100vh;background:#000 url(/brand/night-stage.jpg) center/cover fixed;color:#fff;font-family:Geist,Arial,sans-serif;font-weight:300;line-height:1.5;padding:2rem 1.25rem 4rem}
+.pre{box-sizing:border-box;min-height:100vh;background:black url(/brand/night-stage.jpg) center/cover fixed;color:white;font-family:Geist,Arial,sans-serif;font-weight:300;line-height:1.5;padding:2rem 1.25rem 4rem}
 .pre *{box-sizing:border-box}.pre a{color:inherit}.pre__in{max-width:60rem;margin:0 auto}
 .pre__bar{display:flex;flex-wrap:wrap;gap:1rem 2rem;align-items:baseline;justify-content:space-between;margin-bottom:3rem}
 .pre__brand{font:italic 900 1.5rem/1 'Libre Franklin',Arial Black,sans-serif;text-decoration:none;text-transform:uppercase}
