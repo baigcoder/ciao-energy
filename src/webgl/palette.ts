@@ -18,11 +18,11 @@ export const SCENE_COLOR = {
   baseFill: 0xdfe4ec,
 
   // Studio environment panels (reflections in the metal)
-  studioKey: 0xeaf3ff,
-  studioStripLeft: 0xcfe2ff,
-  studioStripRight: 0xb9cfff,
-  studioFloorBounce: 0x2c4260,
-  studioFrontFill: 0xdce8ff,
+  studioKey: 0xf3f3f1,
+  studioStripLeft: 0xf6f6f4,
+  studioStripRight: 0xe8e8e6,
+  studioFloorBounce: 0x343434,
+  studioFrontFill: 0xeeeeec,
 
   // Aluminium
   lid: 0xd9dbe0,

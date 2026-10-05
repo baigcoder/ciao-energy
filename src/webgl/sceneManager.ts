@@ -542,7 +542,7 @@ export class SceneManager {
     const heroCamera = SCENE_STATES.hero.camera;
     this.heroLift = safeY - canBottom + distance * Math.tan(heroCamera.rotX) + heroCamera.posY;
     if (!isMobile && available !== Number.POSITIVE_INFINITY && available > 5.0 * scale) {
-      this.heroLift += (available - 5.0 * scale) * 0.15;
+      this.heroLift += (available - 5.0 * scale) * 0.3;
     }
   }
 
@@ -1216,7 +1216,7 @@ export class SceneManager {
     // Key light follows the featured can so its top rim always catches the hot specular.
     const pointerX = this.reducedMotion ? 0 : this.pointer.smoothX / (window.innerWidth / 2);
     const pointerY = this.reducedMotion ? 0 : this.pointer.smoothY / (window.innerHeight / 2);
-    this.keyLight.position.set(this.data.canPosX - 1.6 + pointerX * 3, this.data.canPosY + 6.5 - pointerY * 2, this.data.canPosZ + 4.2);
+    this.keyLight.position.set(this.data.canPosX - 4.2 + pointerX * 3, this.data.canPosY + 4.6 - pointerY * 2, this.data.canPosZ + 3.6);
     this.keyLight.target.position.set(this.data.canPosX, this.data.canPosY, this.data.canPosZ);
     this.keyLight.target.updateMatrixWorld();
 
@@ -1265,7 +1265,7 @@ export class SceneManager {
         const breath = this.reducedMotion ? 0 : Math.sin(time * 0.0008 + phase) * 0.014;
         can.position.set(
           this.data.canPosX * (1 - s) + slot.x * mobileK * s,
-          this.data.canPosY * (1 - s) + (slot.y * mobileK + breath + drop) * s,
+          this.data.canPosY * (1 - s) + (slot.y * mobileK + (isMobile ? 2.2 : 0) + breath + drop) * s,
           this.data.canPosZ * (1 - s) + slot.z * s
         );
         can.rotation.set(
@@ -1334,15 +1334,19 @@ export class SceneManager {
       const visibleSlots = isMobile ? CAROUSEL_CONFIG.visibleSlotsMobile : CAROUSEL_CONFIG.visibleSlots;
       const edge = Math.min(1, Math.max(0, (visibleSlots + 0.45 - stepDist) / 0.9));
       const edgeFade = smooth(edge);
-      const ringArc = CAROUSEL_CONFIG.ringArc * Math.min(stepDist, 3) ** 2;
-      // neighbours nearly as large as the centre can (a product wall, as in the reference)
-      let canScale = heroScale * (0.9 + 0.1 * heroWeightSmooth) * (0.75 + 0.25 * edgeFade);
+      const ringArc = (isMobile ? CAROUSEL_CONFIG.ringArcMobile : CAROUSEL_CONFIG.ringArc) * Math.min(stepDist, 3) ** 2;
+      // tilted ring: lower left of centre, higher right of it, level again at the edges (signed slots)
+      const ringWave = (isMobile ? CAROUSEL_CONFIG.ringWaveMobile : CAROUSEL_CONFIG.ringWave) *
+        Math.sin((Math.PI * x) / (this.carousel.spacing * CAROUSEL_CONFIG.ringWaveSlots)) * (1 - heroWeightSmooth);
+      // neighbours a little smaller than the centre can (a product wall, as in the reference)
+      const neighbourScale = CAROUSEL_CONFIG.neighbourScale + (1 - CAROUSEL_CONFIG.neighbourScale) * heroWeightSmooth;
+      let canScale = heroScale * neighbourScale * (0.75 + 0.25 * edgeFade);
       // a product wall, not a parade: each neighbour hangs at its own height and lean (stable per can)
       const scatter = (1 - heroWeightSmooth) * (isMobile ? 0.4 : 1);
-      const scatterY = Math.sin(i * 2.37 + 0.8) * 0.75 * scatter;
+      const scatterY = Math.sin(i * 2.37 + 0.8) * 0.3 * scatter;
       const scatterRoll = Math.sin(i * 1.71 + 2.1) * 0.22 * scatter;
       let canPosX = ringX * this.data.wave;
-      let canPosY = (CAROUSEL_CONFIG.yBase + (isMobile ? 0.7 : 0) + this.heroLift + ringArc + scatterY) * this.data.wave;
+      let canPosY = (CAROUSEL_CONFIG.yBase + (isMobile ? 0.7 : 0) + this.heroLift + ringArc + ringWave + scatterY) * this.data.wave;
       let canPosZ = (ringZ + CAROUSEL_CONFIG.heroLift * heroWeightSmooth - (1 - edgeFade) * 3) * this.data.wave;
 
       const pitch = CAROUSEL_CONFIG.pitchNeighbour + (CAROUSEL_CONFIG.pitchX - CAROUSEL_CONFIG.pitchNeighbour) * heroWeightSmooth;
@@ -1497,7 +1501,7 @@ export class SceneManager {
     this.updateAccent(this.activeProductIndex, time);
     this.rimTint.copy(this.rimBase).lerp(this.glowColor, 0.55);
     this.rimLight.color.lerp(this.rimTint, damp(MOTION_RATE.reveal, delta));
-    this.keyLight.position.set(pose.x - 1.6, pose.y + 6.5, 4.2);
+    this.keyLight.position.set(pose.x - 4.2, pose.y + 4.6, 3.6);
     this.keyLight.target.position.set(pose.x, pose.y, 0);
     this.keyLight.target.updateMatrixWorld();
     this.baseFill.intensity = 0.5;

@@ -40,3 +40,4 @@ Thumbs.db
 test_*.png
 ciao-local-test.png
 .review/
+*.tsbuildinfo

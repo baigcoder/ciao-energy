@@ -373,7 +373,7 @@ export function createCanMaterials(
         anisotropyRotation: 0,
         // printed cans are varnished: a crisp clear coat gives the long vertical studio highlight
         clearcoat: 0.55,
-        clearcoatRoughness: 0.32, // a broad, soft varnish sheen rather than a hard stripe
+        clearcoatRoughness: 0.2, // a glossy varnish: one clean streak down the key side
         envMapIntensity: 1,
       });
   applyCanSurfaceShader(bodyMat);
@@ -389,7 +389,7 @@ export function createCanMaterials(
         metalness: 1,
         roughness: 0.34, // machined lid: crisp rings, a hotspot that never clips to white
         anisotropy: 0.35,
-        envMapIntensity: 0.85,
+        envMapIntensity: 0.62,
       });
   return { bodyMat, aluminumMat };
 }
@@ -423,12 +423,12 @@ export function setCanFocus(can: THREE.Object3D, focus: number) {
       // a faint coloured rim separates side cans from the night; the featured can gets almost none (no outline glow)
       surface.uRimStrength.value = 0.45 - 0.37 * focus + boost;
       const physical = material as THREE.MeshPhysicalMaterial;
-      if (physical.isMeshPhysicalMaterial) physical.clearcoat = Math.max(0.001, 0.55 * focus); // never 0: avoids a shader recompile
+      if (physical.isMeshPhysicalMaterial) physical.clearcoat = 0.55 * (0.45 + 0.55 * focus); // never 0: avoids a shader recompile
     } else if (material.color) {
       // machined aluminium: dim it with the label, relative to its authored colour and reflectance
       const base = (material.userData.base ??= { color: material.color.clone(), env: material.envMapIntensity }) as { color: THREE.Color; env: number };
-      // the machined ends stay bright chrome even on dark side cans (only their reflections dim)
-      material.color.copy(base.color).multiplyScalar(0.6 + 0.4 * focus);
+      // the machined ends drop to a dark metal grey on side cans, as in the reference (never blown white)
+      material.color.copy(base.color).multiplyScalar(0.4 + 0.6 * focus);
       material.envMapIntensity = base.env * (0.3 + 0.7 * focus);
     }
   });
