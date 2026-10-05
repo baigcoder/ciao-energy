@@ -182,7 +182,7 @@ export class FruitField implements SceneMoment {
   private spawn(flavorIndex: number, seconds: number) {
     const flavor = FLAVORS[flavorIndex % FLAVORS.length];
     const recipe = RECIPES[flavor.id] ?? [];
-    const focus = this.host.cans[this.host.carousel.getIndex()];
+    const focus = this.host.cans[this.host.featuredCanIndex()];
     this.origin.setFromMatrixPosition(focus.matrixWorld);
     this.origin.z -= 0.4;
     this.pieces.length = 0;

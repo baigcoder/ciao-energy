@@ -1,332 +1,261 @@
-# GRIZZLY ENERGY (Ciao Energy Digital Flagship)
+<div align="center">
 
-> **Next-Generation 3D Web Experience & Digital Flagship**  
-> Recreating and elevating the physical product theatre of Ciao Energy / Grizzly Energy through procedural PBR WebGL, physics-driven scroll choreography, real-time Web Audio synthesis, full-funnel commerce, and enterprise accessibility (WCAG 2.2 AA).
+# GRIZZLY ENERGY
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Three.js](https://img.shields.io/badge/Three.js-r161-black?logo=threedotjs&logoColor=white)](https://threejs.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![GSAP](https://img.shields.io/badge/GSAP-3.12-88CE02?logo=greensock&logoColor=white)](https://gsap.com/)
-[![Lenis](https://img.shields.io/badge/Lenis-Smooth_Scroll-black)](https://lenis.darkroom.engineering/)
-[![Vitest](https://img.shields.io/badge/Vitest-2.1-FCC72B?logo=vitest&logoColor=black)](https://vitest.dev/)
-[![Playwright](https://img.shields.io/badge/Playwright-E2E-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
-[![WCAG](https://img.shields.io/badge/WCAG_2.2-AA_Compliant-blue)](https://www.w3.org/WAI/standards-guidelines/wcag/)
-[![License](https://img.shields.io/badge/License-Private-lightgrey.svg)]()
+### *Fuel your wild side.*
 
----
+**A real-time 3D product website for Grizzly Energy, a halal energy drink made in Pakistan.**
+You hold the can, crack it open, watch it frost over and melt, and walk through the whole flavor range in one continuous WebGL scene.
 
-## ⚡ Quick Navigation
+![Hero: a fan of six flavors in a lit studio](.github/readme/hero.jpg)
 
-- [Overview & Creative Direction](#-overview--creative-direction)
-- [Flavor Lineup](#-flavor-lineup)
-- [System Architecture](#-system-architecture)
-- [WebGL 3D Engine & Shaders](#-webgl-3d-engine--shaders)
-- [Procedural Web Audio Engine](#-procedural-web-audio-engine)
-- [E-Commerce & Storefront](#-e-commerce--storefront)
-- [Performance & Hardware Scaling](#-performance--hardware-scaling)
-- [Accessibility & Progressive Enhancement](#-accessibility--progressive-enhancement)
-- [SEO, AEO & Static Prerendering](#-seo-aeo--static-prerendering)
-- [Project Directory Structure](#-project-directory-structure)
-- [Getting Started & Local Setup](#-getting-started--local-setup)
-- [Testing & Quality Assurance](#-testing--quality-assurance)
+`React 18` · `Three.js r161` · `GSAP` · `Lenis` · `Vite` · `TypeScript` · `Playwright`
+
+</div>
 
 ---
 
-## 🌌 Overview & Creative Direction
+## Contents
 
-GRIZZLY ENERGY is a high-performance, single-page immersive 3D marketing and e-commerce experience. Built to faithfully recreate and surpass the Ciao Energy marketing aesthetic, the experience fuses high-fashion product minimalism with visceral, tactile physical details:
-
-* **Futuristic & Minimalist:** A deep, neutral-grey and obsidian studio backdrop punctuated only by focused light and flavor accents.
-* **Physical & Tactile:** Real-time brushed aluminum surfaces, procedural condensation with run-down droplet physics, light refraction, and metallic sheen.
-* **Product-First:** The 3D can is always the hero; text, navigation, and UI frame the can without ever obscuring it.
-* **Deterministic Scroll Choreography:** Smooth, unified timeline synchronization where scroll progress directly drives camera trajectories, lighting, and physical can transformations.
-* **Zero Bloat:** Pure WebGL shaders, zero heavy external audio files (100% procedural Web Audio synthesis), clean semantic DOM, and sub-second initial paint.
-
----
-
-## 🥫 Flavor Lineup
-
-The experience showcases 6 bespoke flavors, each tied to a synchronized 3D lighting environment, color accent palette, and physical can artwork:
-
-| Flavor | Accent Token | Accent Hex | Notes & Profile | Edition |
-| :--- | :--- | :--- | :--- | :--- |
-| **Blue Raspberry** | `--accent-blue` | `#2a4fd0` | Sour-sweet berry burst with clean, electrifying lift | Core |
-| **Mango Fuego** | `--accent-mango` | `#f5a623` | Tropical ripe mango infused with a subtle fiery warmth | Core |
-| **Watermelon** | `--accent-melon` | `#2f7a3b` | Crisp summer watermelon, chilled and ultra-hydrating | Core |
-| **Strawberry Kiwi** | `--accent-strawberry` | `#d02a48` | Sweet sun-ripened strawberry balanced with tangy kiwi | Core |
-| **Peach** | `--accent-peach` | `#f3a074` | Velvety white peach nectar with a smooth, refreshing finish | Core |
-| **Blackout Berry** | `--accent-blackout` | `#4a2a78` | Deep wild blackberry and acai for midnight focus | Limited |
-
-### Clean Formulation Claims
-* **Natural Caffeine:** Extracted from green coffee beans for jitter-free focus.
-* **Natural Electrolytes:** Himalayan & sea salt electrolytes for cell hydration.
-* **Added Zamzam Water:** Premium water treatment in every can.
-* **B-Vitamin Matrix:** B3, B5, B6, and B12 metabolic cofactors.
-* **Halal Certified:** 100% halal certified formulation, zero artificial colors, zero preservatives.
+- [The experience](#the-experience)
+- [Interactions](#interactions)
+- [Quick start](#quick-start)
+- [Scripts](#scripts)
+- [How it works](#how-it-works)
+- [Project structure](#project-structure)
+- [Content and brand data](#content-and-brand-data)
+- [Performance](#performance)
+- [Accessibility](#accessibility)
+- [Commerce](#commerce)
+- [SEO and answer engines](#seo-and-answer-engines)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Conventions](#conventions)
 
 ---
 
-## 🏛️ System Architecture
+## The experience
 
-The application is structured into a disciplined 6-layer architecture to decouple 3D rendering loops from UI state changes:
+The home page is a single scroll-driven film. A pinned WebGL canvas sits behind the DOM, and every section is a waypoint on one GSAP master timeline that moves the camera, the cans, the lighting and the stage.
 
-```mermaid
-graph TD
-    A[Layer A: Semantic DOM & Typography] --> B[Layer B: Interaction Orchestrator]
-    B --> C[Layer C: WebGL 3D Scene Manager]
-    B --> D[Layer D: Master Motion Timeline]
-    B --> E[Layer E: Procedural Web Audio Engine]
-    C --> F[Layer F: Can Shaders & Visual Moments]
-    B --> G[E-Commerce & Cart State Machine]
-```
+| # | Section | What happens |
+|---|---------|--------------|
+| 01 | **Hero** | A symmetric fan of 12 cans (two of each flavor) in a grey studio with an overhead spotlight and a flavor-tinted halo. The centre can is sharp; the cans behind it fall softly out of focus. |
+| 02 | **Flavor intro** | The camera swings round and the whole can floats beside the flavor story, bobbing and turning slowly. Frost creeps up the label and melts into running drops. |
+| 03–06 | **Benefits** | The can turns to its side panel and lights one block at a time: natural caffeine, electrolytes, B vitamins, Zamzam water. |
+| 04 | **Electrolytes** | The air turns into the drink: carbonation streams up past the can while the flavor's fruit drifts beside it. |
+| 06 | **Zamzam** | The night gives way to a still pool lit from above. The can stands on the water line over its own reflection, rings spread from its base, a drop of light falls, and the halal seal is drawn line by line. |
+| 07 | **Tagline** | An upright can in front of the giant headline. |
+| 08 | **Finale** | Every can drops into one tight, twisting row. Above it, the grizzly from the label assembles out of thousands of drifting particles. |
+| 09–10 | **FAQ and newsletter** | The camera lifts away into mountains, mist and a live sky: the moon is drawn at today's real phase, with dawn and dusk following the visitor's clock. |
 
-1. **Layer A — Semantic DOM:** Clean HTML5 document tree with fluid type scales (`Geist`, `Geist Mono`, `Libre Franklin`). Never hides essential text inside WebGL.
-2. **Layer B — Interaction Orchestrator:** Manages normalized scroll progress (`Lenis`), pointer parallax, touch gestures, reduced-motion preferences, and active route state.
-3. **Layer C — WebGL Scene Manager:** Persistent Three.js renderer, custom camera controllers, PMREM studio environment, and geometry pooling.
-4. **Layer D — Motion Timeline:** Deterministic GSAP timelines mapping scroll progress directly to scene coordinates and DOM reveals without triggering layout reflows.
-5. **Layer E — Audio Synthesis:** Client-side Web Audio API synthesizers triggered by user gestures and spatial transitions.
-6. **Layer F — Commerce & State:** LocalStorage-backed cart state machine with item validation, pack builders, promo codes, and multi-step checkout.
+<table>
+<tr>
+<td width="50%"><img src=".github/readme/flavor-intro.jpg" alt="Flavor intro: the whole can floating beside the copy"></td>
+<td width="50%"><img src=".github/readme/electrolytes.jpg" alt="Electrolytes: bubbles and fruit around the lit label"></td>
+</tr>
+<tr>
+<td><img src=".github/readme/zamzam.jpg" alt="Zamzam: the can standing over still, lit water"></td>
+<td><img src=".github/readme/bear-swarm.jpg" alt="Finale: the bear assembling from particles above the row"></td>
+</tr>
+</table>
 
----
+## Interactions
 
-## 💎 WebGL 3D Engine & Shaders
+| Gesture | Where | Result |
+|---------|-------|--------|
+| **Click** the centre can, or press <kbd>O</kbd> | Hero | The lid tips toward you, the tab cracks open with a hiss, and cold mist rolls out. |
+| **Press and hold** the centre can | Hero | It lifts out of the ring. Drag to turn it on both axes, then let go and it settles back. |
+| **Flick** while turning | Any single-can scene | The can keeps spinning in the direction you threw it and eases to a stop. |
+| **Swipe** across the ring | Hero | The ring carries on with momentum (up to three cans), then snaps to a flavor. The background floods with the new flavor's colour. |
+| <kbd>←</kbd> <kbd>→</kbd> · <kbd>Shift</kbd>+<kbd>↑</kbd> <kbd>↓</kbd> | Home / product | Turn and tilt the featured can like a model viewer. |
+| **Tilt** your phone | Mobile | Parallax on the can. iOS asks for permission on your first tap. |
+| **Hover** | Desktop | Cans lean toward the pointer, with a soft chime per can. |
+| **Pick flavors** | `/mix` | Each can arcs from the list into a 3D carton and drops into its well. The carton lights up when the pack is full. |
 
-### 1. Procedural Condensation Shader (`canModel.ts`)
-* **Dual-Scale Sampling:** Samples a high-resolution 512×512 normal/height bead map at two non-repeating frequencies (`vec2(5.0, 4.0)` and `vec2(3.3, 2.7)`), eliminating visible tiling patterns across the cylinder.
-* **Patchy Density Mask:** Low-frequency simplex noise groups water droplets into realistic organic clusters rather than an artificial uniform film.
-* **Running Water Drops:** 28 radial lanes simulate water beads sliding down the can body with wobbling paths, leaving thinning wet wakes behind them.
-* **Dynamic Highlight Back-Off:** When an ingredient benefit block is hovered or active, surface droplets automatically dim down by up to 55% so the typography stays razor sharp.
+<table>
+<tr>
+<td width="50%"><img src=".github/readme/crack-open.jpg" alt="Clicking the can: the tab lifts and the lid faces the camera"></td>
+<td width="50%"><img src=".github/readme/pack-carton.jpg" alt="Mix your pack: a full 6-pack carton glowing in the flavor colour"></td>
+</tr>
+</table>
 
-### 2. Can Anatomy & Physical Geometry
-* **Aluminum Shell:** Realistic metal roughness (`MeshPhysicalMaterial`) with anisotropic brushed metal texturing on lids, rims, and base bevels.
-* **Extruded Rim & Tab:** Precision lathe geometry for the can lid, beverage opening slot, and pop-tab void.
-* **Color Accents & Varnish:** High-gloss varnish layer reflecting studio softboxes over satin-finish label art.
+## Quick start
 
-### 3. Studio Environment & Lighting (`studioEnv.ts` & `palette.ts`)
-* **Zero HDRI Dependencies:** Procedurally generated studio room prefiltered using Three.js `PMREMGenerator`.
-* **Light Rig:**
-  * Overhead softbox for metal rim illumination.
-  * Tall left key strip (`#f6f6f4`) creating a crisp gloss streak along the can edge.
-  * Right fill strip (`#e8e8e6`) for shadow-side definition.
-  * Neutral floor bounce panel preventing dark voids.
-  * Centralized palette system in `src/webgl/palette.ts`.
+Requires **Node 18+** (developed on Node 24).
 
-### 4. Choreographed Visual Moments (`src/webgl/moments/`)
-* **Hero Carousel Ring:** Desktop 11-can tilted sweeping ring; mobile responsive arc.
-* **Flavor Profile:** Can moves forward with interactive pointer rotation and floating accent particles.
-* **Benefit Comparisons:** Smooth focus transitions highlighting green coffee beans, electrolytes, and Zamzam water.
-* **Inside The Can:** Dynamic camera dive down the opening slot with swirling vortex particles.
-* **Ice Dust & Fruit Fields:** Instanced 3D fruit pieces (kiwi, watermelon, mango, peach) with physical rotational tumble.
-* **6-Can Finale Lineup:** Desktop mountain-shaped arc and mobile 2×3 grid with reflective wet floor highlights.
-
----
-
-## 🔊 Procedural Web Audio Engine
-
-Built in `src/audio/audioManager.ts` using the native **Web Audio API** without loading external audio assets:
-
-* **Can Crack Sound:** Synthesized white noise burst filtered through a steep bandpass filter combined with an exponentially decaying low-frequency pop.
-* **Effervescent Carbonation (Fizz):** High-frequency granulated noise simulating escaping CO₂ micro-bubbles.
-* **Subtle Spatial Drone:** Dual-sine wave ambient hum modulated by scroll velocity and viewport proximity.
-* **Interactive Haptics:** Subtle high-pass clicks on button hover, carousel navigation, and drawer toggles.
-* **Mute/Unmute State:** Strict user gesture compliance with persistent audio preferences across routes.
-
----
-
-## 🛒 E-Commerce & Storefront
-
-A full-fledged direct-to-consumer store embedded within the experience:
-
-* **Dynamic Product Catalog (`/shop`):** 6 individual flavor cans, multipacks, and limited editions.
-* **Interactive Pack Builder (`PackBuilder.tsx`):** Custom 12-can and 24-can builder with instant visual feedback and bundle savings.
-* **Slide-out Cart Drawer (`CartDrawer.tsx`):** Fly-to-bag animations, quantity stepper, free shipping progress bar, and instant line item removal.
-* **Dedicated Checkout Flow (`/checkout`):** Order summary, promo code application, shipping calculator, billing form validation, and offline order confirmation simulation.
-* **Limited Edition Drop Countdown (`LimitedCountdown.tsx`):** Real-time countdown timer for exclusive releases like Blackout Berry.
-
----
-
-## 🚀 Performance & Hardware Scaling
-
-To guarantee smooth 60fps across phones, laptops, and ultra-wide workstations, the engine dynamically adjusts to device capability:
-
-* **Quality Tier Classification (`devicePower.ts`):** Automatically assigns devices to `HIGH`, `MEDIUM`, `LOW`, or `STATIC` tiers based on core count, GPU renderer strings, and memory benchmarks.
-* **Device Pixel Ratio (DPR) Clamping:** DPR is capped at 1.75 on desktop and 1.5 on mobile to eliminate GPU memory throttling on Retina/4K screens.
-* **Deferred Initialization:** Non-critical 3D moments (inside-can, fruit particles, finale lineup) are initialized in background idle callbacks (`requestIdleCallback`) after the first paint.
-* **Offscreen Intersection Pausing:** WebGL canvas rendering automatically halts when scrolled offscreen or when browser tab visibility is lost.
-* **Deterministic Memory Management:** All geometries, textures, materials, and render targets are strictly disposed of on route transitions.
-
----
-
-## ♿ Accessibility & Progressive Enhancement
-
-Fully compliant with **WCAG 2.2 Level AA** standards:
-
-* **Screen Reader Friendly Headings (`RevealText.tsx`):** Split-character decorative title animations are hidden from assistive technology (`aria-hidden="true"`), while full, clean accessible names (`aria-label="Watermelon"`) are announced to screen readers.
-* **Reduced Motion Mode (`prefers-reduced-motion`):** Automatically disables camera swings, particle drift, and fast rotations, replacing them with subtle, clean fades.
-* **Keyboard Navigation:** Full tab order throughout the carousel, product drawers, pack builder, FAQ accordions, and checkout inputs with high-contrast `:focus-visible` outlines.
-* **Non-WebGL Fallback Stage (`FallbackStage.tsx`):** If WebGL is unsupported or disabled, a static photographic stage with clean CSS layout seamlessly replaces the 3D canvas.
-* **Touch Optimization:** All interactive controls maintain a minimum 44×44px hit target on touch devices.
-
----
-
-## 🔍 SEO, AEO & Static Prerendering
-
-* **14 Static Prerendered Routes:** Precomputed via `scripts/prerender.mjs`:
-  * `/` (Home Showcase)
-  * `/shop` (Storefront)
-  * `/product/:slug` (6 flavor product detail pages)
-  * `/halal` (Halal Water Treatment & Certification)
-  * `/privacy` (Privacy Policy)
-  * `/cart` & `/checkout`
-  * `/404` (Custom 404 page)
-* **Answer Engine Optimization (AEO):** Curated `llms.txt` file in `public/` providing factual, structured context for AI answer engines (Perplexity, ChatGPT, Gemini).
-* **Rich Schema Markup (JSON-LD):** Embedded schema for `Product`, `Organization`, `FAQPage`, and `BreadcrumbList`.
-* **Automated Sitemaps & Social Cards:** Generated `sitemap.xml`, `robots.txt`, and dedicated OpenGraph social posters for all 6 flavors.
-* **Production Security Headers:** `public/_headers` configured with strict Content Security Policy (CSP), HSTS, and aggressive immutable caching for static assets.
-
----
-
-## 📁 Project Directory Structure
-
-```text
-ciao-energy-antigravity-spec/
-├── public/                     # Static production assets
-│   ├── _headers                # Security headers, CSP & caching rules
-│   ├── brand/                  # Vector logos, favicons, badges
-│   ├── products/               # Optimized WebP can thumbnails
-│   ├── social/                 # OpenGraph & Twitter preview banners
-│   ├── textures/grizzly/       # 3D can label and surface maps
-│   ├── llms.txt                # AEO structured AI knowledge file
-│   └── sitemap.xml             # Search engine index
-├── scripts/                    # Build & asset automation
-│   ├── prerender.mjs           # Static site prerenderer
-│   ├── build-thumbs.mjs        # WebP thumbnail generator
-│   └── build-brand-assets.mjs  # SVG to PNG brand asset compiler
-├── src/
-│   ├── __tests__/              # Vitest unit test suites
-│   ├── audio/
-│   │   └── audioManager.ts     # Synthesized Web Audio engine
-│   ├── components/             # Reusable UI & stage components
-│   │   ├── HeroCarousel.tsx    # 3D can carousel HUD & title
-│   │   ├── ProductDetailPage.tsx # PDP view with flavor selector
-│   │   ├── BenefitsSection.tsx # Comparative before/after breakdown
-│   │   ├── CartDrawer.tsx      # Slide-out shopping bag
-│   │   ├── CheckoutPage.tsx    # Multi-step checkout experience
-│   │   ├── PackBuilder.tsx     # Custom 12/24 pack creator
-│   │   ├── RevealText.tsx      # Accessible split text reveal
-│   │   ├── HalalPage.tsx       # Halal certification & Zamzam story
-│   │   └── StageBackdrop.tsx   # Canvas wrapper & fallback container
-│   ├── data/
-│   │   ├── grizzly.json        # Single source of truth for site copy & flavors
-│   │   ├── brand.ts            # Typed brand configuration helpers
-│   │   ├── flavors.ts          # Flavor themes, accents & texture paths
-│   │   └── products.ts         # E-commerce SKUs, pricing & packs
-│   ├── hooks/
-│   │   └── useSmoothScroll.ts  # Lenis smooth scroll bridge
-│   ├── seo/
-│   │   ├── meta.ts             # Route metadata & JSON-LD generators
-│   │   └── staticPage.ts       # HTML injection for prerendered pages
-│   ├── styles/                 # Modular CSS architecture
-│   │   ├── tokens.css          # Design tokens (colors, spacing, typography)
-│   │   ├── base.css            # Reset, typography, utility classes
-│   │   ├── home.css            # Landing page layout & HUD
-│   │   └── shop.css            # Commerce, cart & checkout styling
-│   └── webgl/                  # Three.js 3D Rendering Subsystem
-│       ├── canDimensions.ts    # Physical can height & radius specs
-│       ├── canGeometry.ts      # Lathe & cylinder geometry builders
-│       ├── canModel.ts         # Shader material & condensation GLSL
-│       ├── devicePower.ts      # GPU tier detection & DPR scaling
-│       ├── palette.ts          # Centralized WebGL lighting colors
-│       ├── reflections.ts      # Planar floor reflection manager
-│       ├── sceneManager.ts     # Master 3D scene loop & choreography
-│       ├── sceneStates.ts      # Coordinate keyframes across sections
-│       ├── stage.ts            # Gradient backdrop & post-process shader
-│       ├── studioEnv.ts        # Procedural PMREM studio environment
-│       └── moments/            # Section-specific visual 3D moments
-│           ├── finaleGlow.ts   # 6-can finale lighting
-│           ├── fruitField.ts   # Floating fruit slices particle field
-│           ├── insideCan.ts    # Camera dive-in vortex effect
-│           ├── iceDust.ts      # Chilled vapor particle simulation
-│           └── zamzamPool.ts   # Water ripple shader effect
-├── tests/
-│   └── e2e/                    # Playwright end-to-end test suites
-│       ├── a11y.spec.ts        # Automated axe-core accessibility audit
-│       ├── commerce.spec.ts    # Cart & checkout transaction tests
-│       ├── flavors.spec.ts     # Flavor navigation & texture switching
-│       ├── layout.spec.ts      # Responsive viewport validation
-│       └── seo-audit.spec.ts   # Meta tags, canonicals & schema checks
-├── index.html                  # HTML entry template
-├── package.json                # Project dependencies and npm scripts
-├── playwright.config.ts        # End-to-end testing configuration
-├── tsconfig.json               # TypeScript compiler configuration
-└── vite.config.ts              # Vite bundling & code-splitting configuration
-```
-
----
-
-## 🛠️ Getting Started & Local Setup
-
-### Prerequisites
-* **Node.js:** `v18.0.0` or higher
-* **npm:** `v9.0.0` or higher
-
-### 1. Installation
-Clone the repository and install project dependencies:
 ```bash
-git clone https://github.com/baigcoder/ciao-energy.git
-cd ciao-energy
 npm install
 ```
 
-### 2. Development Server
-Start the local Vite dev server with hot module replacement (HMR):
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) (or the assigned port) in your browser.
 
-### 3. Production Build & Static Prerender
-Compile TypeScript, bundle optimized assets with Vite, and prerender all 14 routes:
-```bash
-npm run build
+Open <http://localhost:5173>. The opening sequence plays once per browser session. To skip it while developing, run `sessionStorage.setItem('grizzly_opened_v1', '1')` in the console.
+
+## Scripts
+
+| Command | What it does |
+|---------|--------------|
+| `npm run dev` | Vite dev server with hot reload on port 5173 |
+| `npm run build` | Typecheck, production build, then prerender every route to static HTML (`scripts/prerender.mjs`) |
+| `npm run preview` | Serve the production build on port 4173 |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint with zero warnings allowed |
+| `npm test` | Vitest unit tests |
+| `npm run test:e2e` | Playwright end-to-end suite (builds and serves the site itself) |
+
+Asset pipelines (re-run after changing their sources):
+
+| Script | Builds |
+|--------|--------|
+| `node scripts/build-labels.mjs` | Can label textures (albedo, surface and normal maps) from `src/data/grizzly.json` and the label art |
+| `node scripts/build-ktx2.mjs` | GPU-compressed KTX2 versions of the label textures |
+| `node scripts/build-bear.mjs` | The bear art used by the roar and the finale particles |
+| `node scripts/build-thumbs.mjs` | Product thumbnails |
+| `node scripts/build-social.mjs` | Social share images |
+| `node scripts/build-brand-assets.mjs` | Logo and brand assets |
+
+## How it works
+
 ```
-Preview the production build locally:
-```bash
-npm run preview
+                 scroll (Lenis) ──► useHomeScroll ──► SceneManager.seekProgress(p)
+                                                          │
+             ┌────────────────────────────────────────────┤
+             ▼                                            ▼
+  GSAP master timeline                           per-frame render loop
+  (SCENE_SEQUENCE → SCENE_STATES)                ├─ damped camera follow
+  camera · can pose · lighting · stage           ├─ layoutCans(): hero fan / feature / finale row
+                                                 ├─ moments[]: self-contained choreography
+                                                 ├─ Stage: backdrop shader + foreground mist
+                                                 └─ PostFx: lens focus → bloom → finish
 ```
+
+- **One source of scene truth.** [`sceneStates.ts`](src/webgl/sceneStates.ts) maps each DOM section id to a pose (camera, product, lighting, stage). The master timeline is built from that list, so adding a section means adding one entry.
+- **Moments.** Each signature effect is a small class in [`src/webgl/moments/`](src/webgl/moments) with `update()` and `dispose()`. A moment adjusts the frame's copy of the timeline data and never owns the loop:
+
+  | Moment | Effect |
+  |--------|--------|
+  | `opening` | The first-visit lid close-up, tab crack and mist |
+  | `canCrack` | Click to open the hero can |
+  | `frostMelt` | Frost creeps up the label, then melts into wet beads |
+  | `roar` | On the first scroll, the bear rises behind the can with a calm camera tremor |
+  | `fruitField` | Fruit bursts on a flavor change |
+  | `effervescence` | Bubbles and fruit around the can in the electrolytes chapter |
+  | `zamzamPool` | The still pool, light shafts, ripples and the falling drop |
+  | `ghostText` | Tagline type in the scene |
+  | `finaleGlow` | A flavor glow behind each can in the finale row |
+  | `bearSwarm` | The particle grizzly above the finale |
+  | `iceDust` | Drifting ice crystals across every 3D route |
+- **The can** ([`canModel.ts`](src/webgl/canModel.ts)) is a `MeshPhysicalMaterial` extended with `onBeforeCompile`. One label texture drives brushed metal and lacquered ink, plus two-scale condensation beads, running drops, frost, a benefit spotlight and a rim light.
+- **The stage** ([`stage.ts`](src/webgl/stage.ts)) is a full-screen shader drawn at half resolution: a night sky with an aurora and today's moon, ridge-line mountains, fog banks, a wet mirror floor, the grey product studio and the flavor colour field. All of them blend from timeline values.
+- **Reflections** come from a studio built in code ([`studioEnv.ts`](src/webgl/studioEnv.ts)), with a softbox, strip lights and a flavor-coloured gel, prefiltered with PMREM. It is rebuilt when the flavor changes.
+- **Post-processing** ([`post.ts`](src/webgl/post.ts)) runs a lens-focus pass (a depth-of-field look without a depth buffer), highlight-only bloom, and a finish pass with vignette, grain and dither.
+- **SSR-safe.** Browser APIs stay behind client boundaries. The 3D chunk loads only on routes that need it.
+
+## Project structure
+
+```
+src/
+├─ App.tsx                 routes, scene lifecycle, section ↔ scene wiring
+├─ components/             DOM layer: hero, sections, shop, cart, checkout, pack builder, menus
+├─ hooks/                  smooth scroll, scroll → timeline, model-viewer keys
+├─ data/
+│  ├─ grizzly.json         ★ single source of truth: brand, label, benefits, flavors, commerce text
+│  ├─ flavors.ts · benefits.ts · products.ts · faq.ts
+├─ webgl/
+│  ├─ sceneManager.ts      renderer, loop, carousel, pointer, routes, quality governor
+│  ├─ sceneStates.ts       section poses (the scroll story)
+│  ├─ canModel.ts          can materials and shader extensions
+│  ├─ stage.ts             backdrop and mist shaders
+│  ├─ post.ts              lens focus, bloom, finish
+│  └─ moments/             signature effects (see above)
+├─ styles/                 tokens.css (design tokens) → primitives → component sheets
+├─ seo/                    per-route head, JSON-LD, static page helpers
+└─ audio/                  synthesised UI sound (no audio files)
+scripts/                   asset pipelines and the prerenderer
+tests/e2e/                 Playwright: commerce, a11y, SEO, layout, leaks, reduced motion …
+public/                    textures, thumbnails, brand, social images, _headers
+```
+
+## Content and brand data
+
+All label and site copy lives in **[`src/data/grizzly.json`](src/data/grizzly.json)**. The site and the label generator both read it, so a change there updates the page, the 3D can and the structured data together:
+
+```bash
+node scripts/build-labels.mjs && node scripts/build-social.mjs
+```
+
+> **Unconfirmed facts stay visible as placeholders.** Any value starting with `TODO` (caffeine, sugar, halal certifier and licence, Zamzam source, prices, delivery, contact details, stores, production domain) shows as a clearly marked placeholder on the site and is never published as a claim. Supply the real values in the JSON to replace them.
+
+## Performance
+
+- **Quality tiers** ([`devicePower.ts`](src/webgl/devicePower.ts)):
+  - `HIGH` gets full materials, bloom, lens focus, floor reflections and up to 2× pixel ratio.
+  - `MEDIUM` drops bloom and uses a lighter stage.
+  - `LOW` drops post-processing and reflections.
+
+  Only a known weakness (data saver, ≤ 2 GB memory, ≤ 2 cores) pushes a device down a tier.
+- **Frame-rate governor.** If the scene can't hold about 50 fps, it steps down the pixel ratio, then bloom, then the tier. It never steps back up within a visit.
+- **Textures stream by need.** Every can starts at 1k. The focused can gets 2k, and 4k only in close-ups on capable high-density screens, never on phones or with data saver on.
+- **Deferred setup.** Post-processing, reflections and the secondary moments are built after the first frame, one idle task at a time.
+- **GPU-side animation.** Bubbles, particles and ripples animate in shaders. The render loop does no per-frame allocation, and every geometry, material, texture and render target is disposed.
+- **Plain pages** (shop, bag, checkout) render the backdrop at 30 fps (15 fps with reduced motion), and phones skip the 3D scene on those pages.
+
+## Accessibility
+
+- **`prefers-reduced-motion`** is respected everywhere: no opening, no spin, fling, drift or tremor. The frost, mist and bear appear in a still state.
+- Every effect is decorative. The facts exist as real text, and the canvas carries a text alternative.
+- Keyboard model viewer: arrows turn the can, <kbd>O</kbd> opens it, and focus inside fields, sliders and dialogs is never hijacked.
+- 44 px touch targets, visible focus, and an axe audit of every home section in CI.
+- English and Urdu (RTL) interface strings in [`src/locale.ts`](src/locale.ts).
+
+## Commerce
+
+Shop, product pages, bag, a mix-your-own pack builder (6 / 12 / 24) and a checkout flow, all client-side:
+
+- Prices are **placeholders** until confirmed in `grizzly.json`, and they're marked on screen.
+- **No payment provider is connected.** Checkout validates the form and reaches a confirmation screen without charging anything.
+- The bag is stored in `localStorage`. Tampered storage cannot change prices, because prices are always re-read from the data.
+
+![Mobile: pack carton and hero](.github/readme/mobile.jpg)
+
+## SEO and answer engines
+
+Every route is prerendered to static HTML, with its own title, description, canonical URL, Open Graph image and JSON-LD (`WebSite`, `Organization`, `Product`, `ItemList`, `BreadcrumbList`, `FAQPage`). The build also writes `robots.txt`, `sitemap.xml` and `llms.txt`. The home page stays crawlable without JavaScript: its `h1`, answer paragraph, range links and FAQ are all in the HTML.
+
+## Testing
+
+```bash
+npm run typecheck && npm run lint && npm test
+```
+
+```bash
+npm run test:e2e
+```
+
+The Playwright suite covers commerce state (shipping maths, undo, promo codes, tampered storage), accessibility (axe on every section, keyboard, focus), SEO and AEO contracts per route, layout (no horizontal overflow at 320 px), the loader lifecycle, listener and memory leaks, reduced motion, the no-WebGL fallback and the security headers.
+
+> On slower machines, run e2e with `--workers=2`. The suite reuses any server already on port 4173, so stop a stale `vite preview` after changing code.
+
+## Deployment
+
+`npm run build` outputs a fully static site to `dist/`. Any static host works.
+
+[`public/_headers`](public/_headers) carries the security and cache headers: a strict CSP, COOP/CORP, `X-Frame-Options`, and a Permissions-Policy that allows only the motion sensors the tilt effect needs. Netlify and Cloudflare Pages read it as-is. On other hosts, copy the same values into the host config. Add HSTS once HTTPS is live on the final domain.
+
+## Conventions
+
+- **Design tokens only.** Colours, spacing, motion and sizes come from [`tokens.css`](src/styles/tokens.css) (CSS) and [`palette.ts`](src/webgl/palette.ts) (WebGL). Components never hard-code a colour.
+- **Animate transforms and opacity**, keep animation state in refs outside React renders, and guard every browser API for SSR.
+- **Every effect documents its contract** in its header comment: trigger, what persists, what is scroll / pointer / time driven, what is WebGL vs DOM, what is optional, and the fallback.
+- Read [`AGENTS.md`](AGENTS.md), [`DESIGN.md`](DESIGN.md) and [`RULES.md`](RULES.md) before changing the experience.
 
 ---
 
-## 🧪 Testing & Quality Assurance
+<div align="center">
 
-The codebase adheres to strict engineering verification standards:
+**GRIZZLY ENERGY** · Made in Pakistan · Halal
 
-| Task | Command | Description |
-| :--- | :--- | :--- |
-| **Typecheck** | `npm run typecheck` | Strict TypeScript validation without emitting output (`tsc --noEmit`) |
-| **Lint** | `npm run lint` | ESLint rules check on all `src/` files with 0 warnings permitted |
-| **Unit Tests** | `npm run test` | Fast Vitest unit tests for SEO, device power, and live sky calculations |
-| **E2E Tests** | `npm run test:e2e` | Headless Playwright tests for a11y, commerce flows, and visual stability |
-
-### Running E2E Tests Headed
-To observe end-to-end tests running interactively in Chromium:
-```bash
-npx playwright test --headed
-```
-
----
-
-## 📜 Brand & Creative Attribution
-
-* **Brand:** Grizzly Energy Beverage Labs
-* **Origin:** Made in Pakistan
-* **Specification:** Ciao Energy Re-Creation & Interactive Showcase
-* **Creative Direction:** Minimalist Dark Product Theatre
-* **Maintained by:** [Hassan Baig](https://github.com/baigcoder)
-
----
-
-<p align="center">
-  <b>GRIZZLY ENERGY</b> • <i>Fuel your wild side.</i>
-</p>
+</div>

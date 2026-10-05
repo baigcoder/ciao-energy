@@ -7,7 +7,7 @@ import { SCENE_COLOR } from './palette';
  * on the right, a grey floor and a small hard kicker behind. Prefiltered with PMREM.
  * The panels are what the can's satin black, clear coat and silver wordmark actually reflect.
  */
-export function createStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
+export function createStudioEnvironment(renderer: THREE.WebGLRenderer, accent?: THREE.ColorRepresentation): THREE.Texture {
   const pmrem = new THREE.PMREMGenerator(renderer);
   const room = new THREE.Scene();
   room.background = new THREE.Color(SCENE_COLOR.black);
@@ -39,6 +39,8 @@ export function createStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Te
   addPanel(24, 24, SCENE_COLOR.studioFloorBounce, 0.2, [0, -6, 0]); // grey floor bounce
   addPanel(12, 7, SCENE_COLOR.studioFrontFill, 1.6, [-2, 2, 14]); // frontal fill so labels stay readable
   addPanel(1.6, 1.6, SCENE_COLOR.white, 5.0, [3.5, 3, -9]); // small hard kicker behind
+  // a coloured gel on the shadow side: each flavor's can carries a thin streak of its own colour in the metal
+  if (accent !== undefined) addPanel(1.2, 9, accent, 1.6, [7.5, 0.5, 1.5]);
 
   const texture = pmrem.fromScene(room, 0.035).texture;
   geometries.forEach((geometry) => geometry.dispose());

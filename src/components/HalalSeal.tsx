@@ -1,6 +1,5 @@
 import React from 'react';
 import { HALAL_WORD_PATH, HALAL_WORD_VIEWBOX } from './halalMark';
-import { SEAL_POSITION } from '../webgl/moments/zamzamLayout';
 
 /** 24 short tick marks around the seal, as one path. */
 const SEAL_TICKS = Array.from({ length: 36 }, (_, i) => {
@@ -16,23 +15,11 @@ const WORD_SCALE = 0.3;
 
 /**
  * The halal seal, drawn line by line while the Zamzam chapter is active: outer ring, inner ring,
- * ticks, then the Arabic word. Decorative (the claim is in the chapter copy and caption); it sits
- * on the centre of the ripple drawn in WebGL (see webgl/moments/zamzamPool.ts).
+ * ticks, then the Arabic word. Decorative (the claim is in the chapter copy and caption). `inline` is the compact
+ * badge under the Zamzam chapter copy (the can stands over the water on the right, see webgl/moments/zamzamPool.ts).
  */
-export const HalalSeal: React.FC<{ placed?: boolean }> = ({ placed = false }) => (
-  <div
-    className={`halal-seal ${placed ? 'halal-seal--placed' : ''}`}
-    style={
-      placed
-        ? ({
-        '--seal-x': `${SEAL_POSITION.desktop.x * 100}%`,
-        '--seal-y': `${SEAL_POSITION.desktop.y * 100}%`,
-        '--seal-x-narrow': `${SEAL_POSITION.mobile.x * 100}%`,
-        '--seal-y-narrow': `${SEAL_POSITION.mobile.y * 100}%`,
-      } as React.CSSProperties)
-        : undefined
-    }
-  >
+export const HalalSeal: React.FC<{ inline?: boolean }> = ({ inline = false }) => (
+  <div className={`halal-seal ${inline ? 'halal-seal--inline' : ''}`}>
     <svg className="halal-seal__art" viewBox="-60 -60 120 120" aria-hidden="true" focusable="false">
       <circle className="halal-seal__line" style={{ '--n': 0 } as React.CSSProperties} r="56" pathLength={1} />
       <circle className="halal-seal__line" style={{ '--n': 1 } as React.CSSProperties} r="50" pathLength={1} />

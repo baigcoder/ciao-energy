@@ -23,7 +23,7 @@ export const STRINGS = {
   languageLabel: { en: 'Switch to Urdu', ur: 'Switch to English' },
   viewDetails: { en: 'View details & order', ur: 'تفصیل دیکھیں اور آرڈر کریں' },
   scroll: { en: 'Scroll to discover', ur: 'مزید دیکھنے کے لیے اسکرول کریں' },
-  turnHint: { en: 'Press ← → to turn the can', ur: 'کین گھمانے کے لیے ← → دبائیں' },
+  turnHint: { en: 'Click the can to open · hold to pick it up · ← → to turn', ur: 'کین کھولنے کے لیے کلک کریں · اٹھانے کے لیے دبائے رکھیں · گھمانے کے لیے ← →' },
   addToBag: { en: 'Add to bag', ur: 'تھیلے میں ڈالیں' },
   allFlavors: { en: 'All flavors', ur: 'تمام ذائقے' },
   tagline: { en: 'Fuel your wild side', ur: 'اپنے جنگلی پن کو توانائی دیں' },

@@ -15,7 +15,7 @@ function focusOwnsKeys(target: EventTarget | null): boolean {
 }
 
 /**
- * Model-viewer keys for the 3D can. Home: ← → spin the featured can, Shift + ↑ ↓ (or W / S) tilt it;
+ * Model-viewer keys for the 3D can. Home: ← → spin the featured can, Shift + ↑ ↓ (or W / S) tilt it, O opens it;
  * plain ↑ ↓ keep scrolling the page. Product page: the arrows turn the can from anywhere on the
  * page. Nothing happens while focus is in a field, a slider or a dialog.
  */
@@ -28,6 +28,12 @@ export function useCanKeys(route: 'HOME' | 'PRODUCT' | 'OTHER', sceneRef: React.
       const scene = sceneRef.current;
       if (!scene) return;
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      if (key === 'o' && route === 'HOME') {
+        // O cracks the centre hero can open (the same as clicking it)
+        event.preventDefault();
+        scene.crackOpen();
+        return;
+      }
       let yaw = 0;
       let pitch = 0;
       if (key === 'ArrowLeft' || key === 'a') yaw = -1;

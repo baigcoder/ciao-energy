@@ -34,7 +34,7 @@ export const RevealText: React.FC<RevealTextProps> = ({ lines, as = 'h2', classN
             line.split('').map((char) => {
               const index = charIndex++;
               return (
-                <span className="reveal__unit" key={index} style={{ '--i': index } as React.CSSProperties}>
+                <span className={`reveal__unit${char === ' ' ? ' reveal__unit--space' : ''}`} key={index} style={{ '--i': index } as React.CSSProperties}>
                   {char === ' ' ? ' ' : char}
                 </span>
               );

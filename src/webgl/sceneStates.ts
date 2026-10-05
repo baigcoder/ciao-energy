@@ -57,6 +57,8 @@ const BENEFIT_SCALE = 2.6;
 const SHELL_HEIGHT = CAN.shellHeight;
 const BLOCK_SCREEN_Y = 0.15; // world Y where the active block is held (screen middle)
 const panelCentreU = (LABEL.panels.right[0] + LABEL.panels.right[1]) / 2;
+/** The Zamzam chapter's upright can (world units); its base sits on the water line. */
+const ZAMZAM_CAN = { scale: 1.45, x: 3.3, y: 0.55 };
 const BENEFIT_ROT_Y = (0.5 - panelCentreU) * Math.PI * 2;
 
 const benefit = (index: number, rotZ: number, camZ: number, camX: number): SceneStateConfig => {
@@ -96,10 +98,10 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
 
   // Flavor intro: the camera swings round to the left while the can leans in on the right, fully in frame.
   profile: {
-    // as in the reference: a big can leaning ~25° fills the right two-thirds, lid near the header,
-    // base running off the lower-right edge
+    // The whole can, lid to base, leaning ~16° in the right half of the frame (at scale 2.45 it ran off the bottom
+    // edge and read as cut). Scale 1.5 keeps it about 75% of the frame height with clear air around it, left of the rail.
     camera: cam(-1.4, 0.2, 27, 0.03, 0.05, 0),
-    product: { scale: 2.45, posX: 1.9, posY: -1.15, posZ: 0, rotX: 6 * DEG, rotY: -0.32, rotZ: 20 * DEG, spin: 0 },
+    product: { scale: 1.5, posX: 2.7, posY: 0.45, posZ: 0, rotX: 8 * DEG, rotY: -0.38, rotZ: 16 * DEG, spin: 0 },
     lighting: { ...LIGHT, pointerInfluence: 0.12 },
     stage: { ...STAGE, floorY: -4.4, reflect: 0.5, mistFg: 0.2, stars: 0, field: 1 },
     spacing: CAROUSEL_CONFIG.spacing,
@@ -111,7 +113,17 @@ export const SCENE_STATES: Record<string, SceneStateConfig> = {
   benefit01: benefit(0, 6 * DEG, 29, 0),
   benefit02: benefit(1, 5 * DEG, 27.5, 0.2),
   benefit03: benefit(2, 4 * DEG, 26, -0.2),
-  benefit04: benefit(3, 3 * DEG, 24.5, 0),
+  // Zamzam: the camera pulls back and the whole can stands upright over still, lit water (see moments/zamzamPool.ts):
+  // the label is lit again and the can's base meets its own reflection on the water line.
+  benefit04: {
+    camera: cam(0, 0.2, 28, 0.02, 0, 0),
+    product: { scale: ZAMZAM_CAN.scale, posX: ZAMZAM_CAN.x, posY: ZAMZAM_CAN.y, posZ: 0, rotX: 4 * DEG, rotY: -0.3, rotZ: 0, spin: 0 },
+    lighting: { ...LIGHT, pointerInfluence: 0.1, labelDim: 0 },
+    stage: { ...STAGE_CLOSE, floorY: ZAMZAM_CAN.y - (SHELL_HEIGHT / 2 + CAN.bottomHeight) * ZAMZAM_CAN.scale, reflect: 0.9, field: 0.5 },
+    spacing: CAROUSEL_CONFIG.spacing,
+    wave: 0,
+    swirl: 0,
+  },
 
   // The tagline: an upright can in front of the giant headline.
   argument: {

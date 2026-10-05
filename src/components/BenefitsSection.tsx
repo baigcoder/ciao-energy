@@ -69,8 +69,8 @@ export const BenefitsSection: React.FC<BenefitsSectionProps> = ({ activeChapter,
             lines={benefit.titleLine2 ? [benefit.titleLine1, benefit.titleLine2] : [benefit.titleLine1]}
           />
           <p className="section-copy__text">{publicText(benefit.description)}</p>
+          {benefit.iconType === 'zamzam' && <HalalSeal inline />}
         </div>
-        {benefit.iconType === 'zamzam' && <HalalSeal placed />}
       </section>
     ))}
   </>

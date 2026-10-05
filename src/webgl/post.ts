@@ -56,12 +56,59 @@ const FinishShader = {
     }`,
 };
 
+/**
+ * Lens focus: a depth-of-field look without a depth buffer. Everything stays sharp inside an ellipse around the
+ * featured can (taller than wide, like the can); outside it, a 12-tap golden-angle disc blur opens up with the
+ * distance, so the cans behind fall softly out of focus. Fast scrolling adds to the strength (a motion soften).
+ * Runs on the linear HDR target, before bloom, so out-of-focus highlights spread into soft discs.
+ */
+const FocusShader = {
+  uniforms: {
+    tDiffuse: { value: null as THREE.Texture | null },
+    uFocus: { value: new THREE.Vector2(0.5, 0.5) },
+    uStrength: { value: 0 },
+    uAspect: { value: 1 },
+    uTexel: { value: new THREE.Vector2(1 / 1920, 1 / 1080) },
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform vec2 uFocus;
+    uniform float uStrength;
+    uniform float uAspect;
+    uniform vec2 uTexel;
+    varying vec2 vUv;
+    void main() {
+      vec4 base = texture2D(tDiffuse, vUv);
+      vec2 q = vec2((vUv.x - uFocus.x) * uAspect, (vUv.y - uFocus.y) * 0.55);
+      float coc = uStrength * smoothstep(0.2, 0.75, length(q)) * 4.5; // circle of confusion, in pixels
+      // no early exit: a texture fetch inside non-uniform control flow trips ANGLE's derivative warning
+      // (the render target has no mipmaps, so a sharp pixel simply averages the same texel)
+      vec3 sum = base.rgb;
+      float total = 1.0;
+      for (int i = 0; i < 12; i++) {
+        float fi = float(i);
+        float r = sqrt((fi + 0.5) / 12.0) * coc;
+        float a = fi * 2.39996;
+        sum += texture2D(tDiffuse, vUv + vec2(cos(a), sin(a)) * r * uTexel).rgb;
+        total += 1.0;
+      }
+      gl_FragColor = vec4(sum / total, base.a);
+    }`,
+};
+
 export type PostTier = 'HIGH' | 'MEDIUM';
 
 export class PostFx {
   readonly composer: EffectComposer;
   readonly bloom: UnrealBloomPass | null;
   private readonly finish: ShaderPass;
+  private readonly focus: ShaderPass | null;
 
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, width: number, height: number, pixelRatio: number, tier: PostTier) {
     const target = new THREE.WebGLRenderTarget(width * pixelRatio, height * pixelRatio, {
@@ -72,6 +119,12 @@ export class PostFx {
     this.composer.setPixelRatio(pixelRatio);
     this.composer.setSize(width, height);
     this.composer.addPass(new RenderPass(scene, camera));
+    this.focus = tier === 'HIGH' ? new ShaderPass(FocusShader) : null;
+    if (this.focus) {
+      this.focus.enabled = false;
+      this.composer.addPass(this.focus);
+      this.setFocusSize(width, height);
+    }
     // Highlight-only bloom: the threshold sits above the lit label and lacquer, so only
     // specular glints, the rim light and the glow blocks bleed.
     // threshold well above the lit lid and label: only true specular glints bloom, so no halo round the can
@@ -84,6 +137,21 @@ export class PostFx {
 
   setSize(width: number, height: number) {
     this.composer.setSize(width, height);
+    this.setFocusSize(width, height);
+  }
+
+  private setFocusSize(width: number, height: number) {
+    if (!this.focus) return;
+    this.focus.uniforms.uAspect.value = width / Math.max(height, 1);
+    this.focus.uniforms.uTexel.value.set(1 / Math.max(width, 1), 1 / Math.max(height, 1));
+  }
+
+  /** Lens focus on a screen point (uv); strength 0 turns the pass off. */
+  setFocus(x: number, y: number, strength: number) {
+    if (!this.focus) return;
+    this.focus.enabled = strength > 0.02;
+    this.focus.uniforms.uFocus.value.set(x, y);
+    this.focus.uniforms.uStrength.value = strength;
   }
 
   setPixelRatio(ratio: number) {

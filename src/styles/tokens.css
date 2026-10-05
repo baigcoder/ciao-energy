@@ -81,6 +81,7 @@
   --motion-draw: 2.6s;
   --stagger-draw: 0.8s;
   --size-seal: min(34vh, 21.5rem);
+  --size-seal-inline: 5.5rem; /* the Zamzam chapter badge */
   --stroke-seal: 0.5;
   --size-shop-card: 26rem;
   --size-fact: 17rem;
@@ -313,6 +314,9 @@
   /* Shop extras */
   --size-can-top: 3.5rem;
   --size-can-top-small: 1.75rem;
+  --size-can-top-carton: 4.25rem; /* cans in the pack carton: larger, they are the hero of the page */
+  --carton-tilt: 34deg; /* the pack carton seen from above at an angle */
+  --carton-depth: 0.6rem; /* how deep each can well is */
   --size-hotspot: 2.25rem;
   --layout-checkout-max: 72rem;
   --layout-story-max: 60rem;
