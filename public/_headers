@@ -1,0 +1,50 @@
+# Security and caching headers. This file is copied to the site root by the build.
+#
+# The format is read as-is by Netlify and Cloudflare Pages. The final host is not confirmed: on nginx,
+# Apache, Vercel or S3/CloudFront, copy the same headers into that host's own configuration (the values
+# are what matters, not the file). The test tests/e2e/security-headers.spec.ts parses the Content-Security-Policy
+# line below and loads the site under it, so a host-config change that drifts from this file is the only thing
+# that can break WebGL; keep them in step.
+#
+# Not set here on purpose:
+#   Strict-Transport-Security  add it at the host once HTTPS is live on the final domain
+#                              (max-age=31536000; includeSubDomains), it cannot be undone quickly.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: accelerometer=(self), camera=(), geolocation=(), gyroscope=(self), microphone=(), payment=(), usb=(), interest-cohort=()
+  X-Frame-Options: DENY
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; media-src 'self' blob: data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+# Pages: always revalidate, so a new deploy shows up at once.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Build output has a content hash in its name: safe to cache for a year.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fixed names (not hashed): a month, then revalidate in the background.
+/textures/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+/basis/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+/products/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+/brand/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+/social/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+# Search and AI files: short, so edits are picked up within the hour.
+/robots.txt
+  Cache-Control: public, max-age=3600
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+/llms.txt
+  Cache-Control: public, max-age=3600
