@@ -487,7 +487,7 @@ export class SceneManager {
 
   /** 4k only pays off where the label is shown at 1.5+ texels per pixel: capable GPUs on dense screens. */
   private wantsDetail4k() {
-    return !this.isLowPower && !this.dataSaver && this.labels.maxLod >= 2 && window.devicePixelRatio >= 1.5;
+    return !this.isLowPower && !this.dataSaver && this.quality === 'HIGH' && this.labels.maxLod >= 2 && window.devicePixelRatio >= 1.5;
   }
 
   // ───────────────────────── intro ─────────────────────────
@@ -595,6 +595,12 @@ export class SceneManager {
       return;
     }
     this.isRunning = true;
+    // The cheap tier also streams only the small textures and skips emboss maps (a weak device must never look broken
+    // or stall on downloads it cannot use).
+    if (level === 'LOW') {
+      this.labels.maxLod = Math.min(this.labels.maxLod, 1);
+      this.labels.loadNormals = false;
+    }
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
     // HIGH renders up to 2x for crisp labels; the frame-rate governor steps down on slow GPUs
     const cap = level === 'LOW' ? 1 : level === 'MEDIUM' ? 1.25 : 2;

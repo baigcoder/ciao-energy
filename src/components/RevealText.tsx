@@ -21,10 +21,7 @@ export const RevealText: React.FC<RevealTextProps> = ({ lines, as = 'h2', classN
   return (
     <Tag className={`reveal ${className}`} aria-label={lines.join(' ')} id={id}>
       {lines.map((line, lineIndex) => (
-        <React.Fragment key={lineIndex}>
-          {/* a real space between lines, so the text content reads "BLUE RASPBERRY" for crawlers (the lines are blocks) */}
-          {lineIndex > 0 && ' '}
-        <span className="reveal__line" aria-hidden="true">
+        <span className="reveal__line" key={lineIndex} aria-hidden="true">
           {split === 'lines' ? (
             <span className="reveal__unit" style={{ '--i': lineIndex * 3 } as React.CSSProperties}>
               {line}
@@ -34,13 +31,16 @@ export const RevealText: React.FC<RevealTextProps> = ({ lines, as = 'h2', classN
               const index = charIndex++;
               return (
                 <span className="reveal__unit" key={index} style={{ '--i': index } as React.CSSProperties}>
-                  {char === ' ' ? ' ' : char}
+                  {char === ' ' ? ' ' : char}
                 </span>
               );
             })
           )}
+          {/* A trailing space inside each line but the last: the text content reads "BLUE RASPBERRY" for crawlers.
+              It collapses at the end of the line box, so it adds no gap, and the .reveal__line + .reveal__line margins
+              (which a node between the lines would break) are untouched. */}
+          {lineIndex < lines.length - 1 ? ' ' : null}
         </span>
-        </React.Fragment>
       ))}
     </Tag>
   );

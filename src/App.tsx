@@ -37,7 +37,7 @@ import { useSmoothScroll, prefersReducedMotion } from './hooks/useSmoothScroll';
 import { useHomeScroll } from './hooks/useHomeScroll';
 import { useCanKeys } from './hooks/useCanKeys';
 import { OPENING_MIN_SECONDS, openingShouldPlay } from './webgl/moments/openingConfig';
-import { isLowPowerDevice } from './webgl/devicePower';
+import { isLowPowerDevice, pickQuality, readDeviceSignals } from './webgl/devicePower';
 
 const MIN_LOADER_MS = 900;
 
@@ -210,10 +210,8 @@ export const App: React.FC = () => {
         const sm = new SceneManager(canvas);
         performance.mark('grizzly:scene-created');
         sceneManagerRef.current = sm;
-        const isMobile = window.innerWidth < 768;
-        const cores = navigator.hardwareConcurrency || 4;
         // Reduced motion keeps the 3D scene but drops to the light tier, with no intro, spin or tilt.
-        const quality = prefersReducedMotion() ? 'MEDIUM' : isMobile || cores <= 4 ? 'MEDIUM' : 'HIGH';
+        const quality = pickQuality(readDeviceSignals(prefersReducedMotion()));
         sm.reducedMotion = prefersReducedMotion();
         sm.setQuality(quality);
         document.documentElement.dataset.quality = quality;
