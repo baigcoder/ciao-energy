@@ -1,0 +1,94 @@
+/* ============================================================
+   LIQUID GLASS — one surface language for every panel that floats over the scene: the menu, the bag drawer, the
+   storage notice, shop cards and the checkout summary. Frosted and translucent (the night or the flavor colour shows
+   through), a light catching the top edge, a faint wash of the flavor accent from the upper left, and real depth
+   underneath. Loaded last: it only restyles the surface; each component keeps its own layout rules.
+   ============================================================ */
+
+.site-menu,
+.drawer__panel,
+.cookie-notice,
+.checkout__summary {
+  border: var(--border-hairline) solid var(--glass-edge);
+  background: var(--glass-sheen), var(--glass-fill);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+/* The drawer runs edge to edge: only its leading edge catches the light. */
+.drawer__panel {
+  border-width: 0 0 0 var(--border-hairline);
+  box-shadow: var(--glass-highlight-side), var(--glass-shadow);
+}
+
+/* Fluid in, as glass would settle (the style's 400–600 ms curve), still transform and opacity only. */
+.site-menu {
+  animation-duration: var(--motion-glass);
+  animation-timing-function: var(--ease-glass);
+}
+
+.drawer__panel {
+  animation-duration: var(--motion-glass);
+  animation-timing-function: var(--ease-glass);
+}
+
+/* Shop cards: the same glass, keeping their flavor glow; hover lifts the card and lights its edge. */
+.shop-card {
+  border-color: var(--glass-edge);
+  background:
+    radial-gradient(circle at 20% 50%, color-mix(in oklab, var(--color-accent) 34%, transparent), transparent 62%),
+    var(--glass-sheen),
+    var(--glass-fill);
+  box-shadow: var(--glass-highlight), var(--glass-shadow-soft);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-standard) var(--ease-out),
+    transform var(--motion-standard) var(--ease-out);
+}
+
+.shop-card:hover,
+.shop-card:focus-visible {
+  transform: translateY(calc(-1 * var(--space-2xs)));
+  box-shadow: var(--glass-highlight), var(--glass-shadow), 0 0 var(--space-xl) calc(-1 * var(--space-sm)) var(--color-accent);
+}
+
+/* ---------- Menu: where you are ---------- */
+.site-menu__link.is-current {
+  color: var(--color-accent);
+}
+
+.site-menu__link.is-current::before {
+  content: '';
+  display: inline-block;
+  width: var(--space-xs);
+  height: var(--space-xs);
+  margin-right: var(--space-xs);
+  border-radius: var(--radius-round);
+  background: var(--color-accent);
+  box-shadow: var(--shadow-accent-glow);
+  vertical-align: middle;
+}
+
+/* A thin, quiet scrollbar when a short screen makes the menu scroll (never the grey system bar). */
+.site-menu {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-white-a20) transparent;
+}
+
+@media (max-width: 767px) {
+  .site-menu__link {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-menu-phone);
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-card:hover,
+  .shop-card:focus-visible {
+    transform: none;
+  }
+}

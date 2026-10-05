@@ -11,6 +11,8 @@ interface MenuDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   items: MenuItem[];
+  /** The item for where the visitor is now (route or home section): marked, and announced as the current location. */
+  activeKey?: string;
 }
 
 /**
@@ -18,7 +20,7 @@ interface MenuDrawerProps {
  * plus the language switch. Escape or a click outside closes it; focus moves in
  * on open and returns on close.
  */
-export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, items }) => {
+export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, items, activeKey }) => {
   const panelRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -60,7 +62,8 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, items }
         {items.map((item, index) => (
           <li key={item.key} style={{ '--i': index } as React.CSSProperties}>
             <a
-              className="site-menu__link"
+              className={`site-menu__link ${item.key === activeKey ? 'is-current' : ''}`}
+              aria-current={item.key === activeKey ? 'location' : undefined}
               href={item.href}
               onClick={(event) => {
                 event.preventDefault();

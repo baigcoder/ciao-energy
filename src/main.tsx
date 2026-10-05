@@ -21,6 +21,8 @@ import './styles/shop-extras.css';
 // Pointer layer, countdown, saved items, notices, stores.
 import './styles/fx.css';
 import './styles/shop-page.css';
+// Liquid glass surface language, loaded last so it only restyles surfaces.
+import './styles/glass.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -407,6 +407,27 @@ export const App: React.FC = () => {
     { key: 'newsletter', href: '/#newsletter', onSelect: () => goToSection('newsletter') },
   ];
 
+  // Where the visitor is now, for the menu's current marker: the route, or on the home page the section in view
+  // (sections 2–5 are the benefit chapters, 8 the FAQ, 9 the newsletter).
+  const menuActiveKey =
+    route.type === 'SHOP' || route.type === 'PRODUCT'
+      ? 'range'
+      : route.type === 'MIX'
+        ? 'mix'
+        : route.type === 'HALAL'
+          ? 'halal'
+          : route.type === 'STORES'
+            ? 'stores'
+            : isHome
+              ? sectionIndex >= 9
+                ? 'newsletter'
+                : sectionIndex === 8
+                  ? 'faq'
+                  : sectionIndex >= 2 && sectionIndex <= 5
+                    ? 'benefits'
+                    : undefined
+              : undefined;
+
   // The finder recommends from anywhere: go home and spin the ring to the match.
   const handleRecommend = useCallback(
     (index: number) => {
@@ -472,7 +493,7 @@ export const App: React.FC = () => {
         onNavigateHome={() => (isHome ? scrollToSection('gamme') : navigate('/'))}
         onOpenBag={() => toggleCart(true)}
       />
-      <MenuDrawer isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} items={menuItems} />
+      <MenuDrawer isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} items={menuItems} activeKey={menuActiveKey} />
       <FlavorFinder isOpen={isFinderOpen} onClose={() => setIsFinderOpen(false)} onRecommend={handleRecommend} />
 
       <CartDrawer isOpen={isCartOpen} onClose={() => toggleCart(false)} onNavigate={navigate} />
