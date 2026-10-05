@@ -1338,15 +1338,22 @@ export class SceneManager {
       const edgeFade = smooth(edge);
       const ringArc = (isMobile ? CAROUSEL_CONFIG.ringArcMobile : CAROUSEL_CONFIG.ringArc) * Math.min(stepDist, 3) ** 2;
       // tilted ring: lower left of centre, higher right of it, level again at the edges (signed slots)
-      const ringWave = (isMobile ? CAROUSEL_CONFIG.ringWaveMobile : CAROUSEL_CONFIG.ringWave) *
-        Math.sin((Math.PI * x) / (this.carousel.spacing * CAROUSEL_CONFIG.ringWaveSlots)) * (1 - heroWeightSmooth);
-      // neighbours a little smaller than the centre can (a product wall, as in the reference)
-      const neighbourScale = CAROUSEL_CONFIG.neighbourScale + (1 - CAROUSEL_CONFIG.neighbourScale) * heroWeightSmooth;
-      let canScale = heroScale * neighbourScale * (0.75 + 0.25 * edgeFade);
-      // a product wall, not a parade: each neighbour hangs at its own height and lean (stable per can)
+      // tilted ring: lower left of centre, higher right of it, level again at the edges (signed slots)
+      const waveAmp = isMobile ? CAROUSEL_CONFIG.ringWaveMobile : CAROUSEL_CONFIG.ringWave;
+      const waveK = Math.PI / (this.carousel.spacing * CAROUSEL_CONFIG.ringWaveSlots);
+      const ringWave = waveAmp * Math.sin(waveK * x) * (1 - heroWeightSmooth);
+      // each can stands square to the curve, like a rope (the finale row does the same), so the leans flow
+      // with the line instead of jumbling against it
+      const curveLean = Math.atan(waveAmp * waveK * Math.cos(waveK * x)) * (1 - heroWeightSmooth);
+      // near neighbours a touch larger than the outer cans: no hole around the hero, an even rhythm outward
+      const nearBoost = CAROUSEL_CONFIG.neighbourNearBoost * Math.max(0, 1 - (stepDist - 1) / 3);
+      const neighbourScale = CAROUSEL_CONFIG.neighbourScale + nearBoost;
+      const sizeWeight = neighbourScale + (1 - neighbourScale) * heroWeightSmooth;
+      let canScale = heroScale * sizeWeight * (0.75 + 0.25 * edgeFade);
+      // only a trace of per-can life (stable per can): the curve carries the composition
       const scatter = (1 - heroWeightSmooth) * (isMobile ? 0.4 : 1);
-      const scatterY = Math.sin(i * 2.37 + 0.8) * 0.3 * scatter;
-      const scatterRoll = Math.sin(i * 1.71 + 2.1) * 0.15 * scatter;
+      const scatterY = Math.sin(i * 2.37 + 0.8) * 0.12 * scatter;
+      const scatterRoll = Math.sin(i * 1.71 + 2.1) * 0.06 * scatter;
       let canPosX = ringX * this.data.wave;
       let canPosY = (CAROUSEL_CONFIG.yBase + (isMobile ? 0.7 : 0) + this.heroLift + ringArc + ringWave + scatterY) * this.data.wave;
       // edge cans fade by size only: pushing them back made perspective slide them inward onto their neighbours
@@ -1355,7 +1362,7 @@ export class SceneManager {
       const pitch = CAROUSEL_CONFIG.pitchNeighbour + (CAROUSEL_CONFIG.pitchX - CAROUSEL_CONFIG.pitchNeighbour) * heroWeightSmooth;
       let canRotX = pitch * this.data.wave;
       let canRotY = (CAROUSEL_CONFIG.yawHeroY + theta * CAROUSEL_CONFIG.labelTurn * (1 - heroWeightSmooth)) * this.data.wave;
-      let canRotZ = (CAROUSEL_CONFIG.rollZ * heroWeightSmooth + Math.sin(theta) * CAROUSEL_CONFIG.neighbourLean + scatterRoll) * this.data.wave;
+      let canRotZ = (CAROUSEL_CONFIG.rollZ * heroWeightSmooth + curveLean + scatterRoll) * this.data.wave;
 
       let targetSectionScale = this.data.canScale;
       let targetSectionPosY = this.data.canPosY;
