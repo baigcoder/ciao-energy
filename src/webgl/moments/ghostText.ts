@@ -52,7 +52,7 @@ export class GhostText implements SceneMoment {
 
   private async draw() {
     try {
-      await document.fonts.load("italic 900 120px 'Libre Franklin'");
+      await document.fonts.load("italic 900 120px 'Barlow Condensed'");
     } catch {
       // the fallback face still draws legible letters
     }
@@ -67,7 +67,7 @@ export class GhostText implements SceneMoment {
     canvas.height = lineHeight * lines.length + 80;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.font = "italic 900 330px 'Libre Franklin', 'Arial Black', sans-serif";
+    ctx.font = "italic 900 330px 'Barlow Condensed', 'Arial Narrow', sans-serif";
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
     // Cold silver outline over a faint fill that fades into the mist toward each line's base:

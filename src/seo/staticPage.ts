@@ -24,10 +24,10 @@ export const STATIC_CSS = `
 .pre{box-sizing:border-box;min-height:100vh;background:black url(/brand/night-stage.jpg) center/cover fixed;color:white;font-family:Geist,Arial,sans-serif;font-weight:300;line-height:1.5;padding:2rem 1.25rem 4rem}
 .pre *{box-sizing:border-box}.pre a{color:inherit}.pre__in{max-width:60rem;margin:0 auto}
 .pre__bar{display:flex;flex-wrap:wrap;gap:1rem 2rem;align-items:baseline;justify-content:space-between;margin-bottom:3rem}
-.pre__brand{font:italic 900 1.5rem/1 'Libre Franklin',Arial Black,sans-serif;text-decoration:none;text-transform:uppercase}
+.pre__brand{font:italic 900 1.5rem/1 'Barlow Condensed',Arial Narrow,Arial Black,sans-serif;text-decoration:none;text-transform:uppercase}
 .pre nav{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;font-size:.9rem}
-.pre h1{font:italic 900 clamp(2.2rem,6vw,4.2rem)/1 'Libre Franklin',Arial Black,sans-serif;text-transform:uppercase;margin:.5rem 0 1rem}
-.pre h2{font:italic 900 1.5rem/1.1 'Libre Franklin',Arial Black,sans-serif;text-transform:uppercase;margin:2.5rem 0 1rem}
+.pre h1{font:italic 900 clamp(2.2rem,6vw,4.2rem)/1 'Barlow Condensed',Arial Narrow,Arial Black,sans-serif;text-transform:uppercase;margin:.5rem 0 1rem}
+.pre h2{font:italic 900 1.5rem/1.1 'Barlow Condensed',Arial Narrow,Arial Black,sans-serif;text-transform:uppercase;margin:2.5rem 0 1rem}
 .pre h3{font-size:1.05rem;font-weight:500;margin:1.25rem 0 .25rem}
 .pre p{margin:.25rem 0 .75rem;color:rgba(255,255,255,.78);max-width:42rem}.pre__eyebrow{letter-spacing:.3em;text-transform:uppercase;font-size:.75rem;color:rgba(255,255,255,.6)}
 .pre__can{float:right;height:min(46vh,24rem);width:auto;margin:0 0 1rem 1rem}

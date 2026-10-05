@@ -1346,10 +1346,11 @@ export class SceneManager {
       // a product wall, not a parade: each neighbour hangs at its own height and lean (stable per can)
       const scatter = (1 - heroWeightSmooth) * (isMobile ? 0.4 : 1);
       const scatterY = Math.sin(i * 2.37 + 0.8) * 0.3 * scatter;
-      const scatterRoll = Math.sin(i * 1.71 + 2.1) * 0.22 * scatter;
+      const scatterRoll = Math.sin(i * 1.71 + 2.1) * 0.15 * scatter;
       let canPosX = ringX * this.data.wave;
       let canPosY = (CAROUSEL_CONFIG.yBase + (isMobile ? 0.7 : 0) + this.heroLift + ringArc + ringWave + scatterY) * this.data.wave;
-      let canPosZ = (ringZ + CAROUSEL_CONFIG.heroLift * heroWeightSmooth - (1 - edgeFade) * 3) * this.data.wave;
+      // edge cans fade by size only: pushing them back made perspective slide them inward onto their neighbours
+      let canPosZ = (ringZ + CAROUSEL_CONFIG.heroLift * heroWeightSmooth) * this.data.wave;
 
       const pitch = CAROUSEL_CONFIG.pitchNeighbour + (CAROUSEL_CONFIG.pitchX - CAROUSEL_CONFIG.pitchNeighbour) * heroWeightSmooth;
       let canRotX = pitch * this.data.wave;

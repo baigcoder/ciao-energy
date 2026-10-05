@@ -46,6 +46,7 @@
   --font-geist: 'Geist', Arial, sans-serif;
   --font-geist-mono: 'Geist Mono', ui-monospace, monospace;
   --font-franklin: 'Libre Franklin', 'Arial Black', Arial, sans-serif;
+  --font-barlow-condensed: 'Barlow Condensed', 'Arial Narrow', 'Arial Black', sans-serif;
 
   /* Type scale (rem; root is 14px at ≤1680px wide and scales to 16px at 1920px) */
   --size-0667: 0.6667rem;

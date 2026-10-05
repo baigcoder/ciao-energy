@@ -535,7 +535,7 @@
 
 .faq__title {
   margin-left: calc(var(--layout-text-inset) - var(--layout-gutter));
-  font-size: var(--font-size-4xl);
+  font-size: var(--font-size-giant); /* condensed caps carry the giant size, as in the reference */
   line-height: var(--line-height-giant);
 }
 
@@ -546,26 +546,67 @@
 .faq__list {
   max-width: var(--layout-faq-max);
   margin: var(--space-5xl) auto 0;
+  counter-reset: faq;
 }
 
+/* Numbered rows in the display type, like a drinks brand spec sheet: a mono index in the flavor accent,
+   the question in condensed black italic caps, and an accent bar that draws down the open answer. */
 .faq-item {
+  position: relative;
+  counter-increment: faq;
   border-bottom: var(--border-hairline) solid var(--color-line);
+}
+
+.faq-item::before {
+  content: '';
+  position: absolute;
+  top: var(--space-lg);
+  bottom: var(--space-lg);
+  left: calc(-1 * var(--space-lg));
+  width: var(--space-2xs);
+  background: var(--color-accent);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.faq-item.is-open::before {
+  transform: scaleY(1);
 }
 
 .faq-item__question {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: baseline;
   gap: var(--space-lg);
   width: 100%;
   min-height: var(--control-size);
   padding: var(--space-lg) 0;
+  font-family: var(--font-family-display);
   font-size: var(--font-size-question);
-  font-weight: var(--font-weight-body);
+  font-style: italic;
+  font-weight: var(--font-weight-display);
   line-height: var(--line-height-snug);
+  letter-spacing: var(--letter-spacing-display);
+  text-transform: uppercase;
   text-align: left;
   color: var(--color-text-muted);
   transition: color var(--motion-instant) var(--ease-out);
+}
+
+.faq-item__question::before {
+  content: counter(faq, decimal-leading-zero);
+  flex: none;
+  min-width: var(--space-2xl);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  font-style: normal;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label);
+  color: var(--color-accent);
+}
+
+.faq-item__question > span {
+  flex: 1;
 }
 
 .faq-item__question:hover,
@@ -575,7 +616,8 @@
 
 .faq-item__icon {
   flex: none;
-  width: var(--space-xs);
+  align-self: center;
+  width: var(--space-sm);
   fill: currentColor;
   transition: transform var(--motion-fast) var(--ease-out);
 }
@@ -585,9 +627,11 @@
 }
 
 .faq-item__answer {
-  padding-bottom: var(--space-lg);
+  max-width: var(--layout-faq-answer-max);
+  padding: 0 0 var(--space-xl) calc(var(--space-2xl) + var(--space-lg));
   font-size: var(--font-size-xl);
-  color: var(--color-text-primary);
+  line-height: var(--line-height-body);
+  color: var(--color-text-secondary);
   animation: answer-in var(--motion-fast) var(--ease-out);
 }
 
@@ -842,7 +886,21 @@
   }
 
   .faq-item__question {
-    font-size: var(--font-size-xl);
+    gap: var(--space-sm);
+    font-size: var(--font-size-2xl);
+  }
+
+  .faq-item__question::before {
+    min-width: var(--space-xl);
+  }
+
+  .faq-item::before {
+    left: calc(-1 * var(--space-sm));
+  }
+
+  .faq-item__answer {
+    padding-left: calc(var(--space-xl) + var(--space-sm));
+    font-size: var(--font-size-lg);
   }
 
   .site-footer__bar {

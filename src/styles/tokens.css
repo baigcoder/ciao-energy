@@ -92,7 +92,7 @@
   /* Typography */
   --font-family-body: var(--font-geist);
   --font-family-mono: var(--font-geist-mono);
-  --font-family-display: var(--font-franklin);
+  --font-family-display: var(--font-barlow-condensed); /* tall condensed black italic: energy-drink type */
   --font-weight-body: 300;
   --font-weight-medium: 400;
   --font-weight-display: 900;
@@ -102,7 +102,7 @@
   --font-size-lg: var(--size-1);
   --font-size-xl: var(--size-1125);
   --font-size-2xl: var(--size-125);
-  --font-size-question: var(--size-15);
+  --font-size-question: var(--size-225); /* condensed caps read small: a size up */
   --font-size-menu: var(--size-225);
   --font-size-3xl: var(--size-3);
   --font-size-4xl: var(--size-9);
@@ -133,6 +133,7 @@
   --layout-frame-inset: 5.5rem;   /* corner brackets ≈ 80px from the edge at 1920 */
   --layout-gutter: 4.75rem;       /* header content ≈ 76px from the edge */
   --layout-text-inset: 12.25rem;  /* section copy ≈ 196px from the edge */
+  --layout-faq-answer-max: 62ch;  /* FAQ answers: a comfortable reading measure */
   --layout-copy-max: 28rem;
   --layout-faq-max: 48rem;
   --layout-form-max: 35rem;
