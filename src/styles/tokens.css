@@ -97,7 +97,8 @@
   --font-weight-body: 300;
   --font-weight-medium: 400;
   --font-weight-display: 900;
-  --font-size-xs: var(--size-0667);
+  /* (was 0.6667rem ≈ 10.7px: checkout field labels and pack sizes read too small; 11.5px is the floor for labels) */
+  --font-size-xs: 0.72rem;
   --font-size-sm: var(--size-075);
   --font-size-md: var(--size-0875);
   --font-size-lg: var(--size-1);
@@ -105,6 +106,8 @@
   --font-size-2xl: var(--size-125);
   --font-size-question: var(--size-15);
   --font-size-menu: var(--size-225);
+  /* phones: every item on one line and the whole menu in one screen (36px wrapped and scrolled at 390px) */
+  --font-size-menu-phone: clamp(var(--size-125), 6vw, var(--size-15));
   --font-size-3xl: var(--size-3);
   --font-size-4xl: var(--size-9);
   --font-size-compact-display: var(--size-6); /* giant titles on short laptop screens */
@@ -318,7 +321,20 @@
   --carton-tilt: 34deg;
   --spec-leader: 4.5rem; /* spec callout leader line, label to can */
   --spec-dot: 0.4rem;
-  --cine-bar-height: 11vh; /* cinema bars at full close: a 2.39:1 frame on a 16:9 screen */ /* the pack carton seen from above at an angle */
+  --cine-bar-height: 11vh;
+
+  /* Liquid glass (glass.css): every panel floating over the scene */
+  --glass-fill: color-mix(in oklab, var(--color-surface-panel) 58%, transparent);
+  --glass-edge: var(--color-white-a12);
+  --glass-sheen: radial-gradient(120% 70% at 0% 0%, color-mix(in oklab, var(--color-accent) 12%, transparent), transparent 60%);
+  --glass-highlight: inset 0 var(--border-hairline) 0 var(--color-white-a20);
+  --glass-highlight-side: inset var(--border-hairline) 0 0 var(--color-white-a12);
+  --glass-shadow: 0 1.5rem 3.75rem -1.25rem var(--color-black-a70);
+  --glass-shadow-soft: 0 1rem 2.5rem -1.5rem var(--color-black-a70);
+  --glass-blur: 28px;
+  --glass-saturate: 1.6;
+  --motion-glass: 520ms;
+  --ease-glass: cubic-bezier(0.22, 1, 0.36, 1); /* cinema bars at full close: a 2.39:1 frame on a 16:9 screen */ /* the pack carton seen from above at an angle */
   --carton-depth: 0.6rem; /* how deep each can well is */
   --size-hotspot: 2.25rem;
   --layout-checkout-max: 72rem;
