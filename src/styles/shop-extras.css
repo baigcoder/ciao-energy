@@ -337,6 +337,14 @@
   animation: label-pulse var(--motion-slow) var(--ease-in-out) infinite alternate;
 }
 
+/* Loading stays visible without a looping pulse. */
+@media (prefers-reduced-motion: reduce) {
+  .button-primary.is-loading .button-primary__text {
+    animation: none;
+    opacity: var(--opacity-disabled);
+  }
+}
+
 @keyframes label-pulse {
   to { opacity: var(--opacity-dimmed); }
 }

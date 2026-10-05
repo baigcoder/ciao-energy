@@ -478,6 +478,20 @@ body:has(main.page) .site-header::before {
   40% { opacity: 1; }
 }
 
+/* Reduced motion: the scroll hints stay as quiet, still marks (no looping pulse), and the sound bars hold a still
+   "on" shape: the state is still readable without movement. */
+@media (prefers-reduced-motion: reduce) {
+  .frame-chevron {
+    animation: none;
+    opacity: var(--opacity-faint);
+  }
+
+  .sound-toggle.is-on .sound-toggle__bars i {
+    animation: none;
+    height: var(--space-3xs);
+  }
+}
+
 /* ---------- Loader ---------- */
 body:has(.loader) {
   overflow: hidden;

@@ -230,6 +230,7 @@ export class SceneManager {
   private hasRenderedHome = false;
   /** The constructor renders one frame in the default HOME mode: label streaming waits for the app's real route. */
   private routeSet = false;
+  private lastPageFrameAt = 0;
   private readonly routeFrom = Array.from({ length: CAN_COUNT }, () => ({
     position: new THREE.Vector3(),
     quaternion: new THREE.Quaternion(),
@@ -925,6 +926,12 @@ export class SceneManager {
   public animate = (now: number) => {
     this.reqId = requestAnimationFrame(this.animate);
     if (!this.isRunning || this.contextLost) return;
+    // Plain pages (shop, bag, checkout, ...) only use the scene as a backdrop: a calmer rate saves battery and
+    // leaves the main thread to the page (30 fps; 15 with reduced motion).
+    if (this.routeMode === 'PAGE') {
+      if (now - this.lastPageFrameAt < (this.reducedMotion ? 66 : 33)) return;
+      this.lastPageFrameAt = now;
+    }
     const time = this.timeOverride ?? now;
     const rawDelta = (now - this.lastTime) / 1000;
     const delta = Math.min(rawDelta, 0.05);
