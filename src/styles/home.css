@@ -173,6 +173,11 @@
   opacity: 0;
 }
 
+/* The display face's tight tracking all but swallows a word space ("ZAMZAMWATER"): give it a real word gap. */
+.reveal__unit--space {
+  min-width: 0.28em;
+}
+
 .is-active .reveal__unit {
   animation: reveal-up var(--motion-fast) var(--ease-out) forwards;
   animation-delay: calc(var(--i) * var(--stagger-char));
@@ -861,12 +866,24 @@
   pointer-events: none;
 }
 
-/* In the Zamzam chapter the seal sits on the centre of the WebGL ripple. */
-.halal-seal--placed {
-  position: absolute;
-  left: var(--seal-x);
-  top: var(--seal-y);
-  transform: translate(-50%, -50%);
+/* In the Zamzam chapter the seal is a compact badge under the copy: art on the left, caption beside it. */
+.halal-seal--inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: auto;
+  margin-top: var(--space-lg);
+  justify-items: start;
+}
+
+.halal-seal--inline .halal-seal__art {
+  width: var(--size-seal-inline);
+  flex: none;
+}
+
+.halal-seal--inline .halal-seal__caption {
+  max-width: 12ch;
+  line-height: var(--line-height-tight);
 }
 
 .halal-seal__art {
@@ -932,10 +949,8 @@
 }
 
 @media (max-width: 767px) {
-  .halal-seal--placed {
-    left: var(--seal-x-narrow);
-    top: var(--seal-y-narrow);
-    width: min(var(--size-seal), 58vw);
+  .halal-seal--inline {
+    margin-top: var(--space-md);
   }
 }
 
@@ -1006,6 +1021,11 @@
   font-size: var(--font-size-xs);
   letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
+}
+
+/* Gone (not just faded) once the hero hands over: a half-faded hint fails contrast over the next section. */
+.hero:not(.is-active) .hero__turn-hint {
+  visibility: hidden;
 }
 
 @media (hover: none) {

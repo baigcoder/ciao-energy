@@ -18,11 +18,14 @@ import { RoarMoment } from './moments/roar';
 import { OpeningMoment } from './moments/opening';
 import { GhostText } from './moments/ghostText';
 import { FruitField } from './moments/fruitField';
-import { InsideCan } from './moments/insideCan';
+import { Effervescence } from './moments/effervescence';
 import { ZamzamPool } from './moments/zamzamPool';
 import { IceDust } from './moments/iceDust';
 import { moonPhase, twilight } from './liveSky';
 import { FinaleGlow } from './moments/finaleGlow';
+import { CanCrack } from './moments/canCrack';
+import { FrostMelt } from './moments/frostMelt';
+import { BearSwarm } from './moments/bearSwarm';
 import { CAN } from './canDimensions';
 import { MOTION_RATE, damp } from './motionVocabulary';
 import { SCENE_COLOR } from './palette';
@@ -106,6 +109,8 @@ export class SceneManager {
   /** Camera offsets added by moments (shake, push) after the timeline pose. */
   public readonly cameraOffset = new THREE.Vector3();
   public cameraRollOffset = 0;
+  /** Per-frame pose offsets for the featured can, added by moments and the pick-up (reset every frame). */
+  public readonly featuredOffset = { rotX: 0, posY: 0, posZ: 0, scale: 1 };
   /** Per-frame effects set by moments (reset to zero at the start of every frame). */
   public readonly fx = { flash: 0, burst: 0, water: 0, burstPos: new THREE.Vector2(0.5, 0.5) };
   /**
@@ -140,6 +145,17 @@ export class SceneManager {
   private dragStartX = 0;
   private dragStartY = 0;
   private lastDragX = 0;
+  private lastDragY = 0;
+  private lastDragTime = 0;
+  /** Smoothed drag speed (px per ms), for the fling on release. */
+  private dragVelocityX = 0;
+  private dragVelocityY = 0;
+  /** Pick-up: a press-and-hold on the centre hero can lifts it out of the ring to be turned freely. */
+  private pickTimer = -1;
+  private picked = false;
+  private pickBlend = 0;
+  private pressedCan = -1;
+  private crack!: CanCrack;
 
   // State
   public isLowPower = false;
@@ -311,7 +327,8 @@ export class SceneManager {
     this.roarMoment = new RoarMoment(this);
     this.openingMoment = new OpeningMoment();
     this.fruit = new FruitField(this);
-    this.moments.push(this.openingMoment, this.roarMoment, this.fruit);
+    this.crack = new CanCrack();
+    this.moments.push(this.openingMoment, this.roarMoment, this.fruit, this.crack, new FrostMelt());
     this.bindEvents();
     (window as unknown as { __GRIZZLY_SCENE__: SceneManager }).__GRIZZLY_SCENE__ = this;
     this.animate(0);
@@ -323,7 +340,7 @@ export class SceneManager {
   private disposed = false;
 
   /**
-   * Post-processing, floor reflections and the secondary moments (tagline type, inside-can, Zamzam pool, finale
+   * Post-processing, floor reflections and the secondary moments (tagline type, effervescence, Zamzam pool, finale
    * glow, ice dust) are built after the first frame, each in its own task, instead of one long task before it.
    * All of them are optional in the render loop (`?.` / empty lists), so the first frames simply render without them.
    */
@@ -336,8 +353,8 @@ export class SceneManager {
       () => {
         if (!this.isLowPower) this.reflections = new FloorReflections(this.scene, this.cans, this.labels);
       },
-      () => this.moments.push(new GhostText(this), new InsideCan()),
-      () => this.moments.push(new ZamzamPool(this), new FinaleGlow(this)),
+      () => this.moments.push(new GhostText(this), new Effervescence(this)),
+      () => this.moments.push(new ZamzamPool(this), new FinaleGlow(this), new BearSwarm(this)),
       () => {
         this.iceDust = new IceDust(this);
       },
@@ -488,7 +505,8 @@ export class SceneManager {
 
   /** 4k only pays off where the label is shown at 1.5+ texels per pixel: capable GPUs on dense screens. */
   private wantsDetail4k() {
-    return !this.isLowPower && !this.dataSaver && this.quality === 'HIGH' && this.labels.maxLod >= 2 && window.devicePixelRatio >= 1.5;
+    // (1.25+: common laptop scaling already shows the 2k label soft in a close-up)
+    return !this.isLowPower && !this.dataSaver && this.quality === 'HIGH' && this.labels.maxLod >= 2 && window.devicePixelRatio >= 1.25;
   }
 
   // ───────────────────────── intro ─────────────────────────
@@ -511,6 +529,26 @@ export class SceneManager {
   /** The roar (first scroll of a visit): the bear behind the can, a small camera shake. */
   public roar() {
     this.roarMoment.trigger();
+  }
+
+  /** Index (into `cans`) of the can at the centre of the hero ring. */
+  public featuredCanIndex() {
+    const count = this.cans.length;
+    return ((Math.round(this.carousel.position / this.carousel.spacing) % count) + count) % count;
+  }
+
+  /** Cracks the centre hero can open (click on it, or the O key). Only while the hero ring is on screen. */
+  public crackOpen() {
+    if (this.routeMode !== 'HOME' || this.data.wave < 0.6) return;
+    this.crack.trigger(this.featuredCanIndex());
+  }
+
+  /** The centre hero can's index when the point hits it, else -1. */
+  private centreCanAt(clientX: number, clientY: number) {
+    const hit = this.pickCan(clientX, clientY, this.cans);
+    if (!hit) return -1;
+    const index = this.cans.indexOf(hit);
+    return index === this.featuredCanIndex() ? index : -1;
   }
 
   /** 0 = held below frame, 1 = settled; staggered outward from the centre can. */
@@ -717,6 +755,21 @@ export class SceneManager {
     this.dragStartX = e.clientX;
     this.dragStartY = e.clientY;
     this.lastDragX = e.clientX;
+    this.lastDragY = e.clientY;
+    this.lastDragTime = performance.now();
+    this.dragVelocityX = 0;
+    this.dragVelocityY = 0;
+    // Hero: hold the centre can still for a moment to pick it up.
+    this.pressedCan = this.data.wave > 0.6 ? this.centreCanAt(e.clientX, e.clientY) : -1;
+    window.clearTimeout(this.pickTimer);
+    if (this.pressedCan >= 0 && !this.reducedMotion) {
+      this.pickTimer = window.setTimeout(() => {
+        if (!this.isPointerDown || this.isDragging) return;
+        this.picked = true;
+        this.userTurn.lastInput = performance.now();
+        audioManager.playCanHover(494, 0.3);
+      }, 280);
+    }
     try {
       this.canvas.setPointerCapture(e.pointerId);
     } catch {
@@ -729,11 +782,19 @@ export class SceneManager {
     const dx = e.clientX - this.dragStartX;
     const dy = e.clientY - this.dragStartY;
     if (!this.isDragging && Math.hypot(dx, dy) > 6) this.isDragging = true;
-    if (this.isDragging && this.dragTurn) {
-      this.turnCan((e.clientX - this.lastDragX) * 0.012, 0);
+    const now = performance.now();
+    const dt = Math.max(1, now - this.lastDragTime);
+    this.lastDragTime = now;
+    this.dragVelocityX += ((e.clientX - this.lastDragX) / dt - this.dragVelocityX) * 0.35;
+    this.dragVelocityY += ((e.clientY - this.lastDragY) / dt - this.dragVelocityY) * 0.35;
+    if (this.isDragging && (this.dragTurn || this.picked)) {
+      // a held can turns on both axes (picked up in the hero), a featured can turns around its axis
+      this.turnCan((e.clientX - this.lastDragX) * 0.012, this.picked ? (e.clientY - this.lastDragY) * 0.006 : 0);
       this.lastDragX = e.clientX;
+      this.lastDragY = e.clientY;
       return;
     }
+    this.lastDragY = e.clientY;
     if (this.isDragging && this.data.wave > 0.4) {
       const stepX = e.clientX - this.lastDragX;
       this.lastDragX = e.clientX;
@@ -751,13 +812,27 @@ export class SceneManager {
     } catch {
       // nothing captured
     }
-    if (this.isDragging && this.dragTurn) {
+    window.clearTimeout(this.pickTimer);
+    const recent = performance.now() - this.lastDragTime < 90; // a fling only if the pointer was still moving
+    if (this.isDragging && (this.dragTurn || this.picked)) {
+      // fling: the can keeps spinning in the direction it was thrown and eases to a stop
+      if (recent && !this.reducedMotion) this.turnCan(THREE.MathUtils.clamp(this.dragVelocityX * 0.5, -6, 6), 0);
       this.isDragging = false;
+      this.picked = false;
+      return;
+    }
+    if (this.picked) {
+      // held without a drag: put it back
+      this.picked = false;
       return;
     }
     if (this.isDragging) {
       this.isDragging = false;
-      this.carousel.target = Math.round(this.carousel.position / this.carousel.spacing) * this.carousel.spacing;
+      // momentum: a quick swipe carries the ring on by up to three cans, then it snaps to a can
+      const fling = recent && !this.reducedMotion
+        ? THREE.MathUtils.clamp(-this.dragVelocityX * (14 / Math.max(window.innerWidth, 320)) * 260, -3 * this.carousel.spacing, 3 * this.carousel.spacing)
+        : 0;
+      this.carousel.target = Math.round((this.carousel.position + fling) / this.carousel.spacing) * this.carousel.spacing;
     } else if (this.routeMode === 'HOME') {
       if (this.data.swirl > 0.4) this.handleLineupClick(e.clientX, e.clientY);
       else if (this.data.wave > 0.4) this.handleCanClick(e.clientX, e.clientY);
@@ -793,7 +868,10 @@ export class SceneManager {
     const minX = this.cans.length * -0.5 * this.carousel.spacing;
     const maxX = this.cans.length * 0.5 * this.carousel.spacing;
     const x = wrap(target, minX, maxX);
-    if (Math.abs(x) < 0.65 * this.carousel.spacing) this.onHeroCanClicked?.();
+    if (Math.abs(x) < 0.65 * this.carousel.spacing) {
+      this.crack.trigger(canIndex);
+      this.onHeroCanClicked?.();
+    }
     else this.carousel.target += Math.round(x / this.carousel.spacing) * this.carousel.spacing;
   };
 
@@ -1029,6 +1107,18 @@ export class SceneManager {
     this.canOverride.blend = 0;
     this.cameraOffset.set(0, 0, 0);
     this.cameraRollOffset = 0;
+    const fo = this.featuredOffset;
+    fo.rotX = 0;
+    fo.posY = 0;
+    fo.posZ = 0;
+    fo.scale = 1;
+    // a picked-up can lifts toward the camera and grows a little; let go, it settles back into the ring
+    this.pickBlend += ((this.picked ? 1 : 0) - this.pickBlend) * damp(MOTION_RATE.focus, delta);
+    if (this.picked) this.userTurn.lastInput = now;
+    if (this.pickBlend > 0.001) {
+      fo.posZ += 1.5 * this.pickBlend;
+      fo.scale *= 1 + 0.06 * this.pickBlend;
+    }
     this.stepCarousel(delta, now);
     this.stepGlowRect(delta);
     if (this.routeMode === 'HOME') this.moments.forEach((moment) => moment.update(time * 0.001, this));
@@ -1079,6 +1169,22 @@ export class SceneManager {
     void spinT;
   }
 
+  /**
+   * Rebuilds the reflection environment with the flavor's colour gel, once the flavor has settled (a quick run
+   * through the ring rebuilds once, not per can). Skipped on low-power devices, which keep the neutral studio.
+   */
+  private envTimer = -1;
+  private scheduleEnvironment(accent: string) {
+    if (this.isLowPower) return;
+    window.clearTimeout(this.envTimer);
+    this.envTimer = window.setTimeout(() => {
+      if (this.disposed) return;
+      const previous = this.scene.environment;
+      this.scene.environment = createStudioEnvironment(this.renderer, accent);
+      previous?.dispose();
+    }, 450);
+  }
+
   /** Accent colour wave: starts when the focused flavor changes, floods out from the focus can. */
   private updateAccent(flavorIndex: number, time: number) {
     const flavor = FLAVORS[flavorIndex % FLAVORS.length];
@@ -1091,6 +1197,7 @@ export class SceneManager {
       this.accentTo.set(flavor.theme.secondary);
       this.wipeStart = time;
     }
+    if (flavorIndex !== this.lastAccentIndex) this.scheduleEnvironment(flavor.theme.secondary);
     this.lastAccentIndex = flavorIndex;
     const wipeT = Math.min(1, Math.max(0, (time - this.wipeStart) / (this.reducedMotion ? 1 : 1400)));
     this.stageParams.wipe = wipeT >= 1 ? 1 : 1 - (1 - wipeT) ** 3;
@@ -1169,6 +1276,7 @@ export class SceneManager {
     this.applyCamera(false, time);
     this.updateAccent(this.carousel.getIndex(), time);
     this.updateStage(time, null);
+    this.post?.setFocus(0.5, 0.5, 0);
     this.renderScene(time);
   }
 
@@ -1226,8 +1334,13 @@ export class SceneManager {
 
     this.layoutCans(delta, time, isMobile);
     this.reflections?.update(this.cans, this.data.floorY, this.data.reflect, this.reducedMotion);
-    const focus = this.cans[this.carousel.getIndex()] ?? this.cans[0];
+    const focus = this.cans[this.featuredCanIndex()] ?? this.cans[0];
     this.updateStage(time, focus);
+    // Lens focus: the ring's back cans fall softly out of focus, single-can scenes keep only a whisper of it, the
+    // finale row stays sharp; a fast scroll softens the frame a little more (never under reduced motion).
+    const lens = 0.95 * this.data.wave + 0.22 * (1 - this.data.wave) * (1 - this.data.swirl);
+    const rush = this.reducedMotion ? 0 : Math.min(1, Math.abs(this.scrollVelocity) * 0.6) * 0.7;
+    this.post?.setFocus(this.focusScreen.x, this.focusScreen.y, (lens + rush) * (1 - 0.8 * this.pickBlend));
     this.renderScene(time);
   }
 
@@ -1239,6 +1352,7 @@ export class SceneManager {
     let bestHoverCanIndex = -1;
     // The finale row uses every can (two of each flavor), like a full shelf, as in the reference.
     const lineupCount = this.cans.length;
+    const fo = this.featuredOffset;
 
     this.cans.forEach((can, i) => {
       const target = i * this.carousel.spacing - this.carousel.position;
@@ -1311,11 +1425,17 @@ export class SceneManager {
         featRotX -= this.scrollVelocity * 0.07;
         featY += this.scrollVelocity * 0.12;
         featRotX += (this.pointer.smoothY / 1280) * this.tilt();
+        // A whole-can pose floats: a slow bob and a lazy quarter-sway of the label, so the can feels held in the air.
+        // Benefit close-ups (labelDim) stay still so the lit block holds its place on screen.
+        const float = this.reducedMotion ? 0 : 1 - this.data.labelDim;
+        featY += Math.sin(time * 0.0009) * 0.09 * float;
+        featRotY += Math.sin(time * 0.00045) * 0.16 * float;
+        const featRotZ = this.data.canRotZ + Math.sin(time * 0.0007 + 1.3) * 0.025 * float;
         setCanFocus(can, 1);
         this.applyLabelState(can, true);
-        can.position.set(featX, featY, this.data.canPosZ);
-        can.rotation.set(featRotX, featRotY, this.data.canRotZ);
-        can.scale.setScalar(featScale);
+        can.position.set(featX, featY + fo.posY, this.data.canPosZ + fo.posZ);
+        can.rotation.set(featRotX + fo.rotX, featRotY, featRotZ);
+        can.scale.setScalar(featScale * fo.scale);
         this.applyCanOverride(can, i);
         return;
       }
@@ -1332,15 +1452,15 @@ export class SceneManager {
       const visibleSlots = isMobile ? CAROUSEL_CONFIG.visibleSlotsMobile : CAROUSEL_CONFIG.visibleSlots;
       const edge = Math.min(1, Math.max(0, (visibleSlots + 0.45 - stepDist) / 0.9));
       const edgeFade = smooth(edge);
-      const ringArc = (isMobile ? CAROUSEL_CONFIG.ringArcMobile : CAROUSEL_CONFIG.ringArc) * Math.min(stepDist, 3) ** 2;
+      const ringArc = (isMobile ? CAROUSEL_CONFIG.ringArcMobile : CAROUSEL_CONFIG.ringArc) * Math.min(stepDist, isMobile ? 3 : visibleSlots) ** 2;
       // tilted ring: lower left of centre, higher right of it, level again at the edges (signed slots)
       const ringWave = (isMobile ? CAROUSEL_CONFIG.ringWaveMobile : CAROUSEL_CONFIG.ringWave) *
         Math.sin((Math.PI * x) / (this.carousel.spacing * CAROUSEL_CONFIG.ringWaveSlots)) * (1 - heroWeightSmooth);
       // neighbours a little smaller than the centre can (a product wall, as in the reference)
       const neighbourScale = CAROUSEL_CONFIG.neighbourScale + (1 - CAROUSEL_CONFIG.neighbourScale) * heroWeightSmooth;
       let canScale = heroScale * neighbourScale * (0.75 + 0.25 * edgeFade);
-      // a product wall, not a parade: each neighbour hangs at its own height and lean (stable per can)
-      const scatter = (1 - heroWeightSmooth) * (isMobile ? 0.4 : 1);
+      // optional per-can jitter in height and lean (stable per can); off on desktop, where the fan is one clean line
+      const scatter = (1 - heroWeightSmooth) * (isMobile ? CAROUSEL_CONFIG.scatterMobile : CAROUSEL_CONFIG.scatter);
       const scatterY = Math.sin(i * 2.37 + 0.8) * 0.3 * scatter;
       const scatterRoll = Math.sin(i * 1.71 + 2.1) * 0.22 * scatter;
       let canPosX = ringX * this.data.wave;
@@ -1375,8 +1495,10 @@ export class SceneManager {
       // Depth falloff: the focused can is fully lit, neighbours step into the dark.
       // neighbours step back into the dark but keep their label colour (it was a near-black silhouette, so the
       // flavors beside the hero read as unlit shapes); only the centre can is fully lit
-      const ringFocus = (0.14 + 0.16 * Math.max(0, 1 - stepDist / 3)) * edgeFade + 0.8 * heroWeightSmooth;
-      const focus = Math.max(ringFocus, p * collapseBlend);
+      // (raised again: at 0.14–0.3 the wall read as dull black shapes; now every label shows its colour and art,
+      // stepping down gently with distance so the centre can still leads)
+      const ringFocus = (0.52 + 0.22 * Math.max(0, 1 - stepDist / 3)) * edgeFade + 0.3 * heroWeightSmooth;
+      const focus = Math.min(1, Math.max(ringFocus, p * collapseBlend));
       setCanFocus(can, Math.round(focus * 100) / 100);
       this.applyLabelState(can, p > 0.4);
 
@@ -1430,6 +1552,12 @@ export class SceneManager {
         canPosY -= (1 - rise) * 7.5;
         canRotY += (1 - rise) * 2.2;
       }
+
+      // featured-can offsets (opening, pick-up), weighted by how centred this can is
+      canRotX += fo.rotX * p;
+      canPosY += fo.posY * p;
+      canPosZ += fo.posZ * p;
+      canScale *= 1 + (fo.scale - 1) * p;
 
       can.position.set(canPosX, canPosY, canPosZ);
       can.rotation.set(canRotX, canRotY, canRotZ);
@@ -1537,6 +1665,7 @@ export class SceneManager {
     });
     this.reflections?.update(this.cans, this.data.floorY, this.data.reflect, this.reducedMotion);
     this.updateStage(time, this.cans[this.productCanIndex]);
+    this.post?.setFocus(this.focusScreen.x, this.focusScreen.y, 0.18);
     this.renderScene(time);
   }
 
@@ -1549,6 +1678,8 @@ export class SceneManager {
       (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(handle);
     });
     if (this.reqId) cancelAnimationFrame(this.reqId);
+    window.clearTimeout(this.pickTimer);
+    window.clearTimeout(this.envTimer);
     this.removeEngagedListeners();
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('mousemove', this.onMouseMove);

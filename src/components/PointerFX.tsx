@@ -106,6 +106,18 @@ export const PointerFX: React.FC<PointerFXProps> = ({ onTilt }) => {
     if (!fine && !needsPermission && 'DeviceOrientationEvent' in window) {
       window.addEventListener('deviceorientation', onOrientation, { passive: true });
     }
+    // iOS asks first: the request must come from a tap, so it rides on the visitor's first touch.
+    const askTilt = () => {
+      const request = (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission;
+      request()
+        .then((state) => {
+          if (state === 'granted') window.addEventListener('deviceorientation', onOrientation, { passive: true });
+        })
+        .catch(() => {
+          // declined or unavailable: the can simply stays still
+        });
+    };
+    if (!fine && needsPermission) window.addEventListener('touchend', askTilt, { once: true, passive: true });
 
     return () => {
       cancelAnimationFrame(frame);
@@ -118,6 +130,7 @@ export const PointerFX: React.FC<PointerFXProps> = ({ onTilt }) => {
       window.removeEventListener('blur', onLeave);
       window.clearTimeout(idleTimer);
       window.removeEventListener('deviceorientation', onOrientation);
+      window.removeEventListener('touchend', askTilt);
     };
   }, []);
 

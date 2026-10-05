@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { FLAVORS } from '../data/flavors';
 import { PACK_OPTIONS, formatPrice, PLACEHOLDER_PRICING } from '../data/products';
 import { useCart } from '../store/cart';
 import { CanTop } from './CanTop';
 import { ButtonLabel } from './ButtonLabel';
-import { flyToBag } from './flyToBag';
+import { flyBetween, flyToBag } from './flyToBag';
 import { audioManager } from '../audio/audioManager';
 
 interface PackBuilderProps {
@@ -17,6 +17,9 @@ const SIZES = PACK_OPTIONS.filter((pack) => pack.count >= 6);
  * Mix your own pack: pick 6, 12 or 24, then fill the slots (drag a flavor onto a
  * slot, or click/press Enter on a flavor to fill the next empty slot). Clicking a
  * filled slot empties it. One Add to bag for the whole pack.
+ *
+ * The slots are a carton seen in perspective: a picked flavor arcs from the list into its well and drops in with a
+ * small bounce, and the carton lights up once every slot is full.
  */
 export const PackBuilder: React.FC<PackBuilderProps> = ({ onNavigate }) => {
   const [packId, setPackId] = useState(SIZES[0].id);
@@ -24,6 +27,9 @@ export const PackBuilder: React.FC<PackBuilderProps> = ({ onNavigate }) => {
   const [slots, setSlots] = useState<(string | null)[]>(() => Array(SIZES[0].count).fill(null));
   const [state, setState] = useState<'idle' | 'added' | 'error'>('idle');
   const { addMix } = useCart();
+  const slotRefs = useRef<(HTMLLIElement | null)[]>([]);
+  /** The slot that just received a can (replays its drop). */
+  const [landed, setLanded] = useState<{ index: number; key: number } | null>(null);
 
   const filled = slots.filter(Boolean).length;
   const isFull = filled === pack.count;
@@ -36,14 +42,18 @@ export const PackBuilder: React.FC<PackBuilderProps> = ({ onNavigate }) => {
     setState('idle');
   };
 
-  const place = (slug: string, at?: number) => {
+  const place = (slug: string, at?: number, from?: HTMLElement) => {
+    const index = at ?? slots.findIndex((slot) => slot === null);
+    if (index < 0) return;
+    const well = slotRefs.current[index];
+    if (from && well) flyBetween(`/products/thumbs/${slug}.webp`, from, well, { duration: 560, endScale: 0.55, fade: true, lift: 90 });
     setSlots((previous) => {
-      const index = at ?? previous.findIndex((slot) => slot === null);
-      if (index < 0) return previous;
       const next = [...previous];
       next[index] = slug;
       return next;
     });
+    setLanded({ index, key: Date.now() });
+    audioManager.play('click');
     setState('idle');
   };
 
@@ -102,7 +112,7 @@ export const PackBuilder: React.FC<PackBuilderProps> = ({ onNavigate }) => {
                   draggable
                   disabled={isFull}
                   onDragStart={(event) => event.dataTransfer.setData('text/plain', flavor.id)}
-                  onClick={() => place(flavor.id)}
+                  onClick={(event) => place(flavor.id, undefined, event.currentTarget)}
                   aria-label={`Add ${flavor.name}${counts.get(flavor.id) ? `, ${counts.get(flavor.id)} in pack` : ''}`}
                 >
                   <CanTop slug={flavor.id} size="small" />
@@ -116,28 +126,40 @@ export const PackBuilder: React.FC<PackBuilderProps> = ({ onNavigate }) => {
 
         <div>
           <p className="field-legend" aria-live="polite">{filled} of {pack.count} filled</p>
-          <ol className={`builder__slots builder__slots--${pack.count}`} aria-label="Pack slots">
-            {slots.map((slot, index) => (
-              <li
-                key={index}
-                className={`slot ${slot ? 'is-filled' : ''}`}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  const slug = event.dataTransfer.getData('text/plain');
-                  if (FLAVORS.some((flavor) => flavor.id === slug)) place(slug, index);
-                }}
-              >
-                {slot ? (
-                  <button type="button" className="slot__button" onClick={() => clear(index)} aria-label={`Slot ${index + 1}: ${FLAVORS.find((f) => f.id === slot)?.name}. Remove`}>
-                    <CanTop slug={slot} />
-                  </button>
-                ) : (
-                  <span className="slot__empty" role="img" aria-label={`Slot ${index + 1}: empty`} />
-                )}
-              </li>
-            ))}
-          </ol>
+          <div className={`carton ${isFull ? 'is-full' : ''}`}>
+            <ol className={`builder__slots builder__slots--${pack.count}`} aria-label="Pack slots">
+              {slots.map((slot, index) => (
+                <li
+                  key={index}
+                  ref={(element) => {
+                    slotRefs.current[index] = element;
+                  }}
+                  className={`slot ${slot ? 'is-filled' : ''}`}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const slug = event.dataTransfer.getData('text/plain');
+                    if (FLAVORS.some((flavor) => flavor.id === slug)) place(slug, index);
+                  }}
+                >
+                  {slot ? (
+                    <button
+                      type="button"
+                      key={landed?.index === index ? landed.key : 'still'}
+                      className={`slot__button ${landed?.index === index ? 'is-landing' : ''}`}
+                      onClick={() => clear(index)}
+                      aria-label={`Slot ${index + 1}: ${FLAVORS.find((f) => f.id === slot)?.name}. Remove`}
+                    >
+                      <CanTop slug={slot} />
+                    </button>
+                  ) : (
+                    <span className="slot__empty" role="img" aria-label={`Slot ${index + 1}: empty`} />
+                  )}
+                </li>
+              ))}
+            </ol>
+            <span className="carton__band" aria-hidden="true">{pack.count}-pack ready</span>
+          </div>
         </div>
       </div>
 

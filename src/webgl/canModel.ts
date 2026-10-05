@@ -172,8 +172,10 @@ export interface CanSurfaceUniforms {
   uDropMap: { value: THREE.Texture };
   uDropStrength: { value: number };
   uDropTime: { value: number };
-  /** 0..1: the label dissolves away in an organic noise pattern (the push into the can). */
-  uDissolve: { value: number };
+  /** 0..1: frost spreads up the label from the base (FrostMelt). */
+  uFrost: { value: number };
+  /** 0..1: extra wetness while the frost melts into drops. */
+  uWet: { value: number };
 }
 
 /**
@@ -195,7 +197,8 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
     uDropMap: { value: getDropTexture() },
     uDropStrength: condensation.uDropStrength,
     uDropTime: condensation.uDropTime,
-    uDissolve: { value: 0 },
+    uFrost: { value: 0 },
+    uWet: { value: 0 },
   };
   material.userData.surface = uniforms;
   material.customProgramCacheKey = () => 'gz-can-surface';
@@ -216,8 +219,9 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
         uniform sampler2D uDropMap;
         uniform float uDropStrength;
         uniform float uDropTime;
-        uniform float uDissolve;
-        float gzDissolveN = 1.0;
+        uniform float uFrost;
+        uniform float uWet;
+        float gzFrost = 0.0;
         float gzH(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         float gzN(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(gzH(i), gzH(i + vec2(1.0, 0.0)), f.x), mix(gzH(i + vec2(0.0, 1.0)), gzH(i + vec2(1.0, 1.0)), f.x), f.y); }
         vec3 gzDrop = vec3(0.5, 0.5, 0.0);
@@ -234,11 +238,6 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
         '#include <map_fragment>',
         `#include <map_fragment>
         #ifdef USE_MAP
-          if (uDissolve > 0.001) {
-            vec2 dp = vMapUv * vec2(14.0, 10.0);
-            gzDissolveN = 0.55 * gzN(dp) + 0.3 * gzN(dp * 2.3 + 5.0) + 0.15 * gzN(dp * 5.1 + 9.0);
-            if (gzDissolveN < uDissolve * 1.2 - 0.1) discard;
-          }
           vec3 gzInk = diffuseColor.rgb;
           #ifdef USE_METALNESSMAP
             gzMetal = smoothstep(0.6, 0.95, texture2D(metalnessMap, vMapUv).b);
@@ -277,6 +276,8 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
           }
           // small, dim background cans get fewer beads: at that size they only read as grain
           gzDropK = uDropStrength * mix(0.15, 1.0, uFocus * uFocus);
+          // melting frost leaves the can running wet
+          gzDropK = max(gzDropK, uWet);
           // while a benefit block is being lit, the beads back off so its text stays crisp
           gzDropK *= 1.0 - 0.55 * uLabelDim;
           // droplets lift the colour a touch (light bending through water)
@@ -292,6 +293,15 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
           // Benefit spotlight: the rest of the label drops to ~25%, the active block stays at full brightness.
           float gzSpot = gzRect(vMapUv, uGlowRect, 0.008) * step(0.001, uGlowStrength);
           diffuseColor.rgb *= mix(1.0, 0.1, uLabelDim * (1.0 - gzSpot)) * (1.0 + 0.7 * uLabelDim * gzSpot);
+          if (uFrost > 0.001) {
+            // Frost: a crystalline white film that creeps up from the base along a ragged, noisy front, with fine
+            // sparkling grain; the label shows through where it is thin.
+            float gzFrostN = 0.5 * gzN(vMapUv * vec2(38.0, 26.0)) + 0.3 * gzN(vMapUv * vec2(120.0, 84.0)) + 0.2 * gzN(vMapUv * vec2(8.0, 6.0));
+            gzFrost = smoothstep(0.0, 0.14, uFrost * 1.35 - vMapUv.y * 0.55 - gzFrostN * 0.6);
+            float gzCrystal = gzN(vMapUv * vec2(420.0, 300.0));
+            vec3 gzIce = vec3(0.8, 0.87, 0.95) * (0.72 + 0.4 * gzCrystal);
+            diffuseColor.rgb = mix(diffuseColor.rgb, gzIce, gzFrost * (0.55 + 0.35 * gzFrostN));
+          }
         #endif
         // out-of-focus cans fall to near-black silhouettes; their chrome ends and edges stay lit
         diffuseColor.rgb *= mix(0.07, 1.0, uFocus * uFocus);
@@ -305,6 +315,7 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
         `#ifdef USE_ROUGHNESSMAP
           float roughnessFactor = roughness * texture2D(roughnessMap, vRoughnessMapUv).g * (0.85 + 0.3 * gzBrush);
           roughnessFactor = mix(roughnessFactor, 0.06, gzDrop.b * gzDropK);
+          roughnessFactor = mix(roughnessFactor, 0.7, gzFrost);
         #else
           float roughnessFactor = roughness * mix(0.46, 0.2, gzMetal) * (0.82 + 0.36 * gzBrush);
         #endif`
@@ -312,7 +323,7 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
       .replace(
         '#include <metalnessmap_fragment>',
         `#ifdef USE_METALNESSMAP
-          float metalnessFactor = metalness * texture2D(metalnessMap, vMetalnessMapUv).b;
+          float metalnessFactor = metalness * texture2D(metalnessMap, vMetalnessMapUv).b * (1.0 - 0.75 * gzFrost);
         #else
           float metalnessFactor = metalness * mix(0.72, 1.0, gzMetal);
         #endif`
@@ -331,10 +342,6 @@ function applyCanSurfaceShader(material: THREE.MeshPhysicalMaterial | THREE.Mesh
         {
           float rimFacing = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
           totalEmissiveRadiance += uRimColor * uRimStrength * pow(rimFacing, 4.0);
-        }
-        if (uDissolve > 0.001) {
-          float band = 1.0 - smoothstep(0.0, 0.05, gzDissolveN - (uDissolve * 1.2 - 0.1));
-          totalEmissiveRadiance += uRimColor * band * 2.2;
         }
         #ifdef USE_MAP
           if (uGlowStrength > 0.001) {

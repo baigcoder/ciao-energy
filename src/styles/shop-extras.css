@@ -714,6 +714,84 @@ select.field__input--plain option {
   from { transform: scale(var(--scale-hover)); opacity: 0; }
 }
 
+/* The pack as a carton seen in perspective: a tray with one recessed well per can. */
+.carton {
+  --size-can-top: var(--size-can-top-carton);
+  position: relative;
+  display: inline-grid;
+  justify-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-md) var(--space-lg);
+  perspective: 50rem;
+}
+
+.carton .builder__slots {
+  padding: var(--space-md);
+  border: var(--border-hairline) solid var(--color-line-strong);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-base)),
+    var(--color-surface-panel);
+  box-shadow:
+    inset 0 0 0 var(--border-hairline) var(--color-line-subtle),
+    0 var(--space-lg) var(--space-xl) calc(var(--space-sm) * -1) var(--color-surface-overlay);
+  transform: rotateX(var(--carton-tilt));
+  transform-style: preserve-3d;
+  transition: box-shadow var(--motion-slow) var(--ease-out), border-color var(--motion-slow) var(--ease-out);
+}
+
+/* each slot is a well: dark at its centre, a lit rim on the far edge */
+.carton .slot__empty {
+  border: none;
+  background: radial-gradient(closest-side, var(--color-floor-low) 55%, var(--color-floor-mid) 85%, var(--color-line) 100%);
+  box-shadow: inset 0 var(--carton-depth) var(--carton-depth) var(--color-surface-overlay);
+}
+
+/* a filled can stands up out of its well, with a soft shadow under it */
+.carton .slot__button {
+  transform: translateZ(var(--carton-depth));
+  filter: drop-shadow(0 var(--carton-depth) var(--space-2xs) var(--color-surface-overlay));
+}
+
+.carton .slot__button:hover {
+  transform: translateZ(var(--carton-depth)) scale(var(--scale-shrink));
+}
+
+/* the can that just arrived drops in from above and settles with a small bounce */
+.carton .slot__button.is-landing {
+  animation: carton-drop var(--motion-standard) var(--ease-out);
+}
+
+@keyframes carton-drop {
+  0% { transform: translateZ(calc(var(--carton-depth) * 9)) scale(1.25); opacity: 0; }
+  55% { transform: translateZ(0) scale(0.94); opacity: 1; }
+  75% { transform: translateZ(calc(var(--carton-depth) * 1.8)) scale(1.02); }
+  100% { transform: translateZ(var(--carton-depth)); }
+}
+
+/* full: the carton lights up in the flavor accent and its band reads "ready" */
+.carton.is-full .builder__slots {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-accent-glow), inset 0 0 0 var(--border-hairline) var(--color-accent);
+}
+
+.carton__band {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  transition: color var(--motion-slow) var(--ease-out);
+}
+
+.carton:not(.is-full) .carton__band {
+  visibility: hidden;
+}
+
+.carton.is-full .carton__band {
+  color: var(--color-accent);
+}
+
 .builder__footer {
   display: flex;
   flex-wrap: wrap;
@@ -1019,6 +1097,7 @@ select.field__input--plain option {
 @media (prefers-reduced-motion: reduce) {
   .hotspot,
   .slot__button,
+  .carton .slot__button.is-landing,
   .bag__undo {
     animation: none;
   }
