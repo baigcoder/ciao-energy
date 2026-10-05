@@ -1175,8 +1175,8 @@ export class SceneManager {
     const maxX = this.cans.length * 0.5 * this.carousel.spacing;
     let maxHoverInfluence = 0;
     let bestHoverCanIndex = -1;
-    // The finale row uses every can (two of each flavor), like a full shelf.
-    const lineupCount = this.cans.length;
+    // The finale shows each flavor once: six cans on a mountain-shaped arc (the ring holds two of each flavor).
+    const lineupCount = FLAVORS.length;
 
     this.cans.forEach((can, i) => {
       const target = i * this.carousel.spacing - this.carousel.position;
@@ -1189,11 +1189,13 @@ export class SceneManager {
       if (this.data.swirl > 0.01) {
         const s = this.data.swirl;
         // the active flavor lands near the middle of the row
-        const slot = LINEUP_SLOTS[(((i - this.carousel.getIndex() + 5) % lineupCount) + lineupCount) % lineupCount];
+        const slotIndex = (((i - this.carousel.getIndex() + 3) % lineupCount) + lineupCount) % lineupCount;
+        const slot = isMobile ? LINEUP_SLOTS_PHONE[slotIndex] : LINEUP_SLOTS[slotIndex];
         const isFeatured = p > 0.4;
         const fromScale = isFeatured ? this.data.canScale : 0;
-        can.visible = isFeatured || s > 0.25;
-        const mobileK = isMobile ? 0.3 : 1; // phones: the whole ridge fits the narrow frame, with a margin
+        // the second can of each flavor only appears while the ring is still turning into the lineup
+        can.visible = i < lineupCount ? isFeatured || s > 0.25 : isFeatured && s < 0.5;
+        const mobileK = 1; // phones have their own 3 + 3 slots (LINEUP_SLOTS_PHONE)
         // Each can drops in on its own beat (back row first), with a small settle.
         const local = THREE.MathUtils.clamp((s - slot.delay * 0.7) / (1 - slot.delay * 0.7), 0, 1);
         const drop = (1 - landing(local)) * 9;
@@ -1209,7 +1211,7 @@ export class SceneManager {
           this.data.canRotY * (1 - s) + slot.rotY * s,
           this.data.canRotZ * (1 - s) + slot.rotZ * s
         );
-        const canScale = fromScale * (1 - s) + this.data.canScale * (isMobile ? 0.46 : 1) * s;
+        const canScale = fromScale * (1 - s) + this.data.canScale * (isMobile ? 0.7 : 1) * s;
         can.scale.setScalar(canScale);
         setCanFocus(can, Math.round(Math.max(0.02, (isFeatured ? 1 - s : 0) + s * 0.95) * 100) / 100);
         this.applyLabelState(can, false);
@@ -1520,21 +1522,34 @@ function landing(t: number) {
  * Slot 0 is the flavor in focus (it takes the peak); the rest follow catalogue order.
  */
 /**
- * Finale row: every can (two of each flavor) on one long rising diagonal, leaning like
- * dominoes, nearest and lowest at the left, stepping up and away to the right; the ends run
- * out of frame like a full shelf. The active flavor sits near the middle.
+ * Finale lineup: one can per flavor on a mountain-shaped arc, the two middle cans highest and nearest, the ends
+ * stepping down and back, each leaning a little toward the centre. They drop in from the middle outward onto the
+ * wet floor. The active flavor sits just right of the middle.
  */
-const LINEUP_SLOTS = Array.from({ length: 12 }, (_, k) => {
-  const t = k - 5.5;
+/** Phones are too narrow for one row of six: two rows of three, the middle column a little higher and nearer. */
+const LINEUP_SLOTS_PHONE = Array.from({ length: 6 }, (_, k) => {
+  const column = (k % 3) - 1;
+  const row = k < 3 ? 0 : 1;
   return {
-    // one tight row receding in depth: near and low at the left (showing bottoms), far and high
-    // at the right (showing tops), the cans twisting along it; the floor below stays empty
-    x: t * 1.62,
-    y: 0.45 + t * 0.4 - 0.012 * t * t, // rising, flattening toward the far end
-    z: 2.4 - t * 0.85,
-    rotX: -0.5 + (k / 11) * 1.1,
-    rotY: -0.3,
-    rotZ: 0.14,
-    delay: (k / 11) * 0.6,
+    x: column * 1.75,
+    y: (row === 0 ? 2.3 : -1.5) + (column === 0 ? 0.35 : 0),
+    z: column === 0 ? 0.6 : 0,
+    rotX: 0,
+    rotY: -column * 0.1,
+    rotZ: -column * 0.035,
+    delay: (row * 0.3 + Math.abs(column) * 0.15),
+  };
+});
+
+const LINEUP_SLOTS = Array.from({ length: 6 }, (_, k) => {
+  const t = k - 2.5;
+  return {
+    x: t * 3.0,
+    y: 0.9 - 0.22 * t * t,
+    z: 1.6 - 0.45 * Math.abs(t),
+    rotX: 0,
+    rotY: -t * 0.1,
+    rotZ: -t * 0.035,
+    delay: (Math.abs(t) / 2.5) * 0.55,
   };
 });
