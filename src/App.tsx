@@ -40,6 +40,18 @@ import { OPENING_MIN_SECONDS, openingShouldPlay } from './webgl/moments/openingC
 import { isLowPowerDevice } from './webgl/devicePower';
 
 const MIN_LOADER_MS = 900;
+
+/** Resolves after the browser has painted a frame (or after a short timeout in a hidden tab). */
+const afterNextPaint = () =>
+  new Promise<void>((resolve) => {
+    const fallback = window.setTimeout(resolve, 400);
+    requestAnimationFrame(() =>
+      window.setTimeout(() => {
+        window.clearTimeout(fallback);
+        resolve();
+      }, 0)
+    );
+  });
 /** A product page only waits for the scene's first frame (its can), not for a cinematic. */
 const PRODUCT_LOADER_MS = 250;
 
@@ -188,9 +200,13 @@ export const App: React.FC = () => {
     let teardown: () => void = () => {};
     performance.mark('grizzly:scene-import-start');
     import('./webgl/sceneManager')
-      .then(({ SceneManager }) => {
+      .then(async ({ SceneManager }) => {
         if (cancelled) return;
         performance.mark('grizzly:scene-import-end');
+        // Let the loader and the page's first paint land before the (long) scene construction starts: the
+        // text must never wait for WebGL.
+        await afterNextPaint();
+        if (cancelled) return;
         const sm = new SceneManager(canvas);
         performance.mark('grizzly:scene-created');
         sceneManagerRef.current = sm;

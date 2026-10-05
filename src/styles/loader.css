@@ -111,14 +111,24 @@
 
 /* The forming edge: a thin cold light riding the front of the sweep. */
 .loader__word-edge {
+  /* A full-width box that never moves: the light line is drawn at the fill position by a gradient (paint only).
+     It used to slide with `left`, which counted as layout shift and cost CLS on every page with a loader. */
   position: absolute;
   top: calc(var(--space-sm) * -1);
   bottom: calc(var(--space-sm) * -1);
-  left: calc(var(--loader-fill) * 100%);
-  width: var(--border-hairline);
-  background: linear-gradient(to bottom, transparent, var(--color-silver-100), transparent);
-  box-shadow: var(--shadow-accent-glow);
+  left: 0;
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    transparent calc(var(--loader-fill) * 100% - var(--border-hairline)),
+    var(--color-silver-100) calc(var(--loader-fill) * 100% - var(--border-hairline)),
+    var(--color-silver-100) calc(var(--loader-fill) * 100%),
+    transparent calc(var(--loader-fill) * 100%)
+  );
+  mask-image: linear-gradient(to bottom, transparent, var(--color-black), transparent);
+  filter: drop-shadow(0 0 var(--space-xs) var(--color-accent));
   opacity: calc(1 - var(--loader-fill) * var(--loader-fill));
+  pointer-events: none;
 }
 
 .loader__sub {

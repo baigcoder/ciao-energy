@@ -305,18 +305,55 @@ export class SceneManager {
     this.quality = this.isLowPower ? 'MEDIUM' : 'HIGH';
     this.stage = new Stage(this.renderer, width, height, this.quality);
     this.scene.add(this.stage.background, this.stage.foreground);
-    this.buildPost(width, height, pixelRatio);
-    this.reflections = this.isLowPower ? null : new FloorReflections(this.scene, this.cans, this.labels);
 
     this.buildMasterTimeline();
     this.roarMoment = new RoarMoment(this);
     this.openingMoment = new OpeningMoment();
     this.fruit = new FruitField(this);
-    this.moments.push(this.openingMoment, this.roarMoment, new GhostText(this), this.fruit, new InsideCan(), new ZamzamPool(this), new FinaleGlow(this));
-    this.iceDust = new IceDust(this);
+    this.moments.push(this.openingMoment, this.roarMoment, this.fruit);
     this.bindEvents();
     (window as unknown as { __GRIZZLY_SCENE__: SceneManager }).__GRIZZLY_SCENE__ = this;
     this.animate(0);
+    // Everything that is not needed for the first frame is built afterwards, one short task at a time.
+    this.scheduleDeferredSetup();
+  }
+
+  private deferredHandles: number[] = [];
+  private disposed = false;
+
+  /**
+   * Post-processing, floor reflections and the secondary moments (tagline type, inside-can, Zamzam pool, finale
+   * glow, ice dust) are built after the first frame, each in its own task, instead of one long task before it.
+   * All of them are optional in the render loop (`?.` / empty lists), so the first frames simply render without them.
+   */
+  private scheduleDeferredSetup() {
+    const steps: Array<() => void> = [
+      () => {
+        // setQuality may already have built it (reduced motion / low tiers)
+        if (!this.post) this.buildPost(window.innerWidth, window.innerHeight, this.renderer.getPixelRatio());
+      },
+      () => {
+        if (!this.isLowPower) this.reflections = new FloorReflections(this.scene, this.cans, this.labels);
+      },
+      () => this.moments.push(new GhostText(this), new InsideCan()),
+      () => this.moments.push(new ZamzamPool(this), new FinaleGlow(this)),
+      () => {
+        this.iceDust = new IceDust(this);
+      },
+    ];
+    const idleWindow = window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number };
+    const next = () => {
+      const step = steps.shift();
+      if (!step || this.disposed) return;
+      step();
+      queue();
+    };
+    const queue = () => {
+      const handle = idleWindow.requestIdleCallback ? idleWindow.requestIdleCallback(next, { timeout: 600 }) : window.setTimeout(next, 60);
+      this.deferredHandles.push(handle);
+    };
+    // first, let the first frames render
+    this.deferredHandles.push(window.setTimeout(queue, 120));
   }
 
   // ───────────────────────── setup ─────────────────────────
@@ -1479,6 +1516,11 @@ export class SceneManager {
   // ───────────────────────── teardown ─────────────────────────
 
   public dispose() {
+    this.disposed = true;
+    this.deferredHandles.forEach((handle) => {
+      window.clearTimeout(handle);
+      (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(handle);
+    });
     if (this.reqId) cancelAnimationFrame(this.reqId);
     this.removeEngagedListeners();
     window.removeEventListener('resize', this.onResize);
